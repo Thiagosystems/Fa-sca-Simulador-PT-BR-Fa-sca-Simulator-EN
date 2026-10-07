@@ -2302,6 +2302,174 @@ function applyPanes(){const b=document.body;if(!b||!b.classList)return;for(const
 {const _ra=renderAll;renderAll=function(){_ra();applyPanes()}}
 addEventListener('keydown',e=>{if(e.target.matches&&e.target.matches('input,select,textarea'))return;if((e.ctrlKey||e.metaKey)&&e.shiftKey&&(e.key==='F'||e.key==='f')){e.preventDefault();const all=paneHidden('pal')&&paneHidden('side')&&paneHidden('bar');CFG.panes={pal:!all,side:!all,bar:!all};cfgSave();applyPanes()}});
 applyPanes();
+
+/* ================= numeração editável dos contatos (como no CADe_SIMU) ================= */
+{const NUMT=['kno','knc','ktno','ktnc','ftnc','ftno','btn'];
+ const parseNum=c=>{const m=typeof c.num==='string'&&c.num.trim().match(/^([A-Za-z0-9]{1,4})\s*[-–\/ ]\s*([A-Za-z0-9]{1,4})$/);return m?[m[1],m[2]]:null};
+ for(const t of NUMT){const d=DEFS[t];if(!d||termsOf({...makeComp(t,{}),type:t}).length!==2)continue;
+  const N0=d.N,D0=d.draw;
+  d.N=c=>{const n=parseNum(c);return n||fv(N0,c)};
+  d.draw=c=>{let s=D0(c);const n=parseNum(c);if(!n)return s;const o=fv(N0,c)||[];
+   o.forEach((v,i)=>{s=s.replace(`>${esc(v)}</text>`,`>${esc(n[i])}</text>`)});return s};
+  d.F=[...(d.F||[]),['num','Numeração (ex.: 53-54)','text']]}}
+
+
+/* ================= símbolos no estilo do CADe_SIMU: transformador, ponte retificadora e disjuntor ================= */
+/* transformador: duas barras grossas (enrolamentos) com o núcleo entre elas; terminais 1-2 (primário) e 3-4 (secundário) */
+Object.assign(DEFS.xfmr,{N:['1','2','3','4'],B:[-34,-40,68,80],
+ draw:c=>{const e=EN(c.id)?' en':'';return L(-20,-40,-20,-13)+L(20,-40,20,-13)+R(-30,-13,60,8,'fillink'+e)+L(-30,-1,30,-1)+L(-30,1,30,1)+R(-30,5,60,8,'fillink'+e)+L(-20,13,-20,40)+L(20,13,20,40)
+  +T(-16,-28,'1',c.r,'tn')+T(24,-28,'2',c.r,'tn')+T(-16,34,'3',c.r,'tn')+T(24,34,'4',c.r,'tn')}});
+/* ponte retificadora: losango tracejado com diodo; 1 e 2 (~) nas laterais, 3 (+) em cima, 4 (−) embaixo */
+Object.assign(DEFS.rect,{T:[[-40,0],[40,0],[0,-40],[0,40]],N:['1','2','3','4'],B:[-40,-40,80,80],
+ draw:c=>L(-40,0,-24,0)+L(24,0,40,0)+L(0,-40,0,-24)+L(0,24,0,40)+P('M0,-24L24,0L0,24L-24,0Z','dash')+P('M-8,-7L5,0L-8,7Z','fillink')+L(6,-8,6,8,'thick')
+  +T(-38,-6,'1',c.r,'tn')+T(32,-6,'2',c.r,'tn')+T(5,-30,'3',c.r,'tn')+T(5,36,'4',c.r,'tn')+T(-4,-12,'+',c.r,'tn')+T(-4,20,'−',c.r,'tn')});
+/* saída da ponte: sem filtro (média), com capacitor (pico) ou ideal (Vcc = Vca, como no CADe_SIMU) */
+{const d=DEFS.rect;d.def={...(d.def||{}),out:''};
+ const outOf=c=>c.out==='avg'||c.out==='cap'||c.out==='ideal'?c.out:(c.fil?'cap':'avg');
+ d.F=[['out','Tensão de saída','sel',[['avg','Sem filtro: média ≈ 0,9 × Vca'],['cap','Com capacitor de filtro: ≈ pico (1,41 × Vca)'],['ideal','Ideal: Vcc = Vca (como no CADe_SIMU)']]]];
+ const der0=d.der;d.der=(c,X,N)=>{const m=outOf(c);if(m!=='ideal'){c.fil=m==='cap';return der0(c,X,N)}
+  const v=(X.vab&&X.vab(0,1))||(X.energ&&X.energ(0,1)?220:0);if(v>2){X.push(2,c.tag+':+',Math.max(0,v),.1);X.push(3,c.tag+':-',0,.01);N.ds[c.id]=1}};
+ const mk=makeComp;makeComp=function(t,o){const c=mk(t,o);if(t==='rect'&&!c.out)c.out=c.fil?'cap':'avg';return c}}
+/* disjuntor termomagnético: quadradinho preto no contato fixo (o "x" da IEC continua disponível como opção) */
+{const d=DEFS.mp,D0=d.draw;
+ d.draw=c=>{let s=D0(c);if(c.k!=='dj'||c.sym)return s;
+  return s.replace(/<path d="M(-?[\d.]+),-16l8,8M(-?[\d.]+),-16l-8,8"( class="trip")?\/>/g,(m,a,b,tr)=>{const x=+a+4;return R(x-5,-19,10,7,tr?'blown':'fillink')})};
+ const f=d.F.find(x=>x[0]==='sym');if(f)f[3]=[['','Padrão (quadrado, como no CADe_SIMU)'],['iec','IEC (com x)'],['det','Detalhado (térmico + magnético)']]}
+
+/* identificação da ponte acima do terminal 2, fora dos fios */
+{const lp=lblPos;lblPos=function(c){return c.type==='rect'?rot([46,-20],c.r):c.type==='mot6'&&c.pe?rot([46,52],c.r):lp(c)}}
+/* ================= motor de 6 terminais com borne de terra (PE) ================= */
+{const d=DEFS.mot6,T0=d.T,N0=d.N,D0=d.draw,B0=d.B;d.def={...d.def,pe:false};
+ d.T=c=>c.pe?[...fv(T0,c),[60,0]]:fv(T0,c);d.N=c=>c.pe?[...fv(N0,c),'PE']:fv(N0,c);d.B=c=>{const b=fv(B0,c);return c.pe?[b[0],b[1],b[2]+30,b[3]]:b};
+ d.draw=c=>D0(c)+(c.pe?L(26,0,46,0)+P('M46,-10V10M50,-6V6')+L(50,0,60,0)+T(48,-14,'PE',c.r,'tn'):'');
+ d.F=[...(d.F||[]),['pe','Borne de terra (PE)','bool']]}
+for(const[,it]of PAL)for(const x of it)if(x[1]==='mot6'){x[2]={...(x[2]||{}),pe:true}}
+
+/* ================= modelo: estrela-triângulo com comando 24 Vcc (igual ao esquema de referência) ================= */
+{const _lt=loadTpl;loadTpl=function(k,noHist){if(k!=='yd24')return _lt(k,noHist);
+ if(!noHist)pushHist();S={comps:[],wires:[],seq:1};const R={};let n=1;
+ const a=(key,type,x,y,o={})=>{const c={...makeComp(type,o),id:'c'+n++,x,y,r:o.r||0};delete c.nm;S.comps.push(c);R[key]=c},
+  w=(p,i,q,j,o,m)=>{const x={id:'w'+n++,a:{c:R[p].id,t:i},b:{c:R[q].id,t:j}};if(o){x.o=o;x.m=m}S.wires.push(x)},
+  j=(key,x,y)=>a(key,'junction',x,y),tx=(key,x,y,text)=>a(key,'note',x,y,{text});
+ /* ---------- circuito principal ---------- */
+ tx('t1',420,60,'CIRCUITO PRINCIPAL');
+ [['PE',140],['L3',180],['L2',220],['L1',260]].forEach(([v,y])=>a('s'+v,'src',120,y,{v,r:270}));
+ a('F1','mp',300,360,{k:'fu',p:3,In:25,tag:'F1'});
+ j('JL1',260,260);j('JL2',300,220);w('sL1',0,'JL1',0);w('JL1',0,'F1',0);w('sL2',0,'JL2',0);w('JL2',0,'F1',1);w('sL3',0,'F1',2,'h',340);
+ a('K1','mp',300,600,{k:'k',p:3,tag:'K1'});a('K2','mp',520,600,{k:'k',p:3,tag:'K2'});a('K3','mp',720,600,{k:'k',p:3,tag:'K3'});
+ a('RT','ftpow',300,720,{tag:'RT1',Ir:16});a('M','mot6',300,860,{tag:'M1',Vn:380,P:7500,pe:true});
+ [[260,520],[300,480],[340,440]].forEach(([x,y],i)=>{j('J'+i,x,y);w('F1',3+i,'J'+i,0);w('J'+i,0,'K1',i);w('J'+i,0,'K2',i,'h',480+i*40);
+  w('K1',3+i,'RT',i);w('RT',3+i,'M',i);j('A'+i,480+i*40,680+i*40);w('K2',3+i,'A'+i,0);w('A'+i,0,'K3',3+i,'h',680+i*40)});
+ j('JS',720,520);w('K3',0,'JS',0,'v',520);w('JS',0,'K3',1);w('JS',0,'K3',2,'h',760);
+ /* motor: W2 ← K2-2 (L1), U2 ← K2-4 (L2), V2 ← K2-6 (L3) */
+ w('M',5,'A0',0,'v',1060);w('M',3,'A1',0,'v',1020);w('M',4,'A2',0,'v',980);w('sPE',0,'M',6,'h',380);
+ tx('nK1',356,652,'PRINC');tx('nK2',576,652,'TRIAN');tx('nK3',776,652,'ESTRE');
+ /* ---------- fonte do comando: Q1 → T1 → V1 ---------- */
+ a('Q1','mp',900,360,{k:'dj',p:2,In:6,curve:'C',tag:'Q1'});w('JL1',0,'Q1',0,'h',880);w('JL2',0,'Q1',1,'h',920);
+ a('T1','xfmr',900,540,{Vp:380,Vs:24,tag:'T1'});w('Q1',2,'T1',0);w('Q1',3,'T1',1);
+ a('V1','rect',920,720,{out:'ideal',tag:'V1'});w('T1',2,'V1',0);w('T1',3,'V1',1,'v',620);
+ j('PJ',1040,660);w('V1',2,'PJ',0,'v',660);
+ /* ---------- circuito de comando ---------- */
+ tx('t2',1500,60,'CIRCUITO COMANDO');
+ a('RTc','ftnc',1260,180,{tag:'RT1',num:'11-12'});w('PJ',0,'RTc',0,'v',80);
+ a('S0','btn',1260,300,{nc:true,tag:'S0',num:'11-12'});w('RTc',1,'S0',0);tx('nS0',1170,330,'DESL.');
+ const X=[1260,1400,1540,1680,1820,1960,2100];
+ for(let i=0;i<6;i++){j('B'+i,X[i],380);if(i)w('B'+(i-1),0,'B'+i,0)}w('S0',1,'B0',0);
+ a('S1','btn',1260,460,{tag:'S1'});a('K3s','kno',1400,460,{tag:'K3'});a('K3a','kno',1540,460,{tag:'K3',num:'53-54'});a('K1s','kno',1680,460,{tag:'K1'});
+ a('K1n','knc',1820,460,{tag:'K1',num:'61-62'});a('K3n','kno',1960,460,{tag:'K3',num:'83-84'});a('K2n','kno',2100,460,{tag:'K2',num:'53-54'});
+ ['S1','K3s','K3a','K1s','K1n','K3n'].forEach((k2,i)=>w('B'+i,0,k2,0));w('B5',0,'K2n',0,'h',2100);tx('nS1',1170,490,'LIGA');
+ /* ramo 1: S1 + selo K3 → K2 61-62 → KT1 15-16 → K3 e KT1 */
+ j('J0',1260,540);w('S1',1,'J0',0);w('K3s',1,'J0',0,'v',540);
+ a('K2i','knc',1260,620,{tag:'K2',num:'61-62'});a('KTc','ktnc',1260,740,{tag:'KT1',num:'15-16'});w('J0',0,'K2i',0);w('K2i',1,'KTc',0);
+ j('Jc',1260,820);w('KTc',1,'Jc',0);a('K3c','coil',1260,900,{tag:'K3',Vn:24,P:6});a('KT','tcoil',1400,900,{tag:'KT1',m:'on',t:5,Vn:24,P:3});
+ w('Jc',0,'K3c',0);w('Jc',0,'KT',0,'h',1400);
+ /* ramo 2: K3 53-54 + selo K1 13-14 → K1 · K3 61-62 → K2 */
+ j('J2',1540,540);j('J3',1680,540);w('K3a',1,'J2',0);w('K1s',1,'J3',0);w('J3',0,'J2',0);
+ a('K1c','coil',1540,900,{tag:'K1',Vn:24,P:6});w('J2',0,'K1c',0);
+ a('K3i','knc',1680,620,{tag:'K3',num:'61-62'});a('K2c','coil',1680,900,{tag:'K2',Vn:24,P:6});w('J3',0,'K3i',0);w('K3i',1,'K2c',0);
+ /* sinalização */
+ a('H1','lamp',1820,900,{tag:'H1',col:'verde',Vn:24,P:2});a('H2','lamp',1960,900,{tag:'H2',col:'amarela',Vn:24,P:2});a('H3','lamp',2100,900,{tag:'H3',col:'vermelha',Vn:24,P:2});
+ w('K1n',1,'H1',0);w('K3n',1,'H2',0);w('K2n',1,'H3',0);
+ /* retorno (−) */
+ const RX=['K3c','KT','K1c','K2c','H1','H2'];RX.forEach((k2,i)=>{j('R'+i,X[i],980);w(k2,1,'R'+i,0);if(i)w('R'+(i-1),0,'R'+i,0)});
+ w('V1',3,'R0',0,'v',980);w('R5',0,'H3',1,'h',2100);
+ [[['ESTRELA'],1260],[['TEMPO','ESTRELA'],1400],[['PRINCIPAL'],1540],[['TRIÂNGULO'],1680],[['MOTOR','DESLIGADO'],1820],[['MOTOR','EM','ESTRELA'],1960],[['MOTOR','EM','TRIÂNGULO'],2100]]
+  .forEach(([ls,x],i)=>ls.forEach((s,k2)=>tx('n'+i+'_'+k2,x-34,1010+k2*18,s)));
+ S.seq=n;tplSheets(k);S.doc.fr=false;sel=null;tool=null;commit();requestAnimationFrame(fit)}}
+{const s=document.getElementById('bTpl');if(s&&s.querySelector){const o=s.querySelector('option[value="yd"]');if(o){const n=document.createElement('option');n.value='yd24';n.textContent='Estrela-triângulo com comando 24 Vcc';o.after(n)}}}
+Object.assign(I18N_EXACT,{'Estrela-triângulo com comando 24 Vcc':'Star-delta starter with 24 V DC control','Numeração (ex.: 53-54)':'Numbering (e.g. 53-54)','Tensão de saída':'Output voltage',
+ 'Sem filtro: média ≈ 0,9 × Vca':'No filter: average ≈ 0.9 × Vac','Com capacitor de filtro: ≈ pico (1,41 × Vca)':'With filter capacitor: ≈ peak (1.41 × Vac)','Ideal: Vcc = Vca (como no CADe_SIMU)':'Ideal: Vdc = Vac (like CADe_SIMU)',
+ 'Padrão (quadrado, como no CADe_SIMU)':'Default (square, like CADe_SIMU)','IEC (com x)':'IEC (with x)','Borne de terra (PE)':'Earth terminal (PE)'});
+
+/* ================= escala: diminuir ou aumentar uma parte do circuito (alças na seleção) ================= */
+const SCL=c=>{const v=+c.sc;return v>0.05&&v<20?v:1};
+tp=function(c,i){const o=rot(termsOf(c)[i],c.r),s=SCL(c);return{x:c.x+o[0]*s,y:c.y+o[1]*s}};
+wbox=function(o,lb){const b=boxOf(o),s=SCL(o),p=[[b[0],b[1]],[b[0]+b[2],b[1]],[b[0],b[1]+b[3]],[b[0]+b[2],b[1]+b[3]]].map(q=>rot(q,o.r)),xs=p.map(q=>q[0]*s+o.x),ys=p.map(q=>q[1]*s+o.y);
+ return[Math.min(...xs),Math.min(...ys),Math.max(...xs)+(lb&&!D(o).nolbl?34*Math.max(.6,s):0),Math.max(...ys)]};
+{const lp=lblPos;lblPos=function(c){const o=lp(c),s=SCL(c);return s===1?o:[o[0]*s,o[1]*s]}}
+/* aplica a escala ao desenho: o símbolo inteiro e, um pouco menos, os textos ao lado dele (para continuarem legíveis) */
+function applyScaleDom(){const el=document.getElementById('cL');if(!el)return;let cur=null,s=1;
+ for(const n of el.children){if(n.matches('g.comp')){cur=byId(n.dataset.id);s=cur?SCL(cur):1;if(s!==1)n.setAttribute('transform',`translate(${cur.x} ${cur.y}) rotate(${cur.r}) scale(${s})`);continue}
+  if(cur&&s!==1&&n.tagName==='text'){const x=+n.getAttribute('x'),y=+n.getAttribute('y'),t=Math.max(.6,s);n.setAttribute('transform',`translate(${x} ${y}) scale(${t}) translate(${-x} ${-y})`)}}}
+{const _rc=renderComps;renderComps=function(){_rc();applyScaleDom()}}
+
+/* aplica um fator de escala a um conjunto de componentes, a partir de um ponto fixo (âncora) */
+function snapScale(ids){const o={c:{},w:{}};ids.forEach(id=>{const c=byId(id);if(c)o.c[id]={x:c.x,y:c.y,sc:SCL(c)}});
+ S.wires.forEach(w=>{if(o.c[w.a.c]&&o.c[w.b.c]&&num(w.m))o.w[w.id]={m:w.m}});return o}
+function applyScale(sn,f,ax,ay,dx=0,dy=0){const r=v=>Math.round(v*100)/100;
+ for(const id in sn.c){const c=byId(id),o=sn.c[id];if(!c)continue;c.x=r(ax+(o.x-ax)*f+dx);c.y=r(ay+(o.y-ay)*f+dy);const s=r(o.sc*f*1e4)/1e4;if(Math.abs(s-1)<1e-3)delete c.sc;else c.sc=s}
+ for(const w of S.wires){const o=sn.w[w.id];if(o)w.m=r(w.o==='v'?ay+(o.m-ay)*f+dy:ax+(o.m-ax)*f+dx)}}
+function dropPartialRoutes(ids){const set=new Set(ids);for(const w of S.wires){const a=set.has(w.a.c),b=set.has(w.b.c);if(a!==b&&num(w.m)){delete w.m;delete w.o}}}
+function selBox(ids,lb){let b=null;ids.forEach(id=>{const c=byId(id);if(!c||!onSheet(c))return;const q=wbox(c,lb);b=b?[Math.min(b[0],q[0]),Math.min(b[1],q[1]),Math.max(b[2],q[2]),Math.max(b[3],q[3])]:q});return b}
+const selIds=()=>sel&&sel.c?[...sel.c].filter(id=>{const c=byId(id);return c&&onSheet(c)}):[];
+
+/* botões: 50 %, 75 %, 100 % e caber na folha */
+function scaleBy(f,ids=selIds()){if(mode!=='edit'||!ids.length)return;const b=selBox(ids);pushHist();applyScale(snapScale(ids),f,b[0],b[1]);dropPartialRoutes(ids);commit()}
+function scaleTo(pct,ids=selIds()){if(!ids.length)return;const c0=byId(ids[0]);scaleBy(pct/100/SCL(c0),ids)}
+function fitToSheet(ids){if(mode!=='edit'){toast('Pare a simulação para redimensionar.',true);return}
+ ids=ids&&ids.length?ids:S.comps.filter(onSheet).map(c=>c.id);if(!ids.length){toast('A folha está vazia.',true);return}
+ const b=selBox(ids,true),X0=FX0+30,Y0=FY0+40,X1=FX1-30,Y1=FY1-124,f=Math.min((X1-X0)/(b[2]-b[0]),(Y1-Y0)/(b[3]-b[1]),1.5);
+ pushHist();const sn=snapScale(ids);applyScale(sn,f,b[0],b[1],X0-b[0],Y0-b[1]);dropPartialRoutes(ids);
+ if(!S.doc.fr)S.doc.fr=true;commit();requestAnimationFrame(fit);toast(`Redimensionado para ${Math.round(f*100)}% e posicionado dentro da folha.`)}
+
+/* alças nos cantos da seleção */
+let rsz=null;
+function renderHandles(){const w=document.getElementById('world');if(!w)return;let g=document.getElementById('hL');if(!g){g=document.createElementNS('http://www.w3.org/2000/svg','g');g.id='hL';w.appendChild(g)}
+ const ids=selIds();if(mode!=='edit'||!ids.length||(drag&&drag.type!=='comp'&&!rsz)){g.innerHTML='';return}
+ const b=rsz?rsz.live:selBox(ids);if(!b){g.innerHTML='';return}const k=6/view.s,pad=6/view.s,[x0,y0,x1,y1]=[b[0]-pad,b[1]-pad,b[2]+pad,b[3]+pad];
+ let h=`<rect class="rbox" x="${x0}" y="${y0}" width="${x1-x0}" height="${y1-y0}" style="stroke-width:${1.2/view.s};stroke-dasharray:${5/view.s} ${4/view.s}"/>`;
+ for(const[c,x,y]of[['tl',x0,y0],['tr',x1,y0],['bl',x0,y1],['br',x1,y1]])h+=`<rect class="rh" data-k="${c}" x="${x-k}" y="${y-k}" width="${2*k}" height="${2*k}" rx="${2/view.s}" style="stroke-width:${1.5/view.s}"><title>Arraste para diminuir ou aumentar a seleção</title></rect>`;
+ if(rsz)h+=`<text class="rpct" x="${x1+10/view.s}" y="${y1+16/view.s}" style="font-size:${13/view.s}px">${Math.round(rsz.f*100)}%</text>`;
+ g.innerHTML=h}
+{const _ro=renderOverlay;renderOverlay=function(){_ro();renderHandles()}}
+{const _av=applyView;applyView=function(){_av();renderHandles()}}
+svg.addEventListener('pointerdown',e=>{const h=e.target.closest&&e.target.closest('.rh');if(!h||mode!=='edit'||e.button!==0)return;e.stopPropagation();e.preventDefault();
+ const ids=selIds(),b=selBox(ids);if(!b)return;const k=h.dataset.k,ax=k.includes('l')?b[2]:b[0],ay=k.includes('t')?b[3]:b[1],cx=k.includes('l')?b[0]:b[2],cy=k.includes('t')?b[1]:b[3];
+ rsz={ids,b,ax,ay,cx,cy,sn:snapScale(ids),f:1,live:b,moved:false,pid:e.pointerId};try{svg.setPointerCapture(e.pointerId)}catch(_){}},true);
+addEventListener('pointermove',e=>{if(!rsz)return;const p=toWorld(e),{ax,ay,cx,cy}=rsz,vx=cx-ax,vy=cy-ay,L2=vx*vx+vy*vy||1;
+ let f=((p.x-ax)*vx+(p.y-ay)*vy)/L2;f=Math.max(.2,Math.min(4,f));if(Math.abs(f-1)<.03)f=1;
+ for(const s of[.25,.5,.75,1,1.25,1.5,2])if(Math.abs(f-s)<.015)f=s;if(f===rsz.f)return;
+ if(!rsz.moved){pushHist();rsz.moved=true}rsz.f=f;applyScale(rsz.sn,f,ax,ay);rsz.live=selBox(rsz.ids);renderComps();renderWires();renderOverlay()});
+addEventListener('pointerup',()=>{if(!rsz)return;const r=rsz;rsz=null;if(r.moved){dropPartialRoutes(r.ids);commit();toast(`Seleção em ${Math.round(r.f*100)}% do tamanho anterior.`)}else renderOverlay()});
+addEventListener('keydown',e=>{if(rsz&&e.key==='Escape'){applyScale(rsz.sn,1,rsz.ax,rsz.ay);rsz=null;renderAll()}});
+
+/* painel: tamanho da seleção */
+{const _rp=renderProps;renderProps=function(){_rp();const ids=selIds();if(mode!=='edit'||!ids.length)return;const el=$('#props');if(!el||!el.insertAdjacentHTML)return;
+ const s=[...new Set(ids.map(id=>Math.round(SCL(byId(id))*100)))],cur=s.length===1?`${s[0]}%`:'misto';
+ el.insertAdjacentHTML('beforeend',`<div class="tsec"><h4>Tamanho ${ids.length>1?'da seleção':'do componente'} <span class="muted small">(${cur})</span></h4><div class="row">${[50,75,100].map(v=>`<button data-sc="${v}">${v}%</button>`).join('')}</div><div class="row"><button data-fitsel="1">Caber na folha</button></div><p class="muted small">Ou arraste um dos quadradinhos nos cantos da seleção. Os fios continuam ligados.</p></div>`)}}
+$('#props').addEventListener('click',e=>{const b=e.target.closest('[data-sc],[data-fitsel]');if(!b)return;e.stopImmediatePropagation();if(mode!=='edit'){toast('Pare a simulação para redimensionar.',true);return}
+ if(b.dataset.fitsel)fitToSheet(selIds());else scaleTo(+b.dataset.sc)},true);
+
+/* menu Documentação: encaixar a folha inteira */
+{const ref=document.getElementById('dBornes');if(ref&&document.createElement){const b=document.createElement('button');b.id='dFit';b.setAttribute('role','menuitem');
+ b.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><path d="M9 9l6 6M15 9v6H9"/></svg><span>Encaixar o esquema na folha</span>';
+ ref.parentNode.insertBefore(b,ref);b.addEventListener('click',()=>{const m=b.closest('.mlist');if(m)m.hidden=true;const t=$('#bDoc');if(t)t.setAttribute('aria-expanded','false');fitToSheet()})}}
+{const st=document.createElement('style');st.textContent=`#hL .rbox{fill:none;stroke:var(--pick)}#hL .rh{fill:var(--panel);stroke:var(--pick);cursor:nwse-resize}#hL .rh[data-k=tr],#hL .rh[data-k=bl]{cursor:nesw-resize}#hL .rh:hover{fill:var(--pick)}#hL text.rpct{fill:var(--pick);font-family:'IBM Plex Sans',sans-serif;font-weight:700}`;document.head.appendChild(st)}
+Object.assign(I18N_EXACT,{'Caber na folha':'Fit to sheet','Encaixar o esquema na folha':'Fit the schematic to the sheet','Arraste para diminuir ou aumentar a seleção':'Drag to shrink or enlarge the selection',
+ 'Ou arraste um dos quadradinhos nos cantos da seleção. Os fios continuam ligados.':'Or drag one of the small squares at the corners of the selection. Wires stay connected.','Pare a simulação para redimensionar.':'Stop the simulation to resize.','A folha está vazia.':'The sheet is empty.'});
+Object.assign(I18N_EXACT,{'Tamanho da seleção':'Selection size','Tamanho do componente':'Component size','misto':'mixed'});
+I18N_PHR.push(['Tamanho da seleção','Selection size'],['Tamanho do componente','Component size'],['Redimensionado para ','Resized to '],['% e posicionado dentro da folha.','% and placed inside the sheet.'],['Seleção em ','Selection at '],['% do tamanho anterior.','% of its previous size.']);
+I18N_RE=null;I18N_CACHE.clear();renderAll();
 </script>
 </body>
 </html>

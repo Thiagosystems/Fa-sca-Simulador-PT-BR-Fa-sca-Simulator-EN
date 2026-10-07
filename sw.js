@@ -1,5 +1,5 @@
 /* Faísca — service worker: guarda o app para abrir sem internet */
-const VERSAO = 'faisca-v7';
+const VERSAO = 'faisca-v10';
 const ARQUIVOS = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/favicon-32.png'];
 
 self.addEventListener('install', e => {
@@ -12,19 +12,18 @@ self.addEventListener('activate', e => {
     .then(() => self.clients.claim()));
 });
 
+/* Páginas: tenta a internet primeiro (pega a versão nova) e usa a cópia guardada se estiver sem conexão.
+   Demais arquivos: usa a cópia guardada e atualiza em segundo plano. */
 self.addEventListener('fetch', e => {
   const req = e.request;
-  if (req.method !== 'GET') return;
-  const url = new URL(req.url);
-  const fontes = /fonts\.(googleapis|gstatic)\.com$/.test(url.hostname);
-  if (url.origin !== location.origin && !fontes) return;
-  // usa a cópia guardada na hora e atualiza em segundo plano (funciona offline)
-  e.respondWith(caches.open(VERSAO).then(async cache => {
-    const salvo = await cache.match(req, { ignoreSearch: url.origin === location.origin });
-    const rede = fetch(req).then(r => {
-      if (r && (r.ok || r.type === 'opaque')) cache.put(req, r.clone());
-      return r;
-    }).catch(() => salvo);
-    return salvo || rede;
+  if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
+  if (req.mode === 'navigate') {
+    e.respondWith(fetch(req).then(r => { const c = r.clone(); caches.open(VERSAO).then(k => k.put('index.html', c)); return r; })
+      .catch(() => caches.match('index.html')));
+    return;
+  }
+  e.respondWith(caches.match(req).then(hit => {
+    const net = fetch(req).then(r => { if (r.ok) { const c = r.clone(); caches.open(VERSAO).then(k => k.put(req, c)); } return r; }).catch(() => hit);
+    return hit || net;
   }));
 });
