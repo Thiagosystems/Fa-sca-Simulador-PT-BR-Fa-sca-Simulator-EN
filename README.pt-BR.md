@@ -21,6 +21,7 @@ Feito por **Thiagosystems**. Simulador de comandos elétricos, eletrônica, CLP 
 - Seleção por retângulo, copiar/colar/duplicar, desfazer/refazer, ajuste do trajeto dos fios e desvio automático.
 - Ligações confiáveis: o clique "puxa" para o terminal mais próximo, terminar um fio sobre outro cria o ponto de conexão, e um indicador verde mostra onde o fio vai ligar.
 - Cores dos fios e **Colorir fios pela norma** (IEC 60445).
+- Curvas de fio invisíveis, como no CADe_SIMU: a bolinha só aparece nas junções (3 fios ou mais) e nos terminais. Um fio desenhado por cima de outro se liga sozinho, e cancelar um fio (botão direito ou Esc) apaga o trecho que ficou solto.
 
 **Simulação**
 - Análise nodal em CC e CA 60 Hz, com fases defasadas.
