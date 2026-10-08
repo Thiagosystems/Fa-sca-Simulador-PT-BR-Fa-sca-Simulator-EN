@@ -30,6 +30,11 @@ Made by **Thiagosystems**. An electrical control, electronics, PLC and pneumatic
 - 2-channel oscilloscope and history chart.
 - Fault training (teacher and student modes) with a probe multimeter.
 
+**PLC**
+- Digital and **analog** inputs and outputs (0–10 V = 0–27648, Siemens style): IW64, IW66… and QW64, QW66… on CPUs, ET 200 and analog I/O modules; A0–A5 (0–1023) on Arduino.
+- Ladder with contacts, coils (normal, negated, Set, Reset), TON/TOF, **CTU, CTD and CTUD**, **comparators** (==, <>, >=, <=, >, <), **IN_RANGE / OUT_RANGE** and **MOVE**. Values can be variables (IW64, QW64, MW…, C1.CV, T1.ET) or numbers.
+- Ready-made example **PLC with analog input and output** (potentiometer on IW64, comparator, MOVE to QW64 and a voltmeter).
+
 **Documentation**
 - Multiple sheets, inter-sheet links, frame with columns and title block, wire numbers, cross-references, bill of materials (screen, CSV, PDF) and vector PDF.
 

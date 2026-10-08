@@ -30,6 +30,11 @@ Feito por **Thiagosystems**. Simulador de comandos elétricos, eletrônica, CLP 
 - Osciloscópio de 2 canais e gráfico ao longo do tempo.
 - Treino de defeitos (modo professor e aluno) com multímetro de pontas.
 
+**CLP**
+- Entradas e saídas digitais e **analógicas** (0–10 V = 0–27648, como na Siemens): IW64, IW66… e QW64, QW66… nas CPUs, ET 200 e nos módulos de entrada/saída analógica; A0–A5 (0–1023) no Arduino.
+- Ladder com contatos, bobinas (normal, negada, Set, Reset), TON/TOF, **CTU, CTD e CTUD**, **comparadores** (==, <>, >=, <=, >, <), **IN_RANGE / OUT_RANGE** e **MOVE**. Os valores podem ser variáveis (IW64, QW64, MW…, C1.CV, T1.ET) ou números.
+- Modelo pronto **CLP com entrada e saída analógica** (potenciômetro em IW64, comparador, MOVE para QW64 e voltímetro).
+
 **Documentação**
 - Várias folhas, ligação entre folhas, moldura com colunas e carimbo, numeração de fios, referência cruzada, lista de materiais (tela, CSV, PDF) e PDF vetorial.
 
