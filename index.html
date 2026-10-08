@@ -2521,7 +2521,7 @@ renderAll();
 
 /* ================= entradas e saídas analógicas nos CLPs, módulos e Arduino ================= */
 /* Siemens: 0–10 V ↔ 0–27648 (IW64, IW66… / QW64, QW66…). Arduino: 0–5 V ↔ 0–1023 (A0…A5). */
-PM.ai={n:'Entradas analógicas',ni:0,no:0,mod:1};PM.ao={n:'Saídas analógicas',ni:0,no:0,mod:1};
+PM.ai={n:'AI 4×U',ni:0,no:0,mod:1};PM.ao={n:'AQ 2×U',ni:0,no:0,mod:1};
 const AIO={cpu:[2,2,64],s71200:[2,2,64],s71500:[4,2,64],et200:[4,2,96],ai:[4,0,112],ao:[0,2,112],ard:[6,0,0],di:[0,0,0],do:[0,0,0]};
 const LEGACY_PLC=new Set(['cpu','s71200','s71500','et200','di','do','ard']);
 function anaIO(c){const m=PM[c.m]||PM.cpu,a=AIO[c.m]||[0,0,64];if(m.ard)return{ai:rng(a[0]).map(i=>'A'+i),ao:[]};
@@ -2535,11 +2535,13 @@ function plcGeo(c){const io=plcIO(c),an=anaIO(c),nT=io.top.length+an.ai.length,n
  d.N=c=>{const{io,an}=plcGeo(c);return[...io.top,...io.bot,...an.ai,...an.ao]};
  d.B=c=>{const{x0,xmax}=plcGeo(c);return[x0-20,-60,xmax-x0+40,120]};
  d.draw=c=>{const{io,an,x0,xmax}=plcGeo(c),m=PM[c.m]||PM.cpu,cx=(x0+xmax)/2;let run='';if(SIM()&&!m.mod)run=rt.res.cpu[c.id]?'RUN':'STOP';
-  let s=R(x0-20,-36,xmax-x0+40,72,'box',' rx="5"')+T(cx,-4,m.n,c.r,'ctr')+T(cx,12,run,c.r,'tn6');const A=SIM()&&rt.anum||{};
-  io.top.forEach((a,i)=>{const x=x0+i*20;s+=L(x,-60,x,-36)+T(x,-40,a,c.r,'tn6');if(a[0]==='I'||(m.ard&&i>1))s+=R(x-4,-32,8,6,GET(a)?'en':'')});
-  io.bot.forEach((a,i)=>{const x=x0+i*20;s+=L(x,60,x,36)+T(x,46,a,c.r,'tn6')+R(x-4,26,8,6,GET(a)?'en':'')});
-  an.ai.forEach((a,k)=>{const x=x0+(io.top.length+k)*20;s+=L(x,-60,x,-36)+T(x,-40,a,c.r,'tn6')+P(`M${x-4},-24l4,-7l4,7`)+(SIM()?T(x,-14,String(A[a]||0),c.r,'tn6'):'')});
-  an.ao.forEach((a,k)=>{const x=x0+(io.bot.length+k)*20;s+=L(x,60,x,36)+T(x,46,a,c.r,'tn6')+P(`M${x-4},22l4,7l4,-7`)+(SIM()?T(x,18,String(A[a]||0),c.r,'tn6'):'')});
+  /* nomes na vertical, dentro da caixa, cada um alinhado com o seu terminal */
+  const VL=(x,y,t)=>`<text x="${x+2.6}" y="${y}" class="tn6 plcl" transform="rotate(-90 ${x+2.6} ${y})">${esc(t)}</text>`;
+  let s=R(x0-20,-48,xmax-x0+40,96,'box',' rx="5"')+T(cx,2,m.n,c.r,'ctr')+(run?T(cx,14,run,c.r,'tn6'):'');
+  io.top.forEach((a,i)=>{const x=x0+i*20;s+=L(x,-60,x,-48)+VL(x,-25,a);if(a[0]==='I'||(m.ard&&i>1))s+=R(x-4,-21,8,6,GET(a)?'en':'')});
+  io.bot.forEach((a,i)=>{const x=x0+i*20;s+=L(x,60,x,48)+VL(x,45,a)+R(x-4,15,8,6,GET(a)?'en':'')});
+  an.ai.forEach((a,k)=>{const x=x0+(io.top.length+k)*20;s+=L(x,-60,x,-48)+VL(x,-25,a)+P(`M${x-4},-15l4,-6l4,6`)});
+  an.ao.forEach((a,k)=>{const x=x0+(io.bot.length+k)*20;s+=L(x,60,x,48)+VL(x,45,a)+P(`M${x-4},15l4,6l4,-6`)});
   return s};
  const an0=d.an,vin0=d.vin,der0=d.der;
  d.an=(c,x)=>{if(an0)an0(c,x);const{io,an}=plcGeo(c),n=io.top.length+io.bot.length,ard=PM[c.m]&&PM[c.m].ard;an.ai.forEach((_,k)=>x.r(c,n+k,1,ard?1e6:1e5))};
@@ -2632,6 +2634,8 @@ Object.assign(I18N_EXACT,{'Módulo de entrada analógica':'Analog input module',
  'CLP com entrada e saída analógica':'PLC with analog input and output'});
 for(const[o]of CMPS)I18N_EXACT[`Comparador CMP ${o}`]=`CMP ${o} comparator`;
 I18N_RE=null;I18N_CACHE.clear();renderPalette();renderAll();
+
+{const st=document.createElement('style');st.textContent='#world text.plcl{font-size:7px;fill:var(--muted);text-anchor:start}';document.head.appendChild(st)}
 
 </script>
 </body>
