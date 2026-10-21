@@ -13,7 +13,7 @@ Feito por **Thiagosystems**. Simulador de comandos elétricos, eletrônica, CLP 
 ## Recursos
 
 **Desenho**
-- Quase 200 itens em 18 bibliotecas: alimentação, fusíveis e seccionadores, DR e disjuntores (símbolo simplificado ou detalhado), contatores, motores, partida e velocidade, contatos e temporizadores, botoeiras (impulso, retenção, dupla NA+NF, comutadora, luminosa, de puxar, pedal, emergência), detectores, sinalização, relés eletrônicos, lógica, CLP, Ladder, GRAFCET, pneumática, cabos e eletrônica.
+- Mais de 230 itens em 19 bibliotecas: alimentação, fusíveis e seccionadores, DR e disjuntores (símbolo simplificado ou detalhado), contatores, motores, partida e velocidade, contatos e temporizadores, botoeiras (impulso, retenção, dupla NA+NF, comutadora, luminosa, de puxar, pedal, emergência), detectores, sinalização, relés eletrônicos, lógica, CLP, Ladder, GRAFCET, pneumática, cabos, eletrônica e circuitos integrados.
 - **Numeração editável dos contatos** (ex.: 53-54, 61-62, 83-84), como no CADe_SIMU.
 - Símbolos no estilo do CADe_SIMU: transformador com núcleo (1-2 / 3-4), ponte retificadora em losango (1, 2, 3+, 4−) e disjuntor com quadrado preto (o "x" da IEC continua como opção).
 - Motor de 6 terminais com borne de terra (PE) e ponte retificadora com saída sem filtro, com capacitor ou ideal (Vcc = Vca).
@@ -29,6 +29,12 @@ Feito por **Thiagosystems**. Simulador de comandos elétricos, eletrônica, CLP 
 - Diagnóstico ao vivo ("O que faz", "Problemas", "Eventos"), com correções em um clique.
 - Osciloscópio de 2 canais e gráfico ao longo do tempo.
 - Treino de defeitos (modo professor e aluno) com multímetro de pontas.
+
+**Circuitos integrados e sensores**
+- CIs com a pinagem real, no formato DIP: portas 74HC00, 02, 04, 08, 14 (Schmitt), 32 e 86; CMOS CD4011, 4069, 4071, 4081 e 4070; flip-flops 74HC74 e CD4013; 74HC138 (decodificador), 74HC151 (multiplexador), 74HC161 (contador), **74HC595** (registrador de deslocamento), CD4017 (contador de década), CD4511 (BCD para 7 segmentos), **NE555** (temporizador), ULN2003, L293D (ponte H), LM393 (comparador) e PC817 (optoacoplador).
+- Os pinos acendem em verde quando estão em nível alto. O CI precisa de VCC e GND e queima se passar da tensão máxima (74HC: 6 V; CD4000: 18 V; NE555: 16 V).
+- Display de 7 segmentos (cátodo ou ânodo comum), reguladores 7805, 7809, 7812 e AMS1117, sensor de temperatura LM35 e LDR (clique para mudar a temperatura ou a luz).
+- Modelos prontos **Pisca-pisca com NE555** e **Registrador 74HC595 com 8 LEDs**.
 
 **CLP**
 - Entradas e saídas digitais e **analógicas** (0–10 V = 0–27648, como na Siemens): IW64, IW66… e QW64, QW66… nas CPUs, ET 200 e nos módulos de entrada/saída analógica; A0–A5 (0–1023) no Arduino.
@@ -57,6 +63,7 @@ Feito por **Thiagosystems**. Simulador de comandos elétricos, eletrônica, CLP 
 ## Limitações conhecidas
 
 - Motores sem corrente de partida; bobinas sem indutância; retificador sem ondulação.
+- A simulação anda em passos de 0,1 s: o NE555 funciona bem até uns 2 Hz, e os CIs são lógicos (sem atraso de propagação).
 - Uma CPU de CLP por projeto.
 - Os projetos ficam no navegador: salve em `.fais` para não perder.
 

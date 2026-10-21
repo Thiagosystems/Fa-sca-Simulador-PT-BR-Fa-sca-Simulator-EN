@@ -13,7 +13,7 @@ Made by **Thiagosystems**. An electrical control, electronics, PLC and pneumatic
 ## Features
 
 **Drawing**
-- Nearly 200 items in 18 libraries: supplies, fuses and disconnectors, RCDs and circuit breakers (simplified or detailed symbol), contactors, motors, starting and speed control, contacts and timers, push buttons (momentary, latching, double NO+NC, changeover, illuminated, pull, foot pedal, emergency), detectors, signalling, electronic relays, logic, PLC, Ladder, GRAFCET, pneumatics, cables and electronics.
+- More than 230 items in 19 libraries: supplies, fuses and disconnectors, RCDs and circuit breakers (simplified or detailed symbol), contactors, motors, starting and speed control, contacts and timers, push buttons (momentary, latching, double NO+NC, changeover, illuminated, pull, foot pedal, emergency), detectors, signalling, electronic relays, logic, PLC, Ladder, GRAFCET, pneumatics, cables, electronics and integrated circuits.
 - **Editable contact numbering** (e.g. 53-54, 61-62, 83-84), like CADe_SIMU.
 - CADe_SIMU-style symbols: transformer with core (1-2 / 3-4), diamond bridge rectifier (1, 2, 3+, 4−) and circuit breaker with a black square (the IEC "x" is still an option).
 - 6-terminal motor with an earth (PE) terminal, and a bridge rectifier with unfiltered, capacitor-filtered or ideal (Vdc = Vac) output.
@@ -29,6 +29,12 @@ Made by **Thiagosystems**. An electrical control, electronics, PLC and pneumatic
 - Live diagnostics ("What it does", "Problems", "Events") with one-click fixes.
 - 2-channel oscilloscope and history chart.
 - Fault training (teacher and student modes) with a probe multimeter.
+
+**Integrated circuits and sensors**
+- ICs with real DIP pinouts: 74HC00, 02, 04, 08, 14 (Schmitt), 32 and 86 gates; CMOS CD4011, 4069, 4071, 4081 and 4070; 74HC74 and CD4013 flip-flops; 74HC138 (decoder), 74HC151 (multiplexer), 74HC161 (counter), **74HC595** (shift register), CD4017 (decade counter), CD4511 (BCD to 7-segment), **NE555** (timer), ULN2003, L293D (H-bridge), LM393 (comparator) and PC817 (optocoupler).
+- Pins light up green when they are high. Each IC needs VCC and GND, and burns out above its maximum supply (74HC: 6 V; CD4000: 18 V; NE555: 16 V).
+- 7-segment display (common cathode or anode), 7805, 7809, 7812 and AMS1117 regulators, LM35 temperature sensor and LDR (click to change the temperature or the light).
+- Ready-made examples **NE555 LED flasher** and **74HC595 shift register with 8 LEDs**.
 
 **PLC**
 - Digital and **analog** inputs and outputs (0–10 V = 0–27648, Siemens style): IW64, IW66… and QW64, QW66… on CPUs, ET 200 and analog I/O modules; A0–A5 (0–1023) on Arduino.
@@ -57,6 +63,7 @@ Made by **Thiagosystems**. An electrical control, electronics, PLC and pneumatic
 ## Known limitations
 
 - No motor inrush current; coils have no inductance; the rectifier has no ripple.
+- The simulation runs in 0.1 s steps: the NE555 works well up to about 2 Hz, and ICs are logic-level models (no propagation delay).
 - One PLC CPU per project.
 - Projects are stored in the browser: save them as `.fais` so you don't lose them.
 
