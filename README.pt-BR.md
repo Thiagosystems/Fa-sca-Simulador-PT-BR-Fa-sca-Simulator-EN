@@ -34,7 +34,7 @@ Feito por **Thiagosystems**. Simulador de comandos elétricos, eletrônica, CLP 
 - CIs com a pinagem real, no formato DIP: portas 74HC00, 02, 04, 08, 14 (Schmitt), 32 e 86; CMOS CD4011, 4069, 4071, 4081 e 4070; flip-flops 74HC74 e CD4013; 74HC138 (decodificador), 74HC151 (multiplexador), 74HC161 (contador), **74HC595** (registrador de deslocamento), CD4017 (contador de década), CD4511 (BCD para 7 segmentos), **NE555** (temporizador), ULN2003, L293D (ponte H), LM393 (comparador) e PC817 (optoacoplador).
 - Os pinos acendem em verde quando estão em nível alto. O CI precisa de VCC e GND e queima se passar da tensão máxima (74HC: 6 V; CD4000: 18 V; NE555: 16 V).
 - Display de 7 segmentos (cátodo ou ânodo comum), reguladores 7805, 7809, 7812 e AMS1117, sensor de temperatura LM35 e LDR (clique para mudar a temperatura ou a luz).
-- Modelos prontos **Pisca-pisca com NE555** e **Registrador 74HC595 com 8 LEDs**.
+- Modelos prontos **Pisca-pisca com NE555** e **Registrador 74HC595 com 8 LEDs** e **Onda de LEDs (NE555 + 74HC595)** (também no arquivo `Onda-de-LEDs.fais`).
 
 **CLP**
 - Entradas e saídas digitais e **analógicas** (0–10 V = 0–27648, como na Siemens): IW64, IW66… e QW64, QW66… nas CPUs, ET 200 e nos módulos de entrada/saída analógica; A0–A5 (0–1023) no Arduino.

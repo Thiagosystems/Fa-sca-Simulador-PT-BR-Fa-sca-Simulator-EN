@@ -2728,7 +2728,7 @@ const ICS={
   clk:(I,st,P)=>{st.n=st.n||0;if(I(2)&&!P[2]&&I(1)){if(!I(9))st.n=(I(3)?1:0)+(I(4)?2:0)+(I(5)?4:0)+(I(6)?8:0);else if(I(7)&&I(10))st.n=(st.n+1)&15}},
   ev:(I,st)=>{if(!I(1))st.n=0;const n=st.n||0;return{14:!!(n&1),13:!!(n&2),12:!!(n&4),11:!!(n&8),15:I(10)&&n===15}}},
  '74HC595':{n:'74HC595',d:'Registrador de deslocamento 8 bits (serial → paralelo)',fam:'hc',pins:['QB','QC','QD','QE','QF','QG','QH','GND',"QH'",'~SRCLR','SRCLK','RCLK','~OE','SER','QA','VCC'],vcc:16,gnd:8,ins:[10,11,12,13,14],ctl:{10:true,13:false},
-  clk:(I,st,P)=>{st.sr=st.sr||0;st.lt=st.lt||0;if(!I(10))st.sr=0;else if(I(11)&&!P[11])st.sr=((st.sr<<1)|(I(14)?1:0))&255;if(I(12)&&!P[12])st.lt=st.sr},
+  clk:(I,st,P)=>{st.sr=st.sr||0;st.lt=st.lt||0;const old=st.sr;if(!I(10))st.sr=0;else if(I(11)&&!P[11])st.sr=((st.sr<<1)|(I(14)?1:0))&255;if(I(12)&&!P[12])st.lt=I(11)&&!P[11]?old:st.sr},
   ev:(I,st)=>{if(!I(10))st.sr=0;const o={9:!!((st.sr||0)&128)},Q=[15,1,2,3,4,5,6,7],oe=!I(13);Q.forEach((p,k)=>o[p]=oe?!!(((st.lt||0)>>k)&1):null);return o}},
  'CD4017':{n:'CD4017',d:'Contador de década (10 saídas)',fam:'cd',pins:['Q5','Q1','Q0','Q2','Q6','Q7','Q3','VSS','Q8','Q4','Q9','CO','INH','CLK','RST','VDD'],vcc:16,gnd:8,ins:[13,14,15],ctl:{13:false,15:false},
   clk:(I,st,P)=>{st.n=st.n||0;if(I(14)&&!P[14]&&!I(13)&&!I(15))st.n=(st.n+1)%10},
@@ -2821,7 +2821,8 @@ ldr:{n:'LDR (sensor de luz)',own:'LDR',act:1,def:{lux:50},F:[['lux','Luz (%)','n
 
 /* terminais de CI sem uso não geram aviso; avisos próprios para alimentação e pinos de controle soltos */
 {const _an=analyze;analyze=function(){const r=_an();if(!r||!r.issues)return r;const deg=pinDeg();
- r.issues=r.issues.filter(i=>!(i.ids&&i.ids.length===1&&/terminal.*solt/.test(i.msg)&&['ic','seg7'].includes((byId(i.ids[0])||{}).type)));
+ r.issues=r.issues.filter(i=>{if(!(i.ids&&i.ids.length===1&&/terminal.*solt/.test(i.msg)))return true;const c=byId(i.ids[0])||{};if(['ic','seg7'].includes(c.type))return false;
+  if(c.type==='pot'&&/terminal (1|2) solt/.test(i.msg)&&deg[K(c.id,2)])return false;return true});
  for(const c of S.comps){if(c.type!=='ic')continue;const sp=icSpec(c),any=termsOf(c).some((_,i)=>deg[K(c.id,i)]);if(!any)continue;
   if(sp.vcc&&(!deg[K(c.id,sp.vcc-1)]||!deg[K(c.id,sp.gnd-1)]))r.issues.push({lvl:'aviso',msg:`${c.tag} (${sp.n}) sem alimentação`,why:`Ligue VCC no pino ${sp.vcc} e GND no pino ${sp.gnd}. Faixa: ${FAM[sp.fam]?FAM[sp.fam][2]:'—'}.`,ids:[c.id]});
   for(const p in sp.ctl||{})if(!deg[K(c.id,p-1)])r.issues.push({lvl:'info',msg:`${c.tag} (${sp.n}): pino ${p} (${sp.pins[p-1].replace('~','/')}) solto`,why:`No circuito real esse pino não pode ficar solto. O Faísca considera nível ${sp.ctl[p]?'alto (VCC)':'baixo (GND)'}; ligue-o assim na montagem.`,ids:[c.id]})}
@@ -2840,7 +2841,7 @@ PAL.push(['19. Circuitos integrados e sensores',[...Object.keys(ICS).map(k=>[`${
  if(!noHist)pushHist();S={comps:[],wires:[],seq:1};const R0={};let n=1;
  const a=(kk,type,x,y,o={})=>{const c={...makeComp(type,o),id:'c'+n++,x,y,r:o.r||0};delete c.nm;S.comps.push(c);R0[kk]=c},
   w=(p,i,q,j,o,m)=>{const x={id:'w'+n++,a:{c:R0[p].id,t:i},b:{c:R0[q].id,t:j}};if(o){x.o=o;x.m=m}S.wires.push(x)},j=(kk,x,y)=>a(kk,'junction',x,y),tx=(kk,x,y,text)=>a(kk,'note',x,y,{text:LANG==='en'&&typeof tr==='function'?tr(text):text});
- build(a,w,j,tx);S.seq=n;tplSheets(k);S.doc.fr=false;sel=null;tool=null;commit();requestAnimationFrame(fit)}};
+ const dd=build(a,w,j,tx);S.seq=n;tplSheets(k);S.doc.fr=false;if(dd)Object.assign(S.doc,dd);sel=null;tool=null;commit();requestAnimationFrame(fit)}};
  /* NE555 astável: pisca-pisca */
  mk('555',(a,w,j,tx)=>{tx('T1',140,80,'PISCA-PISCA COM NE555 (ASTÁVEL)');
   a('U','ic',400,310,{k:'NE555',tag:'U1'});
@@ -2869,8 +2870,56 @@ PAL.push(['19. Circuitos integrados e sensores',[...Object.keys(ICS).map(k=>[`${
   tx('N1',100,120,'1) S1 (SER) escolhe o bit: ligado = 1, desligado = 0.');tx('N2',100,145,'2) Aperte S2 (SRCLK): o bit entra e os outros andam uma casa.');
   tx('N3',100,170,'3) Aperte S3 (RCLK): o que está no registrador aparece nos LEDs H1 (QA) a H8 (QH).');
   tx('N4',700,760,'Na montagem real, ponha um resistor de 10 kΩ do pino de cada botão para o GND (pull-down).')});
+
+ /* Onda de LEDs: NE555 (clock) + 74HC595 + BC548 (contador Johnson) */
+ mk('onda',(a,w,j,tx)=>{
+  tx('T1',40,-40,'ONDA DE LEDS — NE555 + 74HC595 + BC548');
+  tx('N1',40,-10,'O NE555 gera o clock (CLK) de cerca de 1 Hz; RV1 ajusta a velocidade.');
+  tx('N2',40,20,'Q1 inverte a saída serial (SQH) e devolve em SER: os LEDs acendem um a um e depois apagam um a um.');
+  tx('N3',40,50,'SW1 zera o registrador (RST). Rótulos com o mesmo nome (CLK, SER, RST, SQH, T, QA a QH) estão ligados entre si.');
+  tx('N4',40,80,'Gire RV1 só até uns 70%: acima disso o clock fica rápido demais para a simulação (passos de 0,1 s).');
+  const P=(kk,x,y,r)=>a(kk,'src',x,y,{v:'+',V:5,r:r||0}),G=(kk,x,y,r)=>a(kk,'src',x,y,{v:'-',r:r==null?180:r}),X=(kk,x,y,net,r)=>a(kk,'xref',x,y,{net,r:r||0});
+  /* bloco do 555 */
+  a('U1','ic',360,290,{k:'NE555',tag:'U1'});
+  G('G1',270,200,0);w('U1',0,'G1',0,'h',270);
+  X('LT1',230,280,'T',180);w('U1',1,'LT1',0);
+  X('LC1',130,300,'CLK',180);w('U1',2,'LC1',0);
+  P('P4',250,360,180);w('U1',3,'P4',0,'h',250);
+  P('P8',450,200);w('U1',7,'P8',0,'h',450);
+  j('A',680,280);w('U1',6,'A',0);
+  P('P1',680,140);a('R1','res',680,220,{R:1000,tag:'R1'});w('P1',0,'R1',0);w('R1',1,'A',0);
+  a('R2','res',680,340,{R:10000,tag:'R2'});w('A',0,'R2',0);
+  a('RV1','pot',680,460,{R:100000,pos:30,tag:'RV1'});w('R2',1,'RV1',0);
+  j('TB',500,360);j('T',500,460);w('U1',5,'TB',0,'h',500);w('TB',0,'T',0);X('LT2',560,360,'T');w('TB',0,'LT2',0);w('RV1',2,'T',0);
+  a('C1','cap',500,540,{Cf:10e-6,Vmax:25,pol:true,tag:'C1'});w('T',0,'C1',0);G('G2',500,640);w('C1',1,'G2',0);
+  a('C2','cap',460,400,{Cf:10e-9,Vmax:50,pol:false,tag:'C2'});w('U1',4,'C2',0,'h',460);G('G3',460,480);w('C2',1,'G3',0);
+  P('P6',160,400);a('R6','res',160,480,{R:2200,tag:'R6'});w('P6',0,'R6',0);X('LC2',120,560,'CLK',180);w('R6',1,'LC2',0);
+  /* bloco do 74HC595 */
+  a('U2','ic',1080,310,{k:'74HC595',tag:'U2'});
+  ['QB','QC','QD','QE','QF','QG','QH'].forEach((nt,i)=>{const y=240+20*i,lng=i%2===1;X('LQ'+nt,lng?860:950,y,nt,180);w('U2',i,'LQ'+nt,0)});
+  G('G4',1010,440);w('U2',7,'G4',0);
+  P('P16',1170,180);w('U2',15,'P16',0,'h',1170);
+  P('P3c',1250,60);a('C3','cap',1250,120,{Cf:100e-9,Vmax:50,pol:false,tag:'C3'});G('G3c',1250,200);w('P3c',0,'C3',0);w('C3',1,'G3c',0);
+  X('LQA',1210,260,'QA');w('U2',14,'LQA',0);
+  X('LSER',1310,280,'SER');w('U2',13,'LSER',0);
+  G('GOE',1190,300,90);w('U2',12,'GOE',0);
+  X('LRC',1310,320,'CLK');w('U2',11,'LRC',0);
+  X('LSC',1210,340,'CLK');w('U2',10,'LSC',0);
+  X('LRST',1310,360,'RST');w('U2',9,'LRST',0);
+  X('LSQ',1210,380,'SQH');w('U2',8,'LSQ',0);
+  /* reset */
+  P('P3',1200,420);a('R3','res',1200,500,{R:10000,tag:'R3'});w('P3',0,'R3',0);j('JR',1200,580);w('R3',1,'JR',0);
+  a('SW1','btn',1200,660,{tag:'SW1'});w('JR',0,'SW1',0);G('G6',1200,760);w('SW1',1,'G6',0);X('LRST2',1120,580,'RST',180);w('LRST2',0,'JR',0);
+  /* transistor */
+  a('Q1','npn',1500,520,{tag:'Q1'});X('LSQ2',1300,520,'SQH',180);a('R4','res',1400,520,{R:10000,tag:'R4',r:270});w('LSQ2',0,'R4',0);w('R4',1,'Q1',1);
+  G('G5',1520,620);w('Q1',2,'G5',0);j('JC',1520,440);w('Q1',0,'JC',0);P('P5',1520,300);a('R5','res',1520,380,{R:10000,tag:'R5'});w('P5',0,'R5',0);w('R5',1,'JC',0);
+  X('LSER2',1460,440,'SER',180);w('LSER2',0,'JC',0);
+  /* 8 LEDs */
+  ['QA','QB','QC','QD','QE','QF','QG','QH'].forEach((nt,i)=>{const x=220+120*i;X('LL'+nt,x-60,720,nt,180);a('RL'+i,'res',x,800,{R:470,tag:'R'+(7+i)});w('LL'+nt,0,'RL'+i,0,'h',x);
+   a('D'+i,'led',x,900,{col:'vermelha',tag:'D'+(i+1)});w('RL'+i,1,'D'+i,0);G('GL'+i,x,1000);w('D'+i,1,'GL'+i,0)});
+  return{fr:true,xr:false,titulo:'Onda de LEDs (NE555 + 74HC595)'}});
  const s=document.getElementById('bTpl');if(s&&s.querySelector){const o=s.querySelector('option[value="clpa"]')||s.lastElementChild;
-  [['555','Pisca-pisca com NE555'],['595','Registrador 74HC595 com 8 LEDs']].reverse().forEach(([v,t])=>{const op=document.createElement('option');op.value=v;op.textContent=t;o.after(op)})}}
+  [['555','Pisca-pisca com NE555'],['595','Registrador 74HC595 com 8 LEDs'],['onda','Onda de LEDs (NE555 + 74HC595)']].reverse().forEach(([v,t])=>{const op=document.createElement('option');op.value=v;op.textContent=t;o.after(op)})}}
 
 /* ================= traduções ================= */
 Object.assign(I18N_EXACT,{'Circuito integrado':'Integrated circuit','19. Circuitos integrados e sensores':'19. Integrated circuits and sensors','Display de 7 segmentos':'7-segment display',
@@ -2878,7 +2927,11 @@ Object.assign(I18N_EXACT,{'Circuito integrado':'Integrated circuit','19. Circuit
  'Sensor de temperatura LM35':'LM35 temperature sensor','Temperatura (°C)':'Temperature (°C)','LDR (sensor de luz)':'LDR (light sensor)','Luz (%)':'Light (%)',
  'Display 7 segmentos (cátodo comum)':'7-segment display (common cathode)','Display 7 segmentos (ânodo comum)':'7-segment display (common anode)',
  'Regulador 7805 (5 V)':'7805 regulator (5 V)','Regulador 7812 (12 V)':'7812 regulator (12 V)','Regulador AMS1117 (3,3 V)':'AMS1117 regulator (3.3 V)',
- 'Pisca-pisca com NE555':'NE555 LED flasher','Registrador 74HC595 com 8 LEDs':'74HC595 shift register with 8 LEDs',
+ 'Pisca-pisca com NE555':'NE555 LED flasher','Onda de LEDs (NE555 + 74HC595)':'LED wave (NE555 + 74HC595)','ONDA DE LEDS — NE555 + 74HC595 + BC548':'LED WAVE — NE555 + 74HC595 + BC548',
+ 'O NE555 gera o clock (CLK) de cerca de 1 Hz; RV1 ajusta a velocidade.':'The NE555 generates a clock (CLK) of about 1 Hz; RV1 sets the speed.',
+ 'Q1 inverte a saída serial (SQH) e devolve em SER: os LEDs acendem um a um e depois apagam um a um.':'Q1 inverts the serial output (SQH) and feeds it back to SER: the LEDs turn on one by one, then off one by one.',
+ 'SW1 zera o registrador (RST). Rótulos com o mesmo nome (CLK, SER, RST, SQH, T, QA a QH) estão ligados entre si.':'SW1 clears the register (RST). Labels with the same name (CLK, SER, RST, SQH, T, QA to QH) are connected together.',
+ 'Gire RV1 só até uns 70%: acima disso o clock fica rápido demais para a simulação (passos de 0,1 s).':'Keep RV1 below about 70%: above that the clock is too fast for the simulation (0.1 s steps).','Registrador 74HC595 com 8 LEDs':'74HC595 shift register with 8 LEDs',
  'PISCA-PISCA COM NE555 (ASTÁVEL)':'NE555 LED FLASHER (ASTABLE)','REGISTRADOR DE DESLOCAMENTO 74HC595 COM 8 LEDS':'74HC595 SHIFT REGISTER WITH 8 LEDS',
  'f ≈ 1,44 / ((R1 + 2·R2) · C1) ≈ 0,6 Hz':'f ≈ 1.44 / ((R1 + 2·R2) · C1) ≈ 0.6 Hz',
  'C1 carrega por R1 + R2 até 2/3 de 9 V (6 V): a saída (pino 3) desliga.':'C1 charges through R1 + R2 up to 2/3 of 9 V (6 V): the output (pin 3) switches off.',
@@ -2895,6 +2948,8 @@ I18N_PHR.push([' sem alimentação',' without power'],[': registrador ',': regis
  ['Ligue VCC no pino ','Connect VCC to pin '],[' e GND no pino ',' and GND to pin '],['. Faixa: ','. Range: '],[') solto',') unconnected'],[': pino ',': pin '],
  ['No circuito real esse pino não pode ficar solto. O Faísca considera nível ','On a real board this pin must not float. Faísca treats it as '],['alto (VCC)','high (VCC)'],['baixo (GND)','low (GND)'],['; ligue-o assim na montagem.','; wire it that way when you build it.'],['(2 a 6 V)','(2 to 6 V)'],['(3 a 18 V)','(3 to 18 V)'],['(4,5 a 16 V)','(4.5 to 16 V)'],['(2 a 36 V)','(2 to 36 V)'],['(lógica 4,5 a 7 V)','(logic 4.5 to 7 V)']);
 I18N_RE=null;I18N_CACHE.clear();renderPalette();renderAll();
+{const lp=lblPos;lblPos=function(c){if(c.type!=='ic')return lp(c);const s=SCL(c),o=rot([-50,icPins(c).g.y0-18],c.r);return s===1?o:[o[0]*s,o[1]*s]}}
+renderAll();
 
 </script>
 </body>

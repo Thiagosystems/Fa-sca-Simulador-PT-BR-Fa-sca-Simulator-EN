@@ -34,7 +34,7 @@ Made by **Thiagosystems**. An electrical control, electronics, PLC and pneumatic
 - ICs with real DIP pinouts: 74HC00, 02, 04, 08, 14 (Schmitt), 32 and 86 gates; CMOS CD4011, 4069, 4071, 4081 and 4070; 74HC74 and CD4013 flip-flops; 74HC138 (decoder), 74HC151 (multiplexer), 74HC161 (counter), **74HC595** (shift register), CD4017 (decade counter), CD4511 (BCD to 7-segment), **NE555** (timer), ULN2003, L293D (H-bridge), LM393 (comparator) and PC817 (optocoupler).
 - Pins light up green when they are high. Each IC needs VCC and GND, and burns out above its maximum supply (74HC: 6 V; CD4000: 18 V; NE555: 16 V).
 - 7-segment display (common cathode or anode), 7805, 7809, 7812 and AMS1117 regulators, LM35 temperature sensor and LDR (click to change the temperature or the light).
-- Ready-made examples **NE555 LED flasher** and **74HC595 shift register with 8 LEDs**.
+- Ready-made examples **NE555 LED flasher** and **74HC595 shift register with 8 LEDs** and **LED wave (NE555 + 74HC595)** (also in `Onda-de-LEDs.fais`).
 
 **PLC**
 - Digital and **analog** inputs and outputs (0–10 V = 0–27648, Siemens style): IW64, IW66… and QW64, QW66… on CPUs, ET 200 and analog I/O modules; A0–A5 (0–1023) on Arduino.
