@@ -21,6 +21,8 @@ Made by **Thiagosystems**. An electrical control, electronics, PLC and pneumatic
 - Box selection, copy/paste/duplicate, undo/redo, wire re-routing and automatic obstacle avoidance.
 - Reliable wiring: clicks snap to the nearest terminal, ending a wire on another wire creates a junction, and a green marker shows where the wire will connect.
 - Per-wire colours and **Colour wires by standard** (IEC 60445).
+- **Draggable names:** click and drag any component name (tag) to move it off the drawing; "Move the name back to its default place" resets it.
+- Logic gates with the simple (distinctive-shape) or rectangular (IEC) symbol, with 2 to 8 inputs.
 - Invisible wire bends, like CADe_SIMU: dots only appear at junctions (3 or more wires) and terminals. A wire drawn over another one connects automatically, and cancelling a wire (right click or Esc) removes the loose part.
 
 **Simulation**
