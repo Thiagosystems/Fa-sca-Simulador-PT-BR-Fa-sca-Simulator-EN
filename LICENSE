@@ -1,21 +1,50 @@
-MIT License
+LICENÇA DE USO — FAÍSCA
+Copyright (c) 2026 Thiagosystems. Todos os direitos reservados.
 
-Copyright (c) 2026 Thiagosystems
+O Faísca (código-fonte, código montado, desenhos dos símbolos, textos, ajuda,
+modelos prontos, ícones e demais arquivos deste repositório, chamados aqui de
+"Software") é obra protegida pela Lei de Direitos Autorais (Lei nº 9.610/1998)
+e pela Lei do Software (Lei nº 9.609/1998).
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. O QUE É PERMITIDO
+   Qualquer pessoa pode USAR o Software gratuitamente, pelo site oficial ou
+   pelo aplicativo instalado a partir dele, para estudar, ensinar e montar os
+   próprios esquemas. Os esquemas (.fais) e as imagens/PDFs que o usuário cria
+   com o Software pertencem a ele.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+2. O QUE É PROIBIDO, sem autorização prévia e por escrito da Thiagosystems:
+   a) copiar, clonar, baixar para redistribuir, espelhar ou republicar o
+      Software, no todo ou em parte, em qualquer site, loja de aplicativos,
+      repositório ou mídia;
+   b) modificar, traduzir, adaptar ou criar obras derivadas a partir do
+      Software ou de qualquer parte do seu código, símbolos, textos ou modelos;
+   c) usar o código, a estrutura, a organização, as telas ou os textos do
+      Software como base para outro programa, site ou aplicativo, com ou sem
+      mudança de nome ou aparência;
+   d) vender, alugar, sublicenciar ou explorar comercialmente o Software;
+   e) remover ou alterar o nome Faísca, a marca Thiagosystems ou este aviso.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+3. CÓDIGO VISÍVEL NÃO É CÓDIGO LIVRE
+   O fato de o código estar publicado e visível (por exemplo, no GitHub ou no
+   navegador) não concede nenhuma licença além do uso descrito no item 1.
+
+4. SEM GARANTIA
+   O Software é fornecido "como está", sem garantia de qualquer tipo. É uma
+   ferramenta de estudo e simulação: não substitui projeto, cálculo e
+   responsabilidade técnica de um profissional habilitado. A Thiagosystems não
+   responde por danos decorrentes do seu uso.
+
+5. AUTORIZAÇÕES
+   Pedidos de uso diferente do previsto aqui (parcerias, uso em cursos com
+   cópia própria, distribuição etc.) devem ser feitos à Thiagosystems.
+
+---------------------------------------------------------------------------
+LICENSE — FAÍSCA (English summary; the Portuguese text above prevails)
+Copyright (c) 2026 Thiagosystems. All rights reserved.
+
+You may use the Software free of charge through its official website or the
+app installed from it. You may NOT copy, clone, mirror, redistribute, modify,
+create derivative works from, reuse the code, structure, screens or texts of,
+sell, or remove the name and notices of the Software without prior written
+permission from Thiagosystems. Publicly visible source code is not open-source
+code. The Software is provided "as is", without warranty of any kind.
