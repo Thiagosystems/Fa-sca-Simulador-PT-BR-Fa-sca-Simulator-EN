@@ -141,7 +141,108 @@ with sync_playwright() as p:
     pg.click('#cfgPb');pg.wait_for_timeout(100);r2=pg.evaluate("[!!S.nopb,getComputedStyle(document.getElementById('bPb')).display!=='none']");pg.keyboard.press('Escape');pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d=>d.close())")
     ok('opção: desligar a protoboard no projeto (fios viram normais) e religar',r==[False,True,0,1,'none'] and r2==[False,True],(r,r2))
     pg.evaluate("(()=>{S.pb.on=true;commit()})()")
+    r=pg.evaluate("""(()=>{const out=[];for(const t of ['ardcpp','555','eletr','onda']){loadTpl(t,true);S.pb={on:true,bds:[{id:'pb1',k:'full',x:0,y:0}],w:[]};commit();const M=()=>{startSim();const o={};for(const c of S.comps){const m=AM(c.id);o[c.id]=m?+(m.i||0).toPrecision(4):null}stopSim();return JSON.stringify(o)};
+      const a=M(),nw=S.wires.length;pbAutoMount();const H=pbHoles(),fora=S.comps.filter(c=>pbVis(c)&&onSheet(c)&&!pkgOf(c).sock&&pkgOf(c).pins.length&&!termsOf(c).some((_,i)=>pbIns(c,i,H))).length;
+      out.push([t,M()===a,S.wires.length===nw,fora,S.pb.w.length>0,document.querySelectorAll('#pbv .pbw').length===S.pb.w.length])}return out})()""")
+    ok('protoboard: montar sozinho encaixa tudo, liga com jumpers e não muda a simulação',all(x[1] and x[2] and x[3]==0 and x[4] and x[5] for x in r),r)
+    r=pg.evaluate("""(()=>{loadTpl('ardcpp',true);S.pb={on:true,bds:[{id:'pb1',k:'full',x:0,y:0}],w:[]};commit();pbAutoMount();if(!pbOn()){S.pb.on=true;commit()}pbRender();const led=S.comps.find(c=>c.type==='led'),q=pbPin(led,1),sv=document.getElementById('pbv'),bb=sv.getBoundingClientRect();
+      tool={key:'x',proto:makeComp('res',{R:330},'Resistor')};const hy=q.y<100?q.y-10:q.y+10,ev={bubbles:true,clientX:bb.left+pbV.x+q.x*pbV.s,clientY:bb.top+pbV.y+hy*pbV.s,button:0,pointerId:1};sv.dispatchEvent(new PointerEvent('pointerdown',ev));window.dispatchEvent(new PointerEvent('pointerup',ev));
+      const c=S.comps[S.comps.length-1],w=S.wires.find(w=>w.pb&&(w.a.c===c.id||w.b.c===c.id)),L=wbox(led,true),C=wbox(c,true);return[c.type,!!w,Math.hypot((L[0]+L[2])/2-(C[0]+C[2])/2,(L[1]+L[3])/2-(C[1]+C[3])/2)<400,w?routeHits(wireGeo(w),obstaclesFor(byId(w.a.c),byId(w.b.c))):true]})()""")
+    ok('protoboard: peça nova vai para perto da ligada no esquema e o fio desvia',r==['res',True,True,False],r)
+    CPP={'struct':("struct P{int x;int y;};P a={3,4};P v[2]={{1,2},{5,6}};void setup(){Serial.begin(9600);P b=a;b.x=10;Serial.println(a.x);Serial.println(b.x);Serial.println(v[1].y);}void loop(){}","3\n10\n6\n"),
+     'classe':("class C{public:C(int i):v(i){}void soma(int n){v+=n;}int pega(){return v;}float m(int k){return v/(float)k;}private:int v;};C c(5);void setup(){Serial.begin(9600);c.soma(3);Serial.println(c.pega());Serial.println(c.m(3));}void loop(){}","8\n2.67\n"),
+     'fora':("class L{int p;bool on;public:L(int q);void liga();void troca(){if(on)desl();else liga();}void desl();};L::L(int q){p=q;on=false;}void L::liga(){on=true;Serial.println(1);}void L::desl(){this->on=false;Serial.println(0);}L l(13);void setup(){Serial.begin(9600);l.troca();l.troca();}void loop(){}","1\n0\n"),
+     'heranca':("enum E{A,B=5,C};struct An{int n;int conta(){return n;}};struct Cao:public An{void late(){Serial.println(\"au\");}};void setup(){Serial.begin(9600);Cao d;d.n=4;d.late();Serial.println(d.conta());Serial.println(C);}void loop(){}","au\n4\n6\n"),
+     'ref':("struct P{int v;};void dobra(P &p){p.v*=2;}void copia(P p){p.v=99;}P q={21};void setup(){Serial.begin(9600);dobra(q);copia(q);Serial.println(q.v);}void loop(){}","42\n"),
+     'eeprom':("#include <EEPROM.h>\nvoid setup(){Serial.begin(9600);EEPROM.write(3,77);Serial.println(EEPROM.read(3));Serial.println(EEPROM.length());}void loop(){}","77\n1024\n")}
+    ruins=[]
+    for k,(src,esp) in CPP.items():
+        r=pg.evaluate("""(async(src)=>{loadTpl('ardcpp',true);delete S.pb;const a=S.comps.find(c=>c.type==='plc');a.code=src;commit();startSim();await new Promise(r=>setTimeout(r,500));const st=rt.mcu[a.id];const o=[st.err,st.ser];stopSim();return o})""",src)
+        if r[0] or r[1]!=esp: ruins.append((k,r))
+    ok('Arduino C++: struct, class, métodos fora da classe, herança, enum, referência e EEPROM',not ruins,ruins)
+    r=pg.evaluate("""(async()=>{S={comps:[],wires:[],seq:1};const A=(t,p,x,y)=>{const c=placeComp(makeComp(t,p),x,y,0);S.comps.push(c);return c};const a=A('plc',{m:'ard'},200,200),ic=A('ic',{k:'74HC595'},600,200);const W=(x,i,y,j)=>S.wires.push({id:'w'+S.seq++,a:{c:x.id,t:i},b:{c:y.id,t:j}});const N=namesOf(a),pi=n=>N.indexOf(n);
+      W(a,pi('D11'),ic,13);W(a,pi('D12'),ic,10);W(a,pi('D8'),ic,11);W(a,pi('5V'),ic,15);W(a,pi('GND'),ic,7);W(a,pi('5V'),ic,9);W(a,pi('GND'),ic,12);
+      a.code='void setup(){pinMode(8,OUTPUT);pinMode(11,OUTPUT);pinMode(12,OUTPUT);digitalWrite(8,LOW);delay(50);shiftOut(11,12,MSBFIRST,0xA5);delay(50);digitalWrite(8,HIGH);}void loop(){}';commit();startSim();await new Promise(r=>setTimeout(r,900));const q=[14,0,1,2,3,4,5,6].map(i=>rt.A.vdc(K(ic.id,i))>2?1:0).join('');stopSim();return q})()""")
+    ok('Arduino C++: shiftOut acende as saídas do 74HC595',r=='10100101',r)
+    r=pg.evaluate("(()=>{const q=pbOrtho([{x:0,y:0},{x:50,y:80}]),q2=pbOrtho([{x:0,y:0},{x:40,y:30},{x:90,y:100}]);const ax=L=>L.every((p,i)=>!i||Math.abs(p.x-L[i-1].x)<.5||Math.abs(p.y-L[i-1].y)<.5);return[ax(q),ax(q2),q.length]})()")
+    ok('protoboard: fios em ângulo reto',r==[True,True,4],r)
+    r=pg.evaluate("""(async()=>{S={comps:[],wires:[],seq:1};let x=0;const A=(t,p,X,Y)=>{const c=placeComp(makeComp(t,p),x+=200,0,0);c.pbx=X;c.pby=Y;c.pbr=0;S.comps.push(c);return c};const B=A('bat',{V:9},-100,300),R1=A('res',{R:1000},110,40),R2=A('res',{R:2000},150,40),M=A('mmeter',{},380,240);
+      S.pb={on:true,bds:[{id:'pb1',k:'full',x:0,y:0}],w:[{id:'pw1',a:{c:B.id,t:0},b:{bd:'pb1',hx:11,hy:5}},{id:'pw2',a:{c:B.id,t:1},b:{bd:'pb1',hx:19,hy:5}}]};M.pra='h:pb1:19:7';M.prb='h:pb1:15:7';const nw=S.wires.length;commit();startSim();await new Promise(r=>setTimeout(r,300));const v=mmRead(M);stopSim();return[v,document.querySelectorAll('.pbprobe').length,S.wires.filter(w=>w.a.c===M.id||w.b.c===M.id).length]})()""")
+    ok('protoboard: pontas do multímetro medem sem ligar fios (divisor dá 6 V)',r==['6 V',2,0],r)
+    ruins=[]
+    for k,pin in [('nano','D9'),('mega','D40'),('esp32','D25'),('pico','GP15')]:
+        r=pg.evaluate("""(async([k,pin])=>{S={comps:[],wires:[],seq:1};const A=(t,p,x,y)=>{const c=placeComp(makeComp(t,p),x,y,0);S.comps.push(c);return c};const m=A(k,{},400,200),R=A('res',{R:220},400,500),L=A('led',{},400,700);
+          const N=namesOf(m),W=(a,i,b,j)=>S.wires.push({id:'w'+S.seq++,a:{c:a.id,t:i},b:{c:b.id,t:j}});W(m,N.indexOf(pin),R,0);W(R,1,L,0);W(L,1,m,N.indexOf('GND'));m.code=CEX['Piscar o LED (Blink)'].replace(/13/g,String(BRD[k].num(pin)));
+          S.pb={on:true,bds:[{id:'pb1',k:'full',x:0,y:0}],w:[]};commit();pbAutoMount(true);startSim();let on=0,off=0;for(let i=0;i<10;i++){await new Promise(r=>setTimeout(r,110));if(ledB(L)>.1)on++;else off++}const st=rt.mcu[m.id];stopSim();return[st.err,on>0&&off>0]})""",[k,pin])
+        if r!=[None,True]:ruins.append((k,r))
+    ok('placas Nano, Mega, ESP32 e Pico rodam C++ e piscam o LED',not ruins,ruins)
+    r=ev("""const o=[];for(const t of ['tmp36','lm35']){const s=N(t,{temp:25},400,400),bb=N('bat',{V:5,ri:1},100,300),r=N('res',{R:1e6},600,550);W(bb,0,s,0);W(bb,1,s,2);W(s,1,r,0);W(r,1,bb,1);commit();startSim();clearInterval(timer);for(let i=0;i<4;i++)tick();o.push(+(rt.A.vdc(K(s.id,1))-rt.A.vdc(K(s.id,2))).toFixed(3));stopSim();S.comps=[];S.wires=[]}return o""")
+    ok('TMP36/LM35 com bateria isolada e carga de 1 MΩ mantêm a saída',r==[0.75,0.25],r)
+    ruins=[]
+    for k in ['ard_semaforo','ard_alarme','ard_termo','ard_servo','ard_distancia','ard_contador','ard_arcoiris']:
+        r=pg.evaluate(f"""(async()=>{{loadTpl('{k}',true);const H=pbHoles(),fora=S.comps.filter(c=>pbVis(c)&&!pkgOf(c).sock&&pkgOf(c).pins.length&&!termsOf(c).some((_,i)=>pbIns(c,i,H))).length;startSim();await new Promise(r=>setTimeout(r,700));const a=S.comps.find(c=>c.type==='plc'),st=rt.mcu[a.id];const o=[fora,st.err,analyze().issues.filter(i=>i.lvl==='erro').length];stopSim();return o}})()""")
+        if r!=[0,None,0]:ruins.append((k,r))
+    ok('galeria: 7 projetos com Arduino montados na protoboard e rodando',not ruins,ruins)
+    r=pg.evaluate("(async()=>{loadTpl('ard_arcoiris',true);S.pb.on=true;commit();startSim();await new Promise(r=>setTimeout(r,900));refresh(true);const n=[...document.querySelectorAll('#pbv .pbpart circle')].filter(c=>/rgb\\(/.test(c.getAttribute('fill')||'')).length;stopSim();return n})()")
+    ok('protoboard: anel NeoPixel acende na simulação',r==12,r)
+    r=pg.evaluate("(async()=>{loadTpl('ard_termo',true);startSim();await new Promise(r=>setTimeout(r,800));const l=DEV(S.comps.find(c=>c.type==='lcdi2c')).lines||[];stopSim();return l[1]||''})()")
+    ok('galeria: termômetro mostra a temperatura certa no LCD (24 °C)',23.4<float(r.split()[0] or 0)<24.6,r)
+    pg.evaluate("(()=>{S.pb={on:true,bds:[{id:'pb1',k:'full',x:0,y:0}],w:[]};delete S.nopb;commit()})()")
     pg.click('#bPb');ok('protoboard: botão volta ao esquema',pg.evaluate("!document.body.classList.contains('pbmode')&&!document.getElementById('bTrain')"))
+    print('== MicroPython, Wi-Fi, módulos novos, osciloscópio e defeitos')
+    PRE=r"""S={comps:[],wires:[],seq:1};ensureDoc();const A=(t,p,x,y)=>{const c=placeComp(makeComp(t,p||{}),x,y,0);S.comps.push(c);return c};const W=(a,i,b,j)=>S.wires.push({id:'w'+S.seq++,a:{c:a.id,t:i},b:{c:b.id,t:j}});
+const ix=(c,n)=>{const N=namesOf(c);let i=N.indexOf(n);if(i<0)i=N.findIndex(x=>String(x).replace(/^.*\./,'')===n);return i};const sleep=ms=>new Promise(r=>setTimeout(r,ms));"""
+    A=lambda js:pg.evaluate("(async()=>{"+PRE+js+"})()")
+    r=A(r"""const m=A('pico',{},400,200),R=A('res',{R:220},400,500),L=A('led',{},400,700);W(m,ix(m,'GP15'),R,0);W(R,1,L,0);W(L,1,m,ix(m,'GND'));
+m.code='from machine import Pin\nimport time\nled = Pin(15, Pin.OUT)\nwhile True:\n    led.toggle()\n    time.sleep(0.2)\n';commit();startSim();let on=0,off=0;for(let i=0;i<12;i++){await sleep(100);if(ledB(L)>.1)on++;else off++}const st=rt.mcu[m.id];stopSim();return[st.err,on>1&&off>1]""")
+    ok('MicroPython: Pico pisca o LED do GP15',r==[None,True],r)
+    r=A(r"""const m=A('esp32',{},400,200);m.code=`import math
+class P:
+    def __init__(self, n=0):
+        self.n = n
+    def mais(self, k=1):
+        self.n += k
+        return self
+    def __str__(self):
+        return 'P(%d)' % self.n
+p = P(2).mais().mais(3)
+d = {k: v for k, v in zip('abc', range(3))}
+try:
+    1 / 0
+except ZeroDivisionError as e:
+    erro = str(e)
+a, *b = [1, 2, 3]
+print(p, 7 / 2, 4 / 2, 7 // 2, -7 % 3, 2 ** 8, f"{math.pi:.3f}", sorted(d, key=lambda k: -d[k]), b, [x * x for x in range(4) if x % 2], erro != '', "{:>4}|{:<3}|".format('ab', 1), int('ff', 16), 'x' in d, len('olá'))
+`;commit();startSim();await sleep(300);const st=rt.mcu[m.id];stopSim();return[st.err,st.ser.trim()]""")
+    ok('MicroPython: classes, f-strings, divisão, fatiamento e exceções',r==[None,"P(6) 3.5 2.0 3 2 256 3.142 ['c', 'b', 'a'] [2, 3] [1, 9] True   ab|1  | 255 False 3"],r)
+    r=A(r"""const m=A('esp32',{},400,200);m.code='x = 1\nprint(y)\n';commit();startSim();await sleep(200);const st=rt.mcu[m.id];stopSim();let pe='';try{progParse('if True\n  x=1\n')}catch(e){pe=e.ln+':'+e.msg}return[st.err,pe]""")
+    ok('MicroPython: erro mostra a linha (execução e sintaxe)',r[0]=='Linha 2: NameError: o nome "y" não foi definido' and r[1].startswith('1:'),r)
+    r=A(r"""const m=A('pico',{},400,200);m.code='from machine import Timer\nimport time\nn = 0\ndef t(x):\n    global n\n    n += 1\nTimer(period=100, mode=Timer.PERIODIC, callback=t)\ntime.sleep(1.05)\nprint(n)\n';commit();startSim();await sleep(1800);const st=rt.mcu[m.id];stopSim();return[st.err,st.ser.trim()]""")
+    ok('MicroPython: Timer periódico roda durante o sleep (10 vezes em 1 s)',r==[None,'10'],r)
+    r=A(r"""const m=A('esp32',{},300,200),o=A('oled',{},700,200);W(o,0,m,ix(m,'GND'));W(o,1,m,ix(m,'3V3'));W(o,2,m,ix(m,'D22'));W(o,3,m,ix(m,'D21'));m.code=CEX['ESP32: Wi-Fi e display OLED (C++)'];commit();startSim();await sleep(2600);const st=rt.mcu[m.id],d=DEV(o);const r=[st.err,/IP: 192\.168\.0\.\d+/.test(st.ser),(d.txt||[]).map(t=>t.s).join('|').slice(0,6),(d.buf||[]).reduce((a,b)=>a+b,0)>300];stopSim();return r""")
+    ok('ESP32 C++: Wi-Fi simulado conecta e o OLED mostra texto e desenho',r==[None,True,'Faisca',True],r)
+    r=A(r"""const m=A('esp32',{},300,200),o=A('oled',{},700,200);W(o,0,m,ix(m,'GND'));W(o,1,m,ix(m,'3V3'));W(o,2,m,ix(m,'D22'));W(o,3,m,ix(m,'D21'));m.code=CEX['MicroPython: Wi-Fi + OLED (ESP32)'];commit();startSim();await sleep(2600);const st=rt.mcu[m.id],d=DEV(o);const r=[st.err,/conectado, IP 192\.168\.0\.\d+/.test(st.ser),(d.txt||[]).map(t=>t.s)[0]];stopSim();return r""")
+    ok('MicroPython: network.WLAN conecta e o ssd1306 escreve no OLED',r==[None,True,'Wi-Fi OK'],r)
+    r=A(r"""const m=A('plc',{m:'ard'},300,200),s=A('step28',{},700,300);[8,9,10,11].forEach((p,i)=>W(s,i,m,ix(m,'D'+p)));W(s,4,m,ix(m,'5V'));W(s,5,m,ix(m,'GND'));
+m.code='#include <Stepper.h>\nStepper motor(2048, 8, 10, 9, 11);\nvoid setup(){motor.setSpeed(15);motor.step(512);Serial.println("fim");}\nvoid loop(){}';commit();startSim();await sleep(3500);const st=rt.mcu[m.id];const r=[st.err,st.ser.trim(),Math.round(stpAng(s))];stopSim();return r""")
+    ok('motor de passo: Stepper.step(512) gira 90° (28BYJ-48)',r[0] is None and r[1]=='fim' and 88<=r[2]<=91,r)
+    r=A(r"""const m=A('plc',{m:'ard'},300,200),h=A('l298n',{},700,300),b=A('bat',{V:12,ri:.1},1000,100),mo=A('motdc',{Vn:9,P:6},1000,500);W(b,0,h,2);W(b,1,h,3);W(h,3,m,ix(m,'GND'));W(h,8,m,ix(m,'D5'));W(h,9,m,ix(m,'D6'));W(h,0,mo,0);W(h,1,mo,1);
+m.code='bool r=false;void setup(){pinMode(5,OUTPUT);pinMode(6,OUTPUT);}void loop(){digitalWrite(5,r?LOW:HIGH);digitalWrite(6,r?HIGH:LOW);delay(1000);r=!r;}';commit();startSim();await sleep(700);const a=[VD(h,0,1)>8,DEV(h).a];await sleep(1000);a.push(VD(h,0,1)<-8,DEV(h).a);stopSim();return a""")
+    ok('ponte H L298N: IN1/IN2 invertem o sentido do motor',r==[True,'fwd',True,'rev'],r)
+    r=A(r"""const m=A('plc',{m:'ard'},300,200),k=A('rlymod',{},700,300),b=A('bat',{V:9,ri:.1},1000,100),R=A('res',{R:470},1000,400),L=A('led',{},1000,600);W(k,0,m,ix(m,'5V'));W(k,1,m,ix(m,'GND'));W(k,2,m,ix(m,'D7'));W(b,0,k,4);W(k,3,R,0);W(R,1,L,0);W(L,1,b,1);
+m.code='void setup(){pinMode(7,OUTPUT);}void loop(){digitalWrite(7,HIGH);delay(300);digitalWrite(7,LOW);delay(300);}';commit();startSim();let on=0,off=0;for(let i=0;i<12;i++){await sleep(100);if(ledB(L)>.1)on++;else off++}k.lvl='L';const r=[rt.mcu[m.id].err,on>2&&off>2];stopSim();return r""")
+    ok('módulo relé: o pino do Arduino liga a carga pelo contato NA',r==[None,True],r)
+    r=A(r"""const m=A('plc',{m:'ard'},300,200),e=A('renc',{},700,300);W(e,0,m,ix(m,'D2'));W(e,1,m,ix(m,'D3'));W(e,2,m,ix(m,'D4'));W(e,3,m,ix(m,'5V'));W(e,4,m,ix(m,'GND'));m.code=CEX['Encoder rotativo KY-040'];
+commit();startSim();await sleep(300);for(let i=0;i<3;i++){D(e).hitClick(e,30,0);await sleep(500)}D(e).hitClick(e,-30,0);await sleep(700);D(e).hitClick(e,0,0);solve();await sleep(250);D(e).release(e);solve();await sleep(100);const r=[rt.mcu[m.id].err,rt.mcu[m.id].ser.replace(/posição: /g,'').trim().split('\n').join(',')];stopSim();return r""")
+    ok('encoder KY-040: girar e apertar chegam ao Arduino (1,2,3,2,botão)',r==[None,'1,2,3,2,botão!'],r)
+    r=A(r"""const g=A('fgen',{},300,600),R=A('res',{R:1000},700,200),sc=A('scope',{},700,600);W(g,0,R,0);W(R,1,g,1);S.pb={on:true,bds:[{id:'pb1',k:'full',x:0,y:0}],w:[]};commit();pbAutoMount(true);sc.pra='p:'+R.id+':0';sc.prg='p:'+R.id+':1';sc.trig='auto';sc.tlev=1;commit();
+startSim();await sleep(1500);const x=scopeCh(sc,0),w=waveTr()||'';const r=[Math.abs(x.dc-VD(R,0,1))<1e-6,S.wires.some(q=>q.a.c===sc.id||q.b.c===sc.id),document.querySelectorAll('.pbprobe').length,/trigger CH1/.test(w)];stopSim();return r""")
+    ok('osciloscópio: pontas medem sem fios e o trigger aparece',r==[True,False,3,True],r)
+    r=A(r"""const bt=A('bat',{V:9,ri:.5},200,200),L=A('led',{},500,200);W(bt,0,L,0);W(L,1,bt,1);S.pb={on:true,bds:[{id:'pb1',k:'full',x:0,y:0}],w:[{id:'pw1',a:{bd:'pb1',hx:55,hy:8},b:{bd:'pb1',hx:58,hy:12}}]};commit();pbAutoMount(true);commit();const loose=document.querySelectorAll('#pbJ .pbblink').length;
+startSim();await sleep(2600);const smoke=document.querySelectorAll('#pbC .pbsmoke').length,burnt=!!rt.burnt[L.id];stopSim();S.pb.w.push({id:'pw9',a:{c:bt.id,t:0},b:{c:bt.id,t:1}});commit();startSim();await sleep(300);const sh=document.querySelectorAll('#pbJ .pbshort').length;stopSim();return[loose,burnt,smoke>0,sh>1]""")
+    ok('protoboard: fio solto não pisca, LED queimado solta fumaça e o curto fica vermelho',r==[0,True,True,True],r)
+    r=pg.evaluate(r"""(()=>{const p=plotParse('1 2\n3 4\ntemp:20 umid:50\nlixo\n5,6\n');return[p.order.join('|'),p.n,p.ser['valor 1'].length]})()""")
+    ok('Serial Plotter: lê colunas e nome:valor',r==['valor 1|valor 2|temp|umid',4,3],r)
     ok('nenhum erro de JavaScript',not erros,erros)
     b.close()
 print('\nFALHAS:',len(falhas));sys.exit(1 if falhas else 0)

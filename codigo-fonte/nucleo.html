@@ -801,11 +801,11 @@ const splitNames=s=>String(s||'').split(/[,;\s]+/).filter(Boolean);
 function build(E){const uf=makeUF();
  for(const w of liveWires())uf.u(K(w.a.c,w.a.t),K(w.b.c,w.b.t));
  for(const c of S.comps){for(const[a,b]of condOf(c,E))uf.u(K(c.id,a),K(c.id,b))}
- const src={},list=[],add=(k,l,mag,rs)=>{const r=uf.f(k);(src[r]=src[r]||new Set()).add(l);list.push([k,l,mag,rs])};
- if(!rt.dead){for(const c of S.comps){const d=D(c);if(d.src)for(const[t,l,mag,rs]of d.src(c,E))add(K(c.id,t),l,mag,rs)}for(const[k,l,mag,rs]of E.der)add(k,l,mag,rs)}
+ const src={},list=[],add=(k,l,mag,rs,rf,ci)=>{const r=uf.f(k);(src[r]=src[r]||new Set()).add(l);list.push([k,l,mag,rs,rf,ci])};
+ if(!rt.dead){for(const c of S.comps){const d=D(c);if(d.src)for(const[t,l,mag,rs]of d.src(c,E))add(K(c.id,t),l,mag,rs)}for(const[k,l,mag,rs,rf,ci]of E.der)add(k,l,mag,rs,rf,ci)}
  return{uf,src,list,set:k=>src[uf.f(k)]||EMPTY}}
 function mkX(c,net,N,en,A){const s=i=>net.set(K(c.id,i)),k=i=>K(c.id,i);return{set:s,energ:(i,j)=>energ(s(i),s(j)),hasP:i=>hasPot(s(i),'P'),hasLAD:i=>s(i).has('LAD+'),root:i=>net.uf.f(k(i)),
- push:(i,l,mag,rs)=>N.der.push([k(i),l,mag==null?null:Math.round(mag*10)/10,rs]),en:!!(en&&en[c.id]),A,
+ push:(i,l,mag,rs,ref)=>N.der.push(ref==null||mag==null?[k(i),l,mag==null?null:Math.round(mag*1000)/1000,rs]:[k(i),l,Math.round((mag-(A?A.vdc(k(ref)):0))*1000)/1000,rs,k(ref),c.id]),en:!!(en&&en[c.id]),A,
  vab:(i,j)=>A?A.vab(k(i),k(j)):0,vdc:i=>A?A.vdc(k(i)):0,hi:(i,thr)=>A?A.vdc(k(i))>=thr:hasPot(s(i),'P')}}
 function next(net,en,E,A){const N={out:{},vars:{...rt.vars},der:[],ds:{},ff:{...E.ff},vst:{...E.vst},lad:false,cpu:{}},X=c=>mkX(c,net,N,en,A);
  for(const c of S.comps){const d=D(c);if(d.outF&&c.tag){const v=!!d.outF(c,!!en[c.id],X(c));N.out[c.tag]=N.out[c.tag]||v}}
@@ -1015,7 +1015,7 @@ function analog(E,net){const uf=makeUF(),C=S.comps;
   opa:(c,o,p,n,vp,vn,m,key)=>{const k=key||c.id+':'+o,id=vp==null;els.push({c,k:'o',key:k,o:ctx.node(c,o),p:ctx.node(c,p),n:ctx.node(c,n),vp:id?-1:ctx.node(c,vp),r:id?-1:ctx.node(c,vn),ideal:id,
    A:m&&m.A||2e5,Ro:m&&m.Ro||75,hd:m&&m.hd!=null?m.hd:1.5,ld:m&&m.ld!=null?m.ld:.02,vh:15,vl:id?-15:.02,st:(rt.oas||{})[k]||'lin'})}};
  for(const c of C){if(rt.burnt[c.id])continue;const d=D(c);if(FL(c)==='open'&&!isBR(c))continue;if(FL(c)==='short'){if(termsOf(c).length>=2)ctx.r(c,0,1,.05);continue}if(d.an)d.an(c,ctx)}
- const srcs=[];for(const[k,l,mag,rs]of net.list){const p=pot(l);if(isPn(p)||isLad(p))continue;srcs.push({k,n:nd(k),l,p,mag:mag==null?defMag(l):mag,g:1/(rs||defRs(l))})}
+ const srcs=[];for(const[k,l,mag,rs,rf,ci]of net.list){const p=pot(l);if(isPn(p)||isLad(p))continue;if(rf!=null){els.push({c:byId(ci)||{id:ci},a:nd(k),b:nd(rf),k:'v',g:1/(rs||defRs(l)),V:mag});continue}srcs.push({k,n:nd(k),l,p,mag:mag==null?defMag(l):mag,g:1/(rs||defRs(l))})}
  const N=n,DT=rt.dt||.1,W=2*Math.PI*60;
  function pass(ac){const Yr=[],Yi=[],Br=new Float64Array(N),Bi=new Float64Array(N);for(let i=0;i<N;i++){Yr.push(new Float64Array(N));Yi.push(new Float64Array(N));Yr[i][i]=1e-9}
   const st=(a,b,gr,gi)=>{if(a>=0){Yr[a][a]+=gr;Yi[a][a]+=gi}if(b>=0){Yr[b][b]+=gr;Yi[b][b]+=gi}if(a>=0&&b>=0){Yr[a][b]-=gr;Yi[a][b]-=gi;Yr[b][a]-=gr;Yi[b][a]-=gi}};

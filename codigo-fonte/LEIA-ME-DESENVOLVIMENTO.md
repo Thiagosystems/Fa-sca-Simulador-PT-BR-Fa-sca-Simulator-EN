@@ -17,8 +17,12 @@ O site publicado é um arquivo só (`../index.html`). Ele é **montado** a parti
 | `modulos/10-clp-st-varias-cpus.js` | Programa em texto estruturado (ST) e várias CPUs com prefixo |
 | `modulos/11-duvidas.js` | Aba Dúvidas (ajuda pesquisável) |
 | `modulos/12-componentes-tinkercad.js` | Componentes do Tinkercad (sensores, telas, NeoPixel, servo, instrumentos, micro:bit…) |
+| `modulos/12a-placas.js` | Placas Arduino Nano, Mega 2560, ESP32 e Raspberry Pi Pico (simulação) |
+| `modulos/13b-micropython.js` | Intérprete de MicroPython (lexer, parser e execução passo a passo) com os módulos machine, time, network, neopixel, ssd1306 etc. |
 | `modulos/13-arduino-cpp.js` | Programa C++ do Arduino (interpretador, bibliotecas, monitor serial) |
 | `modulos/14-protoboard.js` | Modo Protoboard: vista física sincronizada com o esquema |
+| `modulos/15-placas-protoboard-galeria.js` | Desenho das placas novas na protoboard e galeria de projetos com Arduino |
+| `modulos/16-modulos-osc-defeitos.js` | OLED, módulo relé, L298N, motor de passo, encoder KY-040, bibliotecas WiFi/SSD1306/Stepper, Serial Plotter, trigger e pontas do osciloscópio, defeitos visíveis na protoboard |
 
 Os módulos entram em ordem numérica, depois do núcleo. Cada um acrescenta ou ajusta funções do núcleo.
 

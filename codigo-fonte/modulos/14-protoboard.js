@@ -40,7 +40,7 @@ function pbSeg(x,y,w,h,bits,col,off){const t=Math.max(1.4,w*.16),s=(on,d)=>`<pat
 /* ---------- pacotes físicos: terminais (em passos de 0,1") e desenho ---------- */
 const pbRow=(n,y=0,x0=0)=>rng(n).map(i=>[x0+i,y]);
 function dipPins(n){const h=n/2;return rng(n).map(i=>{const p=i+1;return p<=h?[p-1,3]:[n-p,0]})}
-function burnFx(b){const cx=(b[0]+b[2])/2,cy=(b[1]+b[3])/2,r=Math.max(8,Math.min(30,(b[2]-b[0])/3));return`<g pointer-events="none">${bC(cx,cy,r,'rgba(25,20,15,.75)',' filter="url(#pbBl)"')}${bC(cx-r*.5,cy-r*1.1,r*.55,'rgba(120,120,120,.55)',' filter="url(#pbBl)"')}${bC(cx+r*.3,cy-r*1.6,r*.45,'rgba(150,150,150,.45)',' filter="url(#pbBl)"')}</g>`}
+function burnFx(b){const cx=(b[0]+b[2])/2,cy=(b[1]+b[3])/2,r=Math.max(8,Math.min(30,(b[2]-b[0])/3));return`<g pointer-events="none">${bC(cx,cy,r,'rgba(25,20,15,.75)',' filter="url(#pbBl)"')}${bP(`M${cx-r*.5},${cy-r*.2}l${r*.3},${r*.25}l${r*.15},-${r*.4}l${r*.3},${r*.3}`,'none',' stroke="#000" stroke-width="1.4" opacity=".7"')}${[0,1,2].map(k=>bC(cx+(k-1)*r*.35,cy-r*.6,r*(.45+k*.08),'rgba(140,140,140,.6)',` class="pbsmoke${k?' s'+(k+1):''}" filter="url(#pbBl)"`)).join('')}</g>`}
 function pbLedCol(c){return({vermelha:'#ff2b2b',verde:'#25d25f',amarela:'#ffd21f',azul:'#3d8bff',branca:'#f2f7ff'})[c.col]||'#ff2b2b'}
 function domeLED(cx,col,b,w=12,dark){const x=cx-w/2,top=-28,base=-8;const body=`M${x},${base}V${top+w/2}A${w/2},${w/2} 0 0 1 ${x+w},${top+w/2}V${base}Z`;
  return(b>0?bC(cx,top+10,10+12*b,col,` opacity="${(.25+.4*b).toFixed(2)}" filter="url(#pbBl)"`):'')+bP(body,dark||col,` opacity="${b>0?1:.82}"`)+(b>0?'':bP(body,'rgba(0,0,0,.28)'))+
@@ -56,7 +56,7 @@ function lcdScreen(x,y,w,h,lines,bl,rows=2,cols=16){let s=bR(x-4,y-4,w+8,h+8,'#1
 function npxDot(x,y,v,on,sz=6){const rr=(v>>16)&255,g=(v>>8)&255,b=v&255,lit=on&&v;return bR(x-sz,y-sz,sz*2,sz*2,'#f4f4f0',' rx="1"')+bC(x,y,sz*.62,lit?`rgb(${rr},${g},${b})`:'#e2e2dc',lit?` style="filter:drop-shadow(0 0 ${sz*.9}px rgb(${rr},${g},${b}))"`:bStk('#c8c8c0',.5))}
 
 /* pacote genérico para o que não tem desenho próprio (comando industrial, lógica, bornes) */
-function genPkg(c){const T=termsOf(c),n=T.length;if(!n)return{pins:[],sock:1,box:[-30,-30,30,30],art:()=>bR(-30,-30,60,60,'#c9ced4',' rx="6"')+bTc(0,4,c.tag||lab(c),8,'#333')};
+function genPkg(c){const T=termsOf(c),n=T.length;if(!n)return{pins:[],sock:1,box:[-30,-30,30,30],art:c=>bR(-30,-30,60,60,'#c9ced4',' rx="6"')+bTc(0,4,c.tag||lab(c),8,'#333')};
  const cy=T.reduce((a,t)=>a+t[1],0)/n,top=[],bot=[];T.forEach((t,i)=>(t[1]<cy-1?top:bot).push(i));const sx=a=>a.sort((i,j)=>T[i][0]-T[j][0]);sx(top);sx(bot);
  const m=Math.max(top.length,bot.length,2),W=m*2+2,H=top.length?7:0,pins=new Array(n);
  top.forEach((i,k)=>pins[i]=[2+k*2+(m-top.length),0]);bot.forEach((i,k)=>pins[i]=[2+k*2+(m-bot.length),top.length?H:0]);
@@ -144,10 +144,10 @@ const PKGS={
  motdc:c=>{const gear=c.look==='gear';return{pins:[[0,0],[2,0]],box:[-26,-74,72,1],art:c=>{const m=SIM()&&rt.res&&rt.res.mot&&rt.res.mot[c.id],on=!!(m&&m.st==='run'),dir=m&&m.dir==='ccw'?'pbspinr':'pbspin';return bWire('M0,0C0,-12 2,-18 4,-26','#d32f2f',1.6)+bWire('M20,0C20,-12 18,-18 16,-26','#2a2a2a',1.6)+
   (gear?bR(-24,-70,60,40,'#f2c014',' rx="3"')+bShade(-24,-70,60,40,3):bR(-22,-68,52,38,'#c4cad0',' rx="8"')+bShade(-22,-68,52,38,8)+bR(-24,-62,4,26,'#9aa2aa',' rx="1"'))+bR(30,-51,14,4,'#9aa2aa')+`<g transform="translate(48 -49)"><g class="${on?dir:''}">${bC(0,0,11,gear?'#222':'#e9ecef',bStk('#777',.8))}${bR(-1.5,-11,3,22,gear?'#f2c014':'#555')}</g></g>`}}},
  mot1:null,
- neopx:c=>{const sh=c.shape||'px',n=sh==='px'?1:Math.max(1,Math.min(64,+c.n||8)),col=DEV(c).px||[],on=!SIM()||PWR(c,0,1,3.5);
-  if(sh==='ring'){const R=Math.max(26,n*3.4);return{pins:pbRow(4),box:[15-R-10,-2*R-24,15+R+10,1],art:()=>{let s=rng(4).map(i=>bLeg(i*10,-8,i*10,0)).join('')+bP(`M${15-R-8},${-R-14}a${R+8},${R+8} 0 1 0 ${2*R+16},0a${R+8},${R+8} 0 1 0 ${-2*R-16},0ZM${15-R+8},${-R-14}a${R-8},${R-8} 0 1 1 ${2*R-16},0a${R-8},${R-8} 0 1 1 ${-2*R+16},0Z`,'#1b1b1b',' fill-rule="evenodd"');for(let i=0;i<n;i++){const a=-Math.PI/2+i*2*Math.PI/n;s+=npxDot(15+Math.cos(a)*R,-R-14+Math.sin(a)*R,col[i]||0,SIM()&&on,Math.min(6,Math.PI*R/n*.7))}return s}}}
-  if(sh==='strip'){const W=n*16+14;return{pins:pbRow(4),box:[-8,-36,W,1],art:()=>{let s=rng(4).map(i=>bLeg(i*10,-10,i*10,0)).join('')+bR(-6,-34,W,22,'#f4f4f0',' rx="2"')+bR(-6,-34,W,22,'none',bStk('#cfcfc6',.8)+' rx="2"');for(let i=0;i<n;i++)s+=npxDot(6+i*16,-23,col[i]||0,SIM()&&on,6);return s}}}
-  return{pins:pbRow(4),box:[-6,-40,36,1],art:()=>rng(4).map(i=>bLeg(i*10,-8,i*10,0)).join('')+bC(15,-24,17,'#1b1b1b')+npxDot(15,-24,col[0]||0,SIM()&&on,8)}},
+ neopx:c=>{const sh=c.shape||'px',n=sh==='px'?1:Math.max(1,Math.min(64,+c.n||8)),st=c=>[DEV(c).px||[],!SIM()||PWR(c,0,1,3.5)];
+  if(sh==='ring'){const R=Math.max(26,n*3.4);return{pins:pbRow(4),box:[15-R-10,-2*R-24,15+R+10,1],art:c=>{const[col,on]=st(c);let s=rng(4).map(i=>bLeg(i*10,-8,i*10,0)).join('')+bP(`M${15-R-8},${-R-14}a${R+8},${R+8} 0 1 0 ${2*R+16},0a${R+8},${R+8} 0 1 0 ${-2*R-16},0ZM${15-R+8},${-R-14}a${R-8},${R-8} 0 1 1 ${2*R-16},0a${R-8},${R-8} 0 1 1 ${-2*R+16},0Z`,'#1b1b1b',' fill-rule="evenodd"');for(let i=0;i<n;i++){const a=-Math.PI/2+i*2*Math.PI/n;s+=npxDot(15+Math.cos(a)*R,-R-14+Math.sin(a)*R,col[i]||0,SIM()&&on,Math.min(6,Math.PI*R/n*.7))}return s}}}
+  if(sh==='strip'){const W=n*16+14;return{pins:pbRow(4),box:[-8,-36,W,1],art:c=>{const[col,on]=st(c);let s=rng(4).map(i=>bLeg(i*10,-10,i*10,0)).join('')+bR(-6,-34,W,22,'#f4f4f0',' rx="2"')+bR(-6,-34,W,22,'none',bStk('#cfcfc6',.8)+' rx="2"');for(let i=0;i<n;i++)s+=npxDot(6+i*16,-23,col[i]||0,SIM()&&on,6);return s}}}
+  return{pins:pbRow(4),box:[-6,-40,36,1],art:c=>{const[col,on]=st(c);return rng(4).map(i=>bLeg(i*10,-8,i*10,0)).join('')+bC(15,-24,17,'#1b1b1b')+npxDot(15,-24,col[0]||0,SIM()&&on,8)}}},
  lcd:c=>({pins:pbRow(16),box:[-32,-150,190,1],art:c=>{const d=DEV(c),pw=!SIM()||PWR(c,1,0,3.5),bl=SIM()&&pw&&rt.ads&&rt.ads[c.id+':bl'],lines=SIM()&&pw&&d.on!==false?(d.lines||['','']):['',''];
   return rng(16).map(i=>bLeg(i*10,-8,i*10,0)).join('')+bR(-30,-148,186,140,'#1f6e3a',' rx="3"')+bShade(-30,-148,186,140,3)+[[-24,-142],[150,-142],[-24,-16],[150,-16]].map(([x,y])=>bC(x,y,3.6,'#c9a227')+bC(x,y,2,'#11441f')).join('')+
    bR(-18,-128,162,90,'#2b2b2b',' rx="2"')+lcdScreen(-10,-118,146,62,lines,bl)+rng(16).map(i=>bTc(i*10,-12,['GND','VCC','V0','RS','RW','E','D0','D1','D2','D3','D4','D5','D6','D7','A','K'][i],3.4,'#dfe6ef')).join('')}}),
@@ -252,15 +252,17 @@ function pbPhys(){const H=pbHoles(),uf=pbUF(),ins=new Map();
  for(const c of S.comps){if(!pbVis(c)||!num(c.pbx))continue;termsOf(c).forEach((_,i)=>{const h=pbIns(c,i,H);if(h){ins.set(K(c.id,i),h);uf.u(K(c.id,i),'N'+h.net)}})}
  const node=e=>{if(e.c)return K(e.c,e.t);const bd=S.pb.bds.find(b=>b.id===e.bd);if(!bd)return'X';const h=H.get(pbSh(bd)+'|'+(bd.x+e.hx*PBP)+','+(bd.y+e.hy*PBP));return h?'N'+h.net:`H${e.bd}:${e.hx}:${e.hy}`};
  for(const w of S.pb.w)uf.u(node(w.a),node(w.b));return{uf,ins,H,node}}
+/* ligações feitas por nome (fonte com o mesmo potencial, rótulo de rede, ligação entre folhas) */
+function pbNameJoin(uf){for(const c of S.comps){const k=c.type==='src'?'src:'+c.v+':'+(c.V!=null?c.V:''):c.type==='netl'?'net:'+(c.net||''):c.type==='xref'?'xr:'+(c.tag||''):null;if(k)uf.u(K(c.id,0),'N@'+k)}}
 function pbSync(){if(!S.pb)return false;
  S.pb.w=S.pb.w.filter(w=>[w.a,w.b].every(e=>e.c?(byId(e.c)&&e.t<termsOf(byId(e.c)).length):S.pb.bds.some(b=>b.id===e.bd)));
  const ph=pbPhys(),groups=new Map();
  for(const c of S.comps){if(!pbVis(c))continue;termsOf(c).forEach((_,i)=>{const k=K(c.id,i),r=ph.uf.f(k);if(r===k&&!ph.ins.has(k))return;if(!groups.has(r))groups.set(r,[]);groups.get(r).push(k)})}
- const sch=pbUF();for(const w of S.wires)if(!w.pb)sch.u(K(w.a.c,w.a.t),K(w.b.c,w.b.t));
+ const sch=pbUF();for(const w of S.wires)if(!w.pb)sch.u(K(w.a.c,w.a.t),K(w.b.c,w.b.t));pbNameJoin(sch);
  const want=new Map(),spos=k=>{const[id,i]=k.split(':'),c=byId(id);return c?tp(c,+i):{x:0,y:0}};
  for(const g of groups.values()){if(g.length<2)continue;g.sort();const done=[g[0]];for(const k of g.slice(1)){if(sch.f(k)!==sch.f(g[0])){const P=spos(k);let best=done[0],bd=1e18;for(const d of done){const Q=spos(d),dd=(P.x-Q.x)**2+(P.y-Q.y)**2;if(dd<bd){bd=dd;best=d}}const key=[k,best].sort().join('|');want.set(key,[best,k]);sch.u(k,g[0])}done.push(k)}}
  let ch=false;const keep=[];for(const w of S.wires){if(!w.pb){keep.push(w);continue}const key=[K(w.a.c,w.a.t),K(w.b.c,w.b.t)].sort().join('|');if(want.has(key)){want.delete(key);keep.push(w)}else ch=true}
- for(const[a,b]of want.values()){const[ac,at]=a.split(':'),[bc,bt]=b.split(':');keep.push({id:'w'+(S.seq++),a:{c:ac,t:+at},b:{c:bc,t:+bt},pb:1});ch=true}
+ for(const[a,b]of want.values()){const[ac,at]=a.split(':'),[bc,bt]=b.split(':'),id='w'+(S.seq++);keep.push({id,a:{c:ac,t:+at},b:{c:bc,t:+bt},pb:1});PBNEW.push(id);ch=true}
  S.wires=keep;return ch}
 
 /* ---------- desenho ---------- */
@@ -277,14 +279,24 @@ function bdSVG(bd){const key=bd.k+bd.x+','+bd.y+'|'+bd.id;if(PBBC[bd.id]&&PBBC[b
 function pbWireCol(w,e1,e2){if(w.pbc&&PBW[w.pbc])return PBW[w.pbc][1];if(w.col&&PBWC[w.col])return PBW[PBWC[w.col]][1];const nm=e=>{if(!e||!e.c)return'';const c=byId(e.c);return c?String(tn(c,e.t)).toUpperCase():''};
  const a=nm(e1),b=nm(e2),gnd=/^(GND|−|-|0V|COM|K \(−\)|M|− \(BU\)|−\s*\(CÁTODO\))/,pos=/^(5V|\+5V|VCC|VBUS|3V|3\.3V|\+|V\+|\+VS|L\+|\+ \(BN\)|\+24V)/;
  if(gnd.test(a)||gnd.test(b))return PBW.preto[1];if(pos.test(a)||pos.test(b))return PBW.vermelho[1];return PBW.verde[1]}
-function wPath(pts,curve){if(pts.length===2&&curve){const[a,b]=pts,L=Math.hypot(b.x-a.x,b.y-a.y)||1,o=Math.min(36,L*.16),mx=(a.x+b.x)/2,my=(a.y+b.y)/2+o;return`M${a.x},${a.y}Q${mx},${my} ${b.x},${b.y}`}
- return'M'+pts.map(p=>p.x+','+p.y).join('L')}
-function pbVisibleWires(ph){const out=[],eOn=e=>e.c?onSheet(byId(e.c)):(()=>{const bd=S.pb.bds.find(b=>b.id===e.bd);return!!bd&&bdOn(bd)})();for(const w of S.wires){if(w.pb)continue;const a=byId(w.a.c),b=byId(w.b.c);if(!pbVis(a)||!pbVis(b)||!onSheet(a)||!onSheet(b))continue;if(ph.uf.f(K(w.a.c,w.a.t))===ph.uf.f(K(w.b.c,w.b.t)))continue;const p=pbEndPos(w.a),q=pbEndPos(w.b);if(!p||!q)continue;out.push({k:'s',w,id:w.id,pts:[p,...(w.pbp||[]).map(([x,y])=>({x,y})),q],col:pbWireCol(w,w.a,w.b)})}
+function pbOrtho(pts){if(pts.length<2)return pts.slice();const o=[pts[0]],n=pts.length;
+ if(n===2){const[a,b]=pts;if(Math.abs(a.x-b.x)<.5||Math.abs(a.y-b.y)<.5)return[a,b];const my=Math.round((a.y+b.y)/2/5)*5;return[a,{x:a.x,y:my},{x:b.x,y:my},b]}
+ for(let i=1;i<n;i++){const a=o[o.length-1],b=pts[i];if(Math.abs(a.x-b.x)>=.5&&Math.abs(a.y-b.y)>=.5)o.push(i===1?{x:a.x,y:b.y}:{x:b.x,y:a.y});o.push(b)}
+ const r=[o[0]];for(let i=1;i<o.length;i++){const a=r[r.length-1],b=o[i];if(Math.abs(a.x-b.x)<.5&&Math.abs(a.y-b.y)<.5)continue;if(r.length>=2){const z=r[r.length-2];if((Math.abs(z.x-a.x)<.5&&Math.abs(a.x-b.x)<.5)||(Math.abs(z.y-a.y)<.5&&Math.abs(a.y-b.y)<.5)){r[r.length-1]=b;continue}}r.push(b)}return r}
+function wPath(pts){const q=pbOrtho(pts);if(q.length<3)return'M'+q.map(p=>p.x+','+p.y).join('L');let d=`M${q[0].x},${q[0].y}`;
+ for(let i=1;i<q.length-1;i++){const a=q[i-1],p=q[i],b=q[i+1],l1=Math.hypot(p.x-a.x,p.y-a.y),l2=Math.hypot(b.x-p.x,b.y-p.y),r=Math.min(4,l1/2,l2/2);
+  const ux=(p.x-a.x)/(l1||1),uy=(p.y-a.y)/(l1||1),vx=(b.x-p.x)/(l2||1),vy=(b.y-p.y)/(l2||1);d+=`L${(p.x-ux*r).toFixed(1)},${(p.y-uy*r).toFixed(1)}Q${p.x},${p.y} ${(p.x+vx*r).toFixed(1)},${(p.y+vy*r).toFixed(1)}`}
+ const z=q[q.length-1];return d+`L${z.x},${z.y}`}
+function pbJunctionsDone(ph){const done=new Set(),adj=new Map(),isJ=c=>c&&['junction','netl','xref','src'].includes(c.type);for(const w of S.wires){for(const[x,y]of[[w.a,w.b],[w.b,w.a]]){if(!adj.has(x.c))adj.set(x.c,[]);adj.get(x.c).push(y)}}
+ const nk=c=>c.type==='netl'?'n:'+(c.net||''):c.type==='xref'?'x:'+(c.tag||''):c.type==='src'?'s:'+c.v+':'+(c.V!=null?c.V:''):null,byK=new Map();for(const c of S.comps){const k=nk(c);if(k){if(!byK.has(k))byK.set(k,[]);byK.get(k).push(c)}}for(const L of byK.values())for(const c of L)for(const o of L)if(o!==c){if(!adj.has(c.id))adj.set(c.id,[]);adj.get(c.id).push({c:o.id,t:0})}
+ for(const c of S.comps){if(!isJ(c)||done.has(c.id))continue;const comp=new Set([c.id]),pins=[],st=[c.id];while(st.length){const id=st.pop();for(const y of adj.get(id)||[]){const o=byId(y.c);if(isJ(o)){if(!comp.has(o.id)){comp.add(o.id);st.push(o.id)}}else pins.push(K(y.c,y.t))}}
+  if(pins.length>=2&&pins.every(k=>ph.uf.f(k)===ph.uf.f(pins[0])))comp.forEach(id=>done.add(id))}return done}
+function pbVisibleWires(ph){const JD=pbJunctionsDone(ph);const out=[],eOn=e=>e.c?onSheet(byId(e.c)):(()=>{const bd=S.pb.bds.find(b=>b.id===e.bd);return!!bd&&bdOn(bd)})();for(const w of S.wires){if(w.pb)continue;const a=byId(w.a.c),b=byId(w.b.c);if(!pbVis(a)||!pbVis(b)||!onSheet(a)||!onSheet(b))continue;if(JD.has(w.a.c)||JD.has(w.b.c))continue;if(ph.uf.f(K(w.a.c,w.a.t))===ph.uf.f(K(w.b.c,w.b.t)))continue;const p=pbEndPos(w.a),q=pbEndPos(w.b);if(!p||!q)continue;out.push({k:'s',w,id:w.id,pts:[p,...(w.pbp||[]).map(([x,y])=>({x,y})),q],col:pbWireCol(w,w.a,w.b)})}
  for(const w of S.pb.w){if(!eOn(w.a)||!eOn(w.b))continue;const p=pbEndPos(w.a),q=pbEndPos(w.b);if(!p||!q)continue;out.push({k:'p',w,id:w.id,pts:[p,...(w.p||[]).map(([x,y])=>({x,y})),q],col:w.col&&PBW[w.col]?PBW[w.col][1]:pbWireCol({},w.a,w.b)})}return out}
 function pbRender(){const sv=document.getElementById('pbv');if(!sv||!pbOn())return;pbInit();const nb=pbSheetBoard();if(pbPlaceNew()||nb){pbSync();save()}
  const ph=pbPhys(),ed=mode==='edit';let hb='',hc='',hw='';
  for(const bd of S.pb.bds.filter(bdOn))hb+=bdSVG(bd)+(pbSelB===bd.id?(()=>{const g=bdGeo(bd);return bR(bd.x-3,bd.y-3,g.w*PBP+6,g.h*PBP+6,'none',' rx="6" stroke="var(--pick)" stroke-width="1.5" stroke-dasharray="5 3" pointer-events="none"')})():'');
- for(const c of S.comps){if(!pbVis(c)||!num(c.pbx)||!onSheet(c))continue;const p=pkgOf(c);let a='';try{a=p.art(c)}catch(e){a=bR(-10,-10,20,20,'#c33')}
+ const JD=pbJunctionsDone(ph);for(const c of S.comps){if(!pbVis(c)||!num(c.pbx)||!onSheet(c)||JD.has(c.id))continue;const p=pkgOf(c);let a='';try{a=p.art(c)}catch(e){a=bR(-10,-10,20,20,'#c33')}
   const sel1=SC(c.id),b=p.box,burnt=SIM()&&rt.burnt&&rt.burnt[c.id],hot=SIM()&&rt.hot&&rt.hot[c.id]>0;
   hc+=`<g class="pbpart${sel1?' sel':''}${SIM()&&(actOf(c)||D(c).hitClick)?' act':''}" data-id="${c.id}" transform="translate(${c.pbx} ${c.pby}) rotate(${c.pbr||0})"><title>${esc((c.tag?c.tag+' — ':'')+lab(c).replace(c.tag||'@@','').trim()+(valTxt(c)?' · '+valTxt(c):''))}</title>`+
    `<rect class="pbhitbox" x="${b[0]}" y="${b[1]}" width="${b[2]-b[0]}" height="${b[3]-b[1]}"/>`+a+(burnt?burnFx(b):'')+(hot&&!burnt?bR(b[0],b[1],b[2]-b[0],b[3]-b[1],'none',' rx="4" stroke="#ff7a1a" stroke-width="2" opacity=".7" pointer-events="none"'):'')+
@@ -293,7 +305,8 @@ function pbRender(){const sv=document.getElementById('pbv');if(!sv||!pbOn())retu
    p.pins.map(([x,y],i)=>`<circle class="pbpin${ph.ins.has(K(c.id,i))?' in':''}" data-c="${c.id}" data-t="${i}" cx="${x*PBP}" cy="${y*PBP}" r="4.6"><title>${esc((c.tag||lab(c))+' · '+tn(c,i))}</title></circle>`).join('')+'</g>';
   if(c.tag&&!['junction','netl','xref'].includes(c.type)){const bb=pbBox(c);hc+=`<text class="pbtag" x="${bb[0]}" y="${bb[1]-3}">${esc(c.tag)}</text>`}}
  for(const v of pbVisibleWires(ph)){const s=pbSelW&&pbSelW.id===v.id,d=wPath(v.pts,v.k==='s'&&v.pts.length===2);hw+=`<g class="pbw${s?' sel':''}" data-w="${v.id}" data-k="${v.k}">${s?`<path d="${d}" stroke="var(--pick)" stroke-width="6" opacity=".45" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`:''}${bWire(d,v.col,2.6)}<path class="pbwhit" d="${d}"/>`+
-  bC(v.pts[0].x,v.pts[0].y,2.2,'#c4cad0',bStk('#6b7178',.6))+bC(v.pts[v.pts.length-1].x,v.pts[v.pts.length-1].y,2.2,'#c4cad0',bStk('#6b7178',.6))+(s&&ed?v.pts.slice(1,-1).map((p,i)=>`<circle class="pbbend" data-i="${i}" cx="${p.x}" cy="${p.y}" r="3.6"/>`).join('')+[['a',v.pts[0]],['b',v.pts[v.pts.length-1]]].map(([k,p])=>`<circle class="pbendh" data-e="${k}" cx="${p.x}" cy="${p.y}" r="${Math.max(4.4,8/pbV.s)}"><title>Arraste para mudar a ponta do fio</title></circle>`).join(''):'')+'</g>'}
+  bC(v.pts[0].x,v.pts[0].y,2.2,'#c4cad0',bStk('#6b7178',.6))+bC(v.pts[v.pts.length-1].x,v.pts[v.pts.length-1].y,2.2,'#c4cad0',bStk('#6b7178',.6))+(s&&ed?v.pts.slice(1,-1).map((p,i)=>`<circle class="pbbend" data-i="${i}" cx="${p.x}" cy="${p.y}" r="3.6"/>`).join('')+[['a',v.pts[0]],['b',v.pts[v.pts.length-1]]].map(([k,p])=>`<circle class="pbendh" data-e="${k}" cx="${p.x}" cy="${p.y}" r="${Math.max(4.4,8/pbV.s)}"><title>${tr('Arraste para mudar a ponta do fio')}</title></circle>`).join(''):'')+'</g>'}
+ hw+=pbDefects(ph);for(const c of S.comps)if((c.type==='mmeter'||c.type==='scope')&&num(c.pbx)&&onSheet(c))hw+=prSVG(c);
  document.getElementById('pbB').innerHTML=hb;document.getElementById('pbC').innerHTML=hc;document.getElementById('pbJ').innerHTML=hw;pbOverlay();pbBar();updHint()}
 function pbOverlay(){const el=document.getElementById('pbO');if(!el)return;let h='';
  if(pbDrag&&pbDrag.t==='box'){const d=pbDrag;h+=bR(Math.min(d.x0,d.x1),Math.min(d.y0,d.y1),Math.abs(d.x1-d.x0),Math.abs(d.y1-d.y0),'rgba(22,104,201,.08)',` stroke="var(--pick)" stroke-width="${1/pbV.s}" stroke-dasharray="${4/pbV.s} ${3/pbV.s}"`)}
@@ -317,10 +330,29 @@ function pbBar(){const el=document.getElementById('pbbar');if(!el)return;const e
  const wsel=pbSelW,cur=wsel?(wsel.k==='s'?(S.wires.find(w=>w.id===wsel.id)||{}).pbc:(S.pb.w.find(w=>w.id===wsel.id)||{}).col):pbCol;
  const h=`<div class="pbgrp"><button data-pb="add" ${ed?'':'disabled'} title="Colocar outra protoboard na bancada">＋ Protoboard ▾</button><div class="pbmenu" hidden><button data-pb="full">Protoboard completa (830 furos)</button><button data-pb="half">Meia protoboard (400 furos)</button><button data-pb="mini">Mini protoboard (170 furos)</button></div></div>`+
   `<div class="pbgrp pbcols" role="group" aria-label="Cor do fio">${Object.keys(PBW).map(k=>`<button class="pbsw${(cur||'')===k||(!cur&&k===pbCol&&!wsel)?' on':''}" data-pbc="${k}" title="Fio ${PBW[k][0].toLowerCase()}" aria-label="Fio ${PBW[k][0].toLowerCase()}" style="--c:${PBW[k][1]}" ${ed?'':'disabled'}></button>`).join('')}</div>`+
+  `<div class="pbgrp"><button data-pb="auto" ${ed?'':'disabled'} title="Encaixa sozinho as peças da bancada na protoboard e liga com jumpers">⚡ Montar na protoboard</button></div>`+
   `<div class="pbgrp"><button data-pb="rot" ${ed&&sel&&sel.c.size?'':'disabled'} title="Girar a peça selecionada (R)">⟳ Girar</button><button data-pb="del" ${ed&&(sel||pbSelW||pbSelB)?'':'disabled'} title="Apagar o que está selecionado (Del)">Apagar</button></div>`+
   (hid?`<span class="pbnote" title="Diagramas ladder, Grafcet, pneumática e itens virtuais não têm peça física">${hid} item(ns) só no esquema</span>`:'');
  if(el.dataset.h!==h){el.dataset.h=h;el.innerHTML=h}}
 
+/* ---------- pontas de prova do multímetro (medem sem mudar o circuito) ---------- */
+const PRB=['a','b'],PRL=c=>c&&c.type==='scope'?['a','b','g']:PRB,PRCOL={a:'#1b1b1b',b:'#d32f2f'},PRSC={a:'#f2c014',b:'#29b6f6',g:'#1b1b1b'};
+const prCol=(c,w)=>c.type==='scope'?PRSC[w]:PRCOL[w];
+function prParse(s){if(typeof s!=='string')return null;const p=s.split(':');if(p[0]==='p'&&p.length===3)return{c:p[1],t:+p[2]};if(p[0]==='h'&&p.length===4)return{bd:p[1],hx:+p[2],hy:+p[3]};if(p[0]==='f'&&p.length===3)return{px:+p[1],py:+p[2]};return null}
+const prStr=e=>e.c?`p:${e.c}:${e.t}`:e.bd?`h:${e.bd}:${e.hx}:${e.hy}`:`f:${Math.round(e.px)}:${Math.round(e.py)}`;
+function prJack(c,w){return pbPin(c,c.type==='scope'?{a:0,b:2,g:1}[w]:w==='a'?0:1)}
+function prTip(c,w){const e=prParse(c['pr'+w]);if(e){const q=e.px!=null?{x:e.px,y:e.py}:pbEndPos(e);if(q)return q}const j=prJack(c,w);const dx=c.type==='scope'?{a:-30,b:40,g:5}[w]:w==='a'?-30:30;return{x:j.x+dx,y:j.y+70}}
+/* terminal (no circuito) que a ponta toca; guarda o resultado durante a simulação */
+function prKey(c,w){const s=c['pr'+w],e=prParse(s);if(!e||e.px!=null)return null;const ck=rt?(rt.prkC||(rt.prkC=new Map())):null,key=c.id+'|'+w+'|'+s;if(ck&&ck.has(key))return ck.get(key);let k=null;
+ if(e.c){if(byId(e.c))k=K(e.c,e.t)}else{const ph=pbPhys(),bd=S.pb.bds.find(b=>b.id===e.bd);if(bd){const root=ph.uf.f(ph.node(e));for(const o of S.comps){if(!pbVis(o)||!num(o.pbx)||o.id===c.id)continue;for(let i=0;i<termsOf(o).length;i++)if(ph.uf.f(K(o.id,i))===root){k=K(o.id,i);break}if(k)break}}}
+ if(ck)ck.set(key,k);return k}
+function prVolt(c,w){if(!pbOnS())return null;const k=prKey(c,w);if(!k)return null;try{return rt.A.vdc(k)}catch(_){return null}}
+function prOn(c){return PRB.every(w=>{const e=prParse(c['pr'+w]);return e&&e.px==null})}
+function prSVG(c){let h='';for(const w of PRL(c)){const j=prJack(c,w),t=prTip(c,w);if(!j)continue;const col=prCol(c,w),my=Math.max(j.y,t.y)+30;h+=`<path d="M${j.x},${j.y}C${j.x},${my} ${t.x},${my+10} ${t.x},${t.y+18}" stroke="${col}" stroke-width="2.4" fill="none" stroke-linecap="round" pointer-events="none"/>`;
+  const ttl=c.type==='scope'?{a:'Ponta do CH1: arraste até um furo ou terminal',b:'Ponta do CH2: arraste até um furo ou terminal',g:'Garra do terra (GND) das pontas: arraste até o GND do circuito'}[w]:w==='a'?'Ponta preta (COM): arraste até um furo ou terminal':'Ponta vermelha (VΩ): arraste até um furo ou terminal';
+  h+=w==='g'?`<g class="pbprobe" data-id="${c.id}" data-p="${w}" transform="translate(${t.x} ${t.y})"><title>${tr(ttl)}</title><path d="M-5,18L-5,6L-2,0L2,0L5,6L5,18Z" fill="${col}"/><path d="M-3,1L0,-3L3,1" fill="none" stroke="#c9ced3" stroke-width="1.6"/><circle cx="0" cy="8" r="9" fill="transparent"/></g>`
+   :`<g class="pbprobe" data-id="${c.id}" data-p="${w}" transform="translate(${t.x} ${t.y})"><title>${tr(ttl)}</title><rect x="-3.2" y="4" width="6.4" height="16" rx="2" fill="${col}"/><rect x="-4" y="14" width="8" height="3" fill="#888"/><path d="M-1.2,4L0,-1L1.2,4Z" fill="#c9ced3"/><circle cx="0" cy="8" r="9" fill="transparent"/></g>`}return h}
+{const mr=mmRead;mmRead=function(c){if(pbOn()&&S.pb&&prOn(c)&&(c.m||'V')==='V'){const a=prVolt(c,'a'),b=prVolt(c,'b');return a==null||b==null?'— — —':fmtE(b-a,'V')}return mr(c)}}
 /* ---------- interação ---------- */
 function pbWorld(e){const b=document.getElementById('pbv').getBoundingClientRect();return{x:(e.clientX-b.left-pbV.x)/pbV.s,y:(e.clientY-b.top-pbV.y)/pbV.s}}
 function pbHoleAt(p,rad=Math.max(4.2,8/pbV.s)){const H=PBH||pbHoles(),x=Math.round(p.x/PBP)*PBP,y=Math.round(p.y/PBP)*PBP,h=H.get(pbCurSh()+'|'+x+','+y);if(!h||Math.hypot(p.x-x,p.y-y)>rad)return null;return h}
@@ -377,6 +409,7 @@ body.sim #pbv .pbpart.act .pbhit{cursor:pointer}
 #pbv .pbwhit{stroke:transparent;stroke-width:9;fill:none;cursor:pointer;stroke-linecap:round}
 #pbv .pbbend{fill:#fff;stroke:var(--pick);stroke-width:1.4;cursor:move}
 #pbO{pointer-events:none}
+#pbv .pbprobe{cursor:grab}
 #pbv .pbendh{fill:rgba(22,104,201,.18);stroke:var(--pick);stroke-width:1.4;cursor:grab}
 #pbv .pbbd{cursor:move}
 #pbv text{user-select:none}
@@ -386,6 +419,8 @@ body.sim #pbv .pbpart.act .pbhit{cursor:pointer}
 @keyframes pbvib{0%{transform:translate(0,0)}25%{transform:translate(.8px,-.6px)}50%{transform:translate(-.7px,.5px)}75%{transform:translate(.5px,.7px)}}
 @media (prefers-reduced-motion:reduce){#pbv .pbspin,#pbv .pbspinr,#pbv .pbvib{animation:none}}
 #bPb.on{background:var(--pick);color:#fff;border-color:var(--pick)}
+@media (max-width:760px){body.pbmode #pbbar{position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));transform:none;width:auto;max-width:none;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;gap:6px;padding:6px;z-index:40;-webkit-overflow-scrolling:touch}
+ body.pbmode #pbbar .pbgrp{flex:0 0 auto}body.pbmode #pbbar .pbnote{display:none}body.pbmode #pbbar .pbmenu{position:fixed;left:8px;bottom:58px}}
 .pitem svg.pbico{width:56px;height:46px}`;document.head.appendChild(css);
 
  /* botão no lugar do antigo Treino */
@@ -397,7 +432,7 @@ body.sim #pbv .pbpart.act .pbhit{cursor:pointer}
  bar.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;const k=b.dataset.pb,menu=bar.querySelector('.pbmenu');
   if(b.dataset.pbc){const col=b.dataset.pbc;if(pbSelW){pushHist();const w=pbSelW.k==='s'?S.wires.find(x=>x.id===pbSelW.id):S.pb.w.find(x=>x.id===pbSelW.id);if(w){if(pbSelW.k==='s')w.pbc=col;else w.col=col}commit()}pbCol=col;try{localStorage.setItem('faisca-pbcol',col)}catch(_){}pbBar();return}
   if(k==='add'){if(menu)menu.hidden=!menu.hidden;return}if(menu)menu.hidden=true;
-  if(PBK[k])pbAddBoard(k);else if(k==='rot')pbRot();else if(k==='del'){if(!pbDelSel())delSel()}});
+  if(PBK[k])pbAddBoard(k);else if(k==='auto')pbAutoMount();else if(k==='rot')pbRot();else if(k==='del'){if(!pbDelSel())delSel()}});
 
  sv.addEventListener('contextmenu',e=>e.preventDefault());
  sv.addEventListener('wheel',e=>{e.preventDefault();const b=sv.getBoundingClientRect();pbZoomAt(e.clientX-b.left,e.clientY-b.top,Math.exp(-e.deltaY*.0015))},{passive:false});
@@ -407,6 +442,7 @@ body.sim #pbv .pbpart.act .pbhit{cursor:pointer}
   const pan=()=>{pbDrag={t:'pan',sx:e.clientX,sy:e.clientY,vx:pbV.x,vy:pbV.y,moved:false};try{sv.setPointerCapture(e.pointerId)}catch(_){}};
   if(e.button===2){if(pbTool){pbTool=null;pbOverlay();return}if(tool){tool=null;renderAll();return}pan();return}
   if(e.button===1){e.preventDefault();pan();return}if(e.button!==0)return;
+  const prEl=e.target.closest('.pbprobe');if(prEl){const c=byId(prEl.dataset.id);if(c){if(mode==='edit')pushHist();pbDrag={t:'probe',c,w:prEl.dataset.p,moved:false};try{sv.setPointerCapture(e.pointerId)}catch(_){}}return}
   const gEl=e.target.closest('.pbpart'),c=gEl&&byId(gEl.dataset.id);
   if(mode==='sim'){if(!c){pan();return}const d=D(c),hit=e.target.closest('.pbhit');
    if(hit&&d.hitClick){e.preventDefault();const r=d.hitClick(c,+hit.dataset.hx,+hit.dataset.hy);if(r==='hold')pbHeld=c;solve();refresh(true);return}
@@ -414,12 +450,12 @@ body.sim #pbv .pbpart.act .pbhit{cursor:pointer}
    if((rt.burnt&&rt.burnt[c.id])||actOf(c)){simPress(c.id);return}pan();return}
   /* edição */
   if(tool&&tool.key){const pr0=tool.proto;if(!pbVis(pr0)){toast('Esse item não tem peça física: coloque-o no esquema (desligue o modo Protoboard).',true);tool=null;renderAll();return}
-   pushHist();const sp=pbSchemPos(),nc=placeComp(pr0,sp.x,sp.y,0);nc.pbx=Math.round(p.x/PBP)*PBP;nc.pby=Math.round(p.y/PBP)*PBP;nc.pbr=tool.pbr||0;S.comps.push(nc);tool=null;sel=mkSel([nc.id]);pbSelW=null;pbSelB=null;commit();return}
+   pushHist();const sp=pbSchemPos(),nc=placeComp(pr0,sp.x,sp.y,0);nc.pbx=Math.round(p.x/PBP)*PBP;nc.pby=Math.round(p.y/PBP)*PBP;nc.pbr=tool.pbr||0;nc.pbsp=1;nc.pbsx=nc.x;nc.pbsy=nc.y;S.comps.push(nc);tool=null;sel=mkSel([nc.id]);pbSelW=null;pbSelB=null;commit();return}
   const wEl=e.target.closest('.pbw'),bendEl=e.target.closest('.pbbend'),endEl=e.target.closest('.pbendh');
   if(endEl&&wEl){const v=pbFindW(wEl.dataset.w,wEl.dataset.k);if(v){pbDrag={t:'end',v,which:endEl.dataset.e,moved:false};try{sv.setPointerCapture(e.pointerId)}catch(_){}}return}
   if(bendEl&&wEl){const v=pbFindW(wEl.dataset.w,wEl.dataset.k);if(v){pbDrag={t:'bend',w:v,i:+bendEl.dataset.i,moved:false};try{sv.setPointerCapture(e.pointerId)}catch(_){}}return}
   if(pbV.s<.9&&(pbNearPin(p)||pbHoleAt(p))){const r=sv.getBoundingClientRect();pbZoomAt(e.clientX-r.left,e.clientY-r.top,1.8/pbV.s);pbOverlay();if(!pbZoomTip){pbZoomTip=1;toast('Aproximei para você acertar o terminal. Clique de novo.')}return}
-  if(pbTool){const end=pbEndAt(e,p);if(end){pbFinishWire(end);return}pbTool.pts.push([Math.round(p.x/5)*5,Math.round(p.y/5)*5]);pbOverlay();return}
+  if(pbTool){const end=pbEndAt(e,p);if(end){pbFinishWire(end);return}{const last=pbTool.pts.length?{x:pbTool.pts[pbTool.pts.length-1][0],y:pbTool.pts[pbTool.pts.length-1][1]}:pbEndPos(pbTool.from)||p,x=Math.round(p.x/5)*5,y=Math.round(p.y/5)*5;pbTool.pts.push(Math.abs(x-last.x)>=Math.abs(y-last.y)?[x,last.y]:[last.x,y])}pbOverlay();return}
   const np=pbPinAt(e,p);if(np){pbTool={from:{c:np.c,t:np.t},pts:[]};pbDrag={t:'wire',sx:e.clientX,sy:e.clientY,moved:false};sel=null;pbSelW=null;pbSelB=null;renderProps();updSelBtns();pbRender();try{sv.setPointerCapture(e.pointerId)}catch(_){}return}
   if(c){const multi=e.shiftKey||e.ctrlKey||e.metaKey;pbSelW=null;pbSelB=null;if(multi){select(toggleSel('c',c.id));pbRender();return}if(!SC(c.id))select(mkSel([c.id]));
    const orig={};sel.c.forEach(id=>{const o=byId(id);if(o&&num(o.pbx))orig[id]={x:o.pbx,y:o.pby}});pbDrag={t:'part',ids:Object.keys(orig),orig,sx:p.x,sy:p.y,moved:false};try{sv.setPointerCapture(e.pointerId)}catch(_){}pbRender();return}
@@ -437,6 +473,7 @@ body.sim #pbv .pbpart.act .pbhit{cursor:pointer}
   const p=pbWorld(e);pbPtr=p;const d=pbDrag;
   if(d&&d.t==='wire'&&Math.hypot(e.clientX-d.sx,e.clientY-d.sy)>6)d.moved=true;
   if(d&&d.t==='box'){d.x1=p.x;d.y1=p.y;pbOverlay();return}
+  if(d&&d.t==='probe'){d.moved=true;d.c['pr'+d.w]=prStr({px:p.x,py:p.y-8});const np=pbNearPin(p),h=np?null:pbHoleAt(p);pbHover=np?{pin:1,x:np.x,y:np.y,k:'e'}:h?{net:h.net,x:h.x,y:h.y,k:'e'}:null;pbRender();pbOverlay();return}
   if(d&&d.t==='pan'){pbV.x=d.vx+e.clientX-d.sx;pbV.y=d.vy+e.clientY-d.sy;d.moved=true;pbApplyView();return}
   if(d&&d.t==='part'){const dx=Math.round((p.x-d.sx)/PBP)*PBP,dy=Math.round((p.y-d.sy)/PBP)*PBP;if(!d.moved&&!dx&&!dy)return;if(!d.moved){pushHist();d.moved=true}for(const id of d.ids){const o=byId(id);if(o){o.pbx=d.orig[id].x+dx;o.pby=d.orig[id].y+dy}}pbRender();return}
   if(d&&d.t==='board'){const dx=Math.round((p.x-d.sx)/PBP)*PBP,dy=Math.round((p.y-d.sy)/PBP)*PBP;if(!d.moved&&!dx&&!dy)return;if(!d.moved){pushHist();d.moved=true}d.bd.x=d.orig.bd.x+dx;d.bd.y=d.orig.bd.y+dy;
@@ -446,10 +483,10 @@ body.sim #pbv .pbpart.act .pbhit{cursor:pointer}
   /* realce do furo/terminal sob o cursor */
   let hv=null;const body=pbOnBody(e)&&!pbTool,np=mode==='edit'?(pbTool?pbNearPin(p):pbPinAt(e,p)):null;
   if(np){const c=byId(np.c);hv={pin:1,x:np.x,y:np.y,tip:`${c.tag||lab(c)} · ${tn(c,np.t)}`}}
-  else if(!body){const h=pbHoleAt(p);if(h)hv={net:h.net,x:h.x,y:h.y,tip:h.rail!=null?`Barramento ${h.rail%2?'+':'−'}`:`${h.row}${h.col}`}}
+  else if(!body){const h=pbHoleAt(p);if(h)hv={net:h.net,x:h.x,y:h.y,tip:h.rail!=null?`${tr('Barramento')} ${h.rail%2?'+':'−'}`:`${h.row}${h.col}`}}
   if(pbTool){pbTool.snap=hv?{x:hv.x,y:hv.y}:null}
   const k=hv?hv.x+','+hv.y+(hv.tip||''):'';if(k!==(pbHover?pbHover.k:'')||pbTool||(tool&&tool.key)){pbHover=hv?{...hv,k}:null;pbOverlay()}});
- const up=e=>{if(e&&TP.has(e.pointerId)){TP.delete(e.pointerId);if(pinch){if(TP.size<2)pinch=null;return}}const d=pbDrag;pbDrag=null;if(d&&d.t==='wire'){if(d.moved&&pbTool){const end=pbEndAt({target:document.body},pbPtr);if(end&&!sameEnd(end,pbTool.from))pbFinishWire(end);else{pbTool=null;pbRender()}}return}if(d&&d.t==='end'){if(d.moved)pbMoveEnd(d.v,d.which,pbEndAt({target:document.body},pbPtr));else pbRender();return}if(d&&d.t==='box'){pbBoxSel(d);return}if(d&&(d.t==='part'||d.t==='board'||d.t==='bend')&&d.moved){commit()}else if(d&&d.t!=='pan')pbOverlay();
+ const up=e=>{if(e&&TP.has(e.pointerId)){TP.delete(e.pointerId);if(pinch){if(TP.size<2)pinch=null;return}}const d=pbDrag;pbDrag=null;if(d&&d.t==='wire'){if(d.moved&&pbTool){const end=pbEndAt({target:document.body},pbPtr);if(end&&!sameEnd(end,pbTool.from))pbFinishWire(end);else{pbTool=null;pbRender()}}return}if(d&&d.t==='probe'){if(d.moved){const end=pbEndAt({target:document.body},pbPtr);d.c['pr'+d.w]=prStr(end||{px:pbPtr.x,py:pbPtr.y-8});pbHover=null;if(mode==='edit')commit();else{save();pbRender();refresh(true)}}return}if(d&&d.t==='end'){if(d.moved)pbMoveEnd(d.v,d.which,pbEndAt({target:document.body},pbPtr));else pbRender();return}if(d&&d.t==='box'){pbBoxSel(d);return}if(d&&(d.t==='part'||d.t==='board'||d.t==='bend')&&d.moved){commit()}else if(d&&d.t!=='pan')pbOverlay();
   if(pbHeld&&rt){const dd=D(pbHeld);if(dd.release)dd.release(pbHeld);pbHeld=null;solve();refresh(true)}pbHeld=null};
  addEventListener('pointerup',up);addEventListener('pointercancel',up);
  sv.addEventListener('pointerleave',()=>{if(pbHover){pbHover=null;pbOverlay()}});
@@ -486,7 +523,7 @@ function pbExportSVG(){const keep=[sel,pbSelW,pbSelB,pbTool,pbHover];sel=null;pb
 function pbCanvas(cb){const x=pbExportSVG();if(!x){toast('A protoboard está vazia.',true);return}const k=Math.min(4,8000/Math.max(x.W,x.H)),img=new Image(),url=URL.createObjectURL(new Blob([x.svg],{type:'image/svg+xml'}));
  img.onload=()=>{const cv=document.createElement('canvas');cv.width=Math.round(x.W*k);cv.height=Math.round(x.H*k);const g=cv.getContext('2d');g.fillStyle='#f4f6f9';g.fillRect(0,0,cv.width,cv.height);g.drawImage(img,0,0,cv.width,cv.height);URL.revokeObjectURL(url);cb(cv)};
  img.onerror=()=>{URL.revokeObjectURL(url);toast('Não consegui gerar a imagem da protoboard.',true)};img.src=url}
-function pbPng(){pbCanvas(cv=>cv.toBlob(b=>{const n=safeName(fname)+'-protoboard';download(b,n+'.png');toast(tr('Imagem PNG gerada: ')+n+'.png')},'image/png'))}
+function pbPng(){pbCanvas(cv=>cv.toBlob(b=>{const n=safeName(fname)+'-protoboard';download(b,n+'.png');toast((LANG==='en'?'PNG image created: ':'Imagem PNG gerada: ')+n+'.png')},'image/png'))}
 function pbPdf(){pbCanvas(cv=>{const jpg=atob(cv.toDataURL('image/jpeg',.92).split(',')[1]),J=new Uint8Array(jpg.length);for(let i=0;i<jpg.length;i++)J[i]=jpg.charCodeAt(i);
  const PW=842,PH=595,m=28,top=24,sc=Math.min((PW-2*m)/cv.width,(PH-2*m-top)/cv.height),dw=cv.width*sc,dh=cv.height*sc,dx=(PW-dw)/2,dy=m+((PH-2*m-top)-dh)/2;
  const title=(safeName(fname).replace(/-/g,' ')+' - protoboard').replace(/[()\\]/g,''),enc=new TextEncoder(),parts=[],off=[];let len=0;const put=x=>{const b=typeof x==='string'?enc.encode(x):x;parts.push(b);len+=b.length};
@@ -495,7 +532,40 @@ function pbPdf(){pbCanvas(cv=>{const jpg=atob(cv.toDataURL('image/jpeg',.92).spl
  put('%PDF-1.4\n');obj(1,'<</Type/Catalog/Pages 2 0 R>>');obj(2,'<</Type/Pages/Kids[3 0 R]/Count 1>>');obj(3,`<</Type/Page/Parent 2 0 R/MediaBox[0 0 ${PW} ${PH}]/Resources<</XObject<</Im0 4 0 R>>/Font<</F1 6 0 R>>>>/Contents 5 0 R>>`);
  obj(4,`<</Type/XObject/Subtype/Image/Width ${cv.width}/Height ${cv.height}/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length ${J.length}>>\nstream\n`,J);obj(5,`<</Length ${cs.length}>>\nstream\n`,enc.encode(cs));obj(6,'<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>');
  const x0=len;let xr=`xref\n0 7\n0000000000 65535 f \n`;for(let i=1;i<=6;i++)xr+=String(off[i]).padStart(10,'0')+' 00000 n \n';put(xr+`trailer\n<</Size 7/Root 1 0 R>>\nstartxref\n${x0}\n%%EOF`);
- const n=safeName(fname)+'-protoboard';download(new Blob(parts,{type:'application/pdf'}),n+'.pdf');toast('PDF gerado: '+n+'.pdf')})}
+ const n=safeName(fname)+'-protoboard';download(new Blob(parts,{type:'application/pdf'}),n+'.pdf');toast((LANG==='en'?'PDF created: ':'PDF gerado: ')+n+'.pdf')})}
+function pbAutoMount(silent){if(mode!=='edit')return;pbInit();pbSheetBoard();
+ const H=pbHoles(),onB=c=>termsOf(c).some((_,i)=>pbIns(c,i,H)),parts=S.comps.filter(c=>pbVis(c)&&num(c.pbx)&&onSheet(c)&&!pkgOf(c).sock&&!onB(c)&&pkgOf(c).pins.length);
+ const srcs=S.comps.filter(c=>c.type==='src'&&onSheet(c)&&num(c.pbx));
+ if(!parts.length&&!srcs.length){if(!silent)toast('Todas as peças já estão na protoboard.');return}if(!silent)pushHist();
+ const boards=S.pb.bds.filter(b=>bdOn(b)&&PBK[b.k].rails).sort((a,b)=>a.y-b.y);const newBoard=()=>{let n=1;while(S.pb.bds.some(b=>b.id==='pb'+n))n++;let y=0;for(const b of S.pb.bds.filter(bdOn))y=Math.max(y,b.y+bdGeo(b).h*PBP+40);const b={id:'pb'+n,k:'full',x:0,y,sh:S.cur||1};S.pb.bds.push(b);boards.push(b);return b};
+ if(!boards.length)newBoard();
+ const occ=new Map(),U=b=>{if(!occ.has(b.id)){const g=bdGeo(b),o={t:new Array(g.n+6).fill(false),b:new Array(g.n+6).fill(false)};for(const c of S.comps){if(!onSheet(c)||!num(c.pbx))continue;termsOf(c).forEach((_,i)=>{const h=pbIns(c,i,H);if(h&&h.bd===b.id&&h.rail==null)(h.hy<g.mid?o.t:o.b)[h.hx]=true})}occ.set(b.id,o)}return occ.get(b.id)};
+ const fit=(c,b)=>{const g=bdGeo(b),u=U(b),top=g.rows.slice(0,5),bot=g.rows.slice(5),pk=pkgOf(c),ys=[...new Set(pk.pins.map(q=>q[1]))].sort((a,z)=>a-z),xs=pk.pins.map(q=>q[0]),x0=Math.min(...xs),x1=Math.max(...xs),dy=ys[ys.length-1]-ys[0];
+  const sy=[...top].reverse().find(y=>bot.includes(y+dy)),opts=ys.length===1?[[top[2]-ys[0],'t'],[bot[2]-ys[0],'b']]:dy===1?[[top[1]-ys[0],'t'],[bot[1]-ys[0],'b']]:ys.length===2&&sy!=null?[[sy-ys[0],'s']]:null;if(!opts)return null;
+  const bx0=Math.min(x0,Math.floor(pk.box[0]/PBP)+1),bx1=Math.max(x1,Math.ceil(pk.box[2]/PBP)-1);
+  for(const[y0,half]of opts)for(let col=3;col+x1-x0<=g.n+1;col++){const cols=[];for(let x=bx0;x<=bx1;x++)if(col+x-x0>=1)cols.push(col+x-x0);const fr=cols.concat([cols[cols.length-1]+1]).every(cc=>cc<=g.n+1&&(half==='t'?!u.t[cc]:half==='b'?!u.b[cc]:!u.t[cc]&&!u.b[cc]));if(!fr)continue;
+   cols.concat([cols[cols.length-1]+1]).forEach(cc=>{if(half!=='b')u.t[cc]=true;if(half!=='t')u.b[cc]=true});return{x:b.x+(col-x0)*PBP,y:b.y+y0*PBP}}return null};
+ let placed=0;const out=[];parts.sort((a,b)=>pkgOf(b).pins.length-pkgOf(a).pins.length||(a.x-b.x));
+ for(const c of parts){let pos=null;for(const b of boards){pos=fit(c,b);if(pos)break}if(!pos&&boards.length<4){pos=fit(c,newBoard())}if(!pos){out.push(c);continue}c.pbr=0;c.pbx=pos.x;c.pby=pos.y;placed++}
+ /* fontes (+ / 0 V) viram etiquetas ao lado do barramento */
+ const b0=boards[0];
+ /* jumpers da protoboard para cada ligação do esquema */
+ const H2=pbHoles(),uf=pbUF();for(const w of S.wires)uf.u(K(w.a.c,w.a.t),K(w.b.c,w.b.t));pbNameJoin(uf);const nets=new Map();
+ for(const c of S.comps){if(!onSheet(c)||!pbVis(c)||!num(c.pbx)||['junction','netl','xref'].includes(c.type))continue;termsOf(c).forEach((_,i)=>{const k=K(c.id,i),r=uf.f(k);if(!nets.has(r))nets.set(r,[]);nets.get(r).push({c,i})})}
+ const usedH=new Set();for(const c of S.comps){if(!num(c.pbx))continue;pkgOf(c).pins.forEach((_,i)=>{const q=pbPin(c,i);if(q)usedH.add(q.x+','+q.y)})}for(const w of S.pb.w)for(const e of[w.a,w.b])if(e.bd){const b=S.pb.bds.find(x=>x.id===e.bd);if(b)usedH.add((b.x+e.hx*PBP)+','+(b.y+e.hy*PBP))}
+ const freeIn=(net,pref)=>{const L=[...H2.values()].filter(v=>v.net===net&&!usedH.has(v.x+','+v.y));if(!L.length)return null;L.sort(pref);const h=L[0];usedH.add(h.x+','+h.y);const b=S.pb.bds.find(x=>x.id===h.bd);return{e:{bd:b.id,hx:(h.x-b.x)/PBP,hy:(h.y-b.y)/PBP},x:h.x}};
+ const ph=pbPhys();let nj=0,ci=0;const COLS=['verde','azul','amarelo','laranja','roxo','branco','ciano','rosa','marrom','cinza'];
+ for(const L of nets.values()){const sv=L.find(({c})=>c.type==='src');const kind=sv?(String(sv.c.v)==='+'?'+':'-'):null;if(L.length<2&&!kind)continue;const ends=[],seen=new Set();
+  for(const{c,i}of L){if(c.type==='src')continue;const h=pbIns(c,i,H2);if(h){const key='N'+h.net;if(seen.has(key))continue;seen.add(key);const g=bdGeo(S.pb.bds.find(x=>x.id===h.bd)),e=freeIn(h.net,(a,z)=>Math.abs(z.hy-g.mid)-Math.abs(a.hy-g.mid));if(e)ends.push({...e,root:ph.uf.f(K(c.id,i))})}
+   else if(pkgOf(c).sock){const q=pbPin(c,i);ends.push({e:{c:c.id,t:i},x:q?q.x:0,root:ph.uf.f(K(c.id,i))})}}
+  const names=L.map(({c,i})=>String(tn(c,i)).toUpperCase()).join(' '),col=kind==='-'||/\b(GND|0V)\b|−/.test(names)?'preto':kind==='+'||/(5V|VCC|3V)/.test(names)?'vermelho':COLS[ci++%COLS.length];
+  if(kind){/* rede da fonte: cada ponta vai ao barramento da sua placa; a etiqueta da fonte liga no barramento da primeira */
+   const railOf=b=>{const g=bdGeo(b);return kind==='+'?`${b.id}:r1`:`${b.id}:r0`};const bs=new Set();
+   for(const en of ends){const bd=en.e.bd?S.pb.bds.find(x=>x.id===en.e.bd):b0;const r=freeIn(railOf(bd),(a,z)=>Math.abs(a.x-en.x)-Math.abs(z.x-en.x));if(r){S.pb.w.push({id:'pw'+(S.seq++),a:en.e,b:r.e,col});nj++;bs.add(bd.id)}}
+   for(const id of bs)if(id!==b0.id){const b=S.pb.bds.find(x=>x.id===id),r1=freeIn(railOf(b0),(a,z)=>a.x-z.x),r2=freeIn(railOf(b),(a,z)=>a.x-z.x);if(r1&&r2){S.pb.w.push({id:'pw'+(S.seq++),a:r1.e,b:r2.e,col});nj++}}continue}
+  if(ends.length<2)continue;ends.sort((a,b)=>a.x-b.x);
+  for(let k=1;k<ends.length;k++){S.pb.w.push({id:'pw'+(S.seq++),a:ends[k-1].e,b:ends[k].e,col});nj++}}
+ commit();if(silent){requestAnimationFrame(pbFit);return}const ns=out.map(c=>c.tag||lab(c)).slice(0,4).join(', ');toast(LANG==='en'?`Auto assembly: ${placed} part(s) placed and ${nj} jumper(s).`+(out.length?` ${out.length} did not fit (${ns}).`:''):`Montagem automática: ${placed} peça(s) encaixada(s) e ${nj} jumper(s).`+(out.length?` ${out.length} não couberam (${ns}).`:''))}
 function pbFindW(id,k){const ph=pbPhys();return pbVisibleWires(ph).find(v=>v.id===id&&v.k===k)||null}
 function pbToggle(){pbInit();S.pb.on=!S.pb.on;pbTool=null;pbSelW=null;pbSelB=null;if(S.pb.on){pbPlaceNew();pbSync()}save();renderAll();if(S.pb.on)requestAnimationFrame(()=>{if(S.pb.vs){pbV={x:S.pb.vx,y:S.pb.vy,s:S.pb.vs};pbApplyView()}else pbFit()})}
 let pbPalOn=null;
@@ -532,12 +602,24 @@ function pbBreak(a,b){const out=[];for(let n=0;n<12&&pbConn(a,b);n++){
  return out}
 function pbHonor(gone){const msg=new Set();for(const[a,b]of gone){if(!byId(a.split(':')[0])||!byId(b.split(':')[0]))continue;const sch=pbUF();for(const w of S.wires)sch.u(K(w.a.c,w.a.t),K(w.b.c,w.b.t));if(sch.f(a)===sch.f(b))continue;if(!pbConn(a,b))continue;pbBreak(a,b).forEach(x=>msg.add(x))}
  if(msg.size){const ps=[...msg].filter(x=>x!=='jumper'),j=msg.has('jumper');setTimeout(()=>toast(`Ligação desfeita também na protoboard: ${[ps.length?ps.join(', ')+(ps.length>1?' saíram':' saiu')+' da placa':'',j?'jumper retirado':''].filter(Boolean).join(' e ')}.`),0)}}
-let pbAutoS=null,pbAuto=new Map();
-{const _c=commit;commit=function(){if(S.pb&&!S.nopb){try{pbFixDup()}catch(e){console.error(e)}try{if(pbAutoS===S){const gone=[];for(const[id,ab]of pbAuto)if(!S.wires.some(w=>w.id===id))gone.push(ab);if(gone.length)pbHonor(gone)}pbSync();pbAutoS=S;pbAuto=new Map(S.wires.filter(w=>w.pb).map(w=>[w.id,[K(w.a.c,w.a.t),K(w.b.c,w.b.t)]]))}catch(e){console.error(e)}if(pbOn()){S.pb.vx=pbV.x;S.pb.vy=pbV.y;S.pb.vs=pbV.s}}_c()}}
+let pbAutoS=null,pbAuto=new Map(),PBNEW=[];
+/* no esquema: peça colocada pela protoboard vai para perto da peça ligada a ela */
+function pbFreeAt(c,x,y){const o={...c,x,y},b=wbox(o,true);for(const q of S.comps){if(q.id===c.id||!onSheet(q)||(q.sh||1)!==(c.sh||1))continue;const r=wbox(q,true);if(b[0]<r[2]+16&&b[2]>r[0]-16&&b[1]<r[3]+16&&b[3]>r[1]-16)return false}return true}
+function pbSchemNear(){let mv=false;for(const c of S.comps){if(!c.pbsp)continue;if(c.x!==c.pbsx||c.y!==c.pbsy){delete c.pbsp;delete c.pbsx;delete c.pbsy;continue}
+  const w=S.wires.find(w=>(w.a.c===c.id||w.b.c===c.id)&&w.a.c!==w.b.c&&(()=>{const o=byId(w.a.c===c.id?w.b.c:w.a.c),nn=x=>parseInt(String(x.id).replace(/\D/g,''))||0;return o&&o.type!=='junction'&&(!o.pbsp||nn(o)<nn(c))})());if(!w)continue;
+  const n=byId(w.a.c===c.id?w.b.c:w.a.c);let done=false;for(let r=1;r<=12&&!done;r++)for(const[dx,dy]of[[1,0],[0,1],[-1,0],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]]){const x=snap(n.x+dx*r*60),y=snap(n.y+dy*r*60);if(pbFreeAt(c,x,y)){c.x=x;c.y=y;done=true;mv=true;break}}
+  delete c.pbsp;delete c.pbsx;delete c.pbsy}return mv}
+/* no esquema: fio criado pela protoboard desvia dos componentes (em ângulo reto) */
+function pbRoute(ids){for(const id of ids){const w=S.wires.find(x=>x.id===id);if(!w)continue;const a=byId(w.a.c),b=byId(w.b.c);if(!a||!b||!onSheetAll(a,b))continue;try{const P=tp(a,w.a.t),Q=tp(b,w.b.t),obs=obstaclesFor(a,b);if(!routeHits(wpts(P,Q,w),obs))continue;
+  const r0=wmode(P,Q,null),st=!!r0.straight,modes=st?[P.x===Q.x?'h':'v']:[r0.o,r0.o==='v'?'h':'v'],ctr=o=>st?(o==='h'?P.x:P.y):(o==='v'?snap((P.y+Q.y)/2):snap((P.x+Q.x)/2));
+  let best=null;for(let k=0;k<=30&&!best;k++)for(const o of modes)for(const sg of k?[1,-1]:[1]){const m=ctr(o)+sg*k*G;if(!routeHits(wpts(P,Q,{o,m}),obs)){best={o,m};break}}
+  if(best){w.o=best.o;w.m=best.m}}catch(e){}}}
+const onSheetAll=(a,b)=>(a.sh||1)===(b.sh||1);
+{const _c=commit;commit=function(){if(S.pb&&!S.nopb){try{pbFixDup()}catch(e){console.error(e)}try{if(pbAutoS===S){const gone=[];for(const[id,ab]of pbAuto)if(!S.wires.some(w=>w.id===id))gone.push(ab);if(gone.length)pbHonor(gone)}PBNEW=[];pbSync();if(pbSchemNear()){PBNEW=S.wires.filter(w=>w.pb).map(w=>w.id)}if(PBNEW.length)pbRoute(PBNEW);PBNEW=[];pbAutoS=S;pbAuto=new Map(S.wires.filter(w=>w.pb).map(w=>[w.id,[K(w.a.c,w.a.t),K(w.b.c,w.b.t)]]))}catch(e){console.error(e)}if(pbOn()){S.pb.vx=pbV.x;S.pb.vy=pbV.y;S.pb.vs=pbV.s}}_c()}}
 {const _r=renderAll;let lastP=null;renderAll=function(){_r();pbSyncUI();if(pbOn()){if(lastP!==IDX.cur){lastP=IDX.cur;PBBC={};if(S.pb.vs){pbV={x:S.pb.vx,y:S.pb.vy,s:S.pb.vs};pbApplyView()}else requestAnimationFrame(pbFit)}pbRender()}}}
 {const _f=refresh;refresh=function(force){_f(force);if(pbOn())pbRender()}}
 {const _s=select;select=function(x){_s(x);if(pbOn())pbRender()}}
-{const _u=updHint;updHint=function(){_u();if(!pbOn())return;const h=document.getElementById('hint');if(h)h.textContent=mode==='sim'?'Clique nos botões, chaves e sensores para operar. Shift + clique segura uma botoeira apertada.':tool&&tool.key?`Clique na bancada para colocar: ${tool.proto.nm||D(tool.proto).n}. R gira, Esc cancela.`:pbTool?'Clique noutro terminal ou furo para terminar o fio. Clique no vazio para fazer uma curva. Esc ou botão direito cancela.':'Arraste as peças para os furos. Clique num terminal ou furo para puxar um fio. Fio selecionado: arraste a ponta para trocar de terminal; duplo clique cria curva. Arraste o vazio para selecionar; botão direito ou do meio move a vista.'}}
+{const _u=updHint;updHint=function(){_u();if(!pbOn())return;const h=document.getElementById('hint');if(h)h.textContent=tr(mode==='sim'?'Clique nos botões, chaves e sensores para operar. Shift + clique segura uma botoeira apertada.':tool&&tool.key?(LANG==='en'?`Click on the bench to place: ${tr(tool.proto.nm||D(tool.proto).n)}. R rotates, Esc cancels.`:`Clique na bancada para colocar: ${tool.proto.nm||D(tool.proto).n}. R gira, Esc cancela.`):pbTool?'Clique noutro terminal ou furo para terminar o fio. Clique no vazio para fazer uma curva. Esc ou botão direito cancela.':'Arraste as peças para os furos. Clique num terminal ou furo para puxar um fio. Fio selecionado: arraste a ponta para trocar de terminal; duplo clique cria curva. Arraste o vazio para selecionar; botão direito ou do meio move a vista.')}}
 {const _d=delSel;delSel=function(){if(pbOn()&&pbDelSel())return;_d()}}
 {const _ro=rotSel;rotSel=function(){if(pbOn())return pbRot();_ro()}}
 {const zo=$('#bZo').onclick,fi=$('#bFit').onclick;$('#bZo').onclick=()=>{if(!pbOn())return zo();const b=document.getElementById('pbv').getBoundingClientRect();pbZoomAt(b.width/2,b.height/2,1/1.2)};$('#bFit').onclick=()=>pbOn()?pbFit():fi();
@@ -548,8 +630,13 @@ Object.assign(I18N_EXACT,{'Protoboard':'Breadboard','＋ Protoboard ▾':'＋ Br
  '⟳ Girar':'⟳ Rotate','Apagar':'Delete','Colocar outra protoboard na bancada':'Add another breadboard to the bench','Girar a peça selecionada (R)':'Rotate the selected part (R)','Apagar o que está selecionado (Del)':'Delete the selection (Del)',
  'Mostrar o circuito montado numa protoboard (e voltar ao esquema)':'Show the circuit built on a breadboard (and back to the schematic)','Cor do fio':'Wire color','Esses dois terminais já estão ligados.':'These two terminals are already connected.',
  'Esse item não tem peça física: coloque-o no esquema (desligue o modo Protoboard).':'This item has no physical part: place it in the schematic (turn Breadboard mode off).','Modo Protoboard':'Breadboard mode',
- 'Diagramas ladder, Grafcet, pneumática e itens virtuais não têm peça física':'Ladder, Grafcet, pneumatic and virtual items have no physical part','Protoboards':'Breadboards','Protoboard':'Breadboard','Meia protoboard':'Half breadboard','Mini protoboard':'Mini breadboard','Componentes básicos':'Basic components','Energia':'Power','Transistores, reguladores e relés':'Transistors, regulators and relays','Sensores e entradas':'Sensors and inputs','Saídas, motores e telas':'Outputs, motors and displays','Microcontroladores e conectores':'Microcontrollers and connectors','Circuitos integrados':'Integrated circuits','Instrumentos':'Instruments','Usar a protoboard neste projeto (botão Protoboard e montagem sincronizada)':'Use the breadboard in this project (Breadboard button and synced assembly)','Protoboard ativada neste projeto.':'Breadboard turned on for this project.','Protoboard desligada neste projeto. As ligações viraram fios normais do esquema.':'Breadboard turned off for this project. Its connections became normal schematic wires.'});
+ 'Diagramas ladder, Grafcet, pneumática e itens virtuais não têm peça física':'Ladder, Grafcet, pneumatic and virtual items have no physical part','Protoboards':'Breadboards','Protoboard':'Breadboard','Meia protoboard':'Half breadboard','Mini protoboard':'Mini breadboard','Componentes básicos':'Basic components','Energia':'Power','Transistores, reguladores e relés':'Transistors, regulators and relays','Sensores e entradas':'Sensors and inputs','Saídas, motores e telas':'Outputs, motors and displays','Microcontroladores e conectores':'Microcontrollers and connectors','Circuitos integrados':'Integrated circuits','Instrumentos':'Instruments','⚡ Montar na protoboard':'⚡ Build on breadboard','Encaixa sozinho as peças da bancada na protoboard e liga com jumpers':'Places the bench parts on the breadboard and wires them with jumpers','Todas as peças já estão na protoboard.':'All parts are already on the breadboard.',
+ 'Clique nos botões, chaves e sensores para operar. Shift + clique segura uma botoeira apertada.':'Click buttons, switches and sensors to operate them. Shift + click holds a push button down.',
+ 'Clique noutro terminal ou furo para terminar o fio. Clique no vazio para fazer uma curva. Esc ou botão direito cancela.':'Click another terminal or hole to finish the wire. Click an empty spot to make a bend. Esc or right click cancels.',
+ 'Arraste as peças para os furos. Clique num terminal ou furo para puxar um fio. Fio selecionado: arraste a ponta para trocar de terminal; duplo clique cria curva. Arraste o vazio para selecionar; botão direito ou do meio move a vista.':'Drag parts into the holes. Click a terminal or hole to pull a wire. Selected wire: drag its end to another terminal; double click adds a bend. Drag on empty space to select; right or middle button moves the view.',
+ 'Aproximei para você acertar o terminal. Clique de novo.':'Zoomed in so you can hit the right terminal. Click again.','A protoboard está vazia.':'The breadboard is empty.','Não consegui gerar a imagem da protoboard.':'Could not create the breadboard image.',
+ 'Barramento':'Rail','Arraste para mudar a ponta do fio':'Drag to move the wire end','Não consegui baixar o arquivo.':'Could not download the file.','Usar a protoboard neste projeto (botão Protoboard e montagem sincronizada)':'Use the breadboard in this project (Breadboard button and synced assembly)','Protoboard ativada neste projeto.':'Breadboard turned on for this project.','Protoboard desligada neste projeto. As ligações viraram fios normais do esquema.':'Breadboard turned off for this project. Its connections became normal schematic wires.'});
 I18N_PHR.push(['Ligação desfeita também na protoboard','Connection also undone on the breadboard'],['saíram da placa','left the board'],['saiu da placa','left the board'],['jumper retirado','jumper removed']);
 Object.keys(PBW).forEach(k=>{I18N_EXACT['Fio '+PBW[k][0].toLowerCase()]=({verde:'Green',vermelho:'Red',preto:'Black',azul:'Blue',amarelo:'Yellow',laranja:'Orange',branco:'White',roxo:'Purple',cinza:'Gray',marrom:'Brown',rosa:'Pink',ciano:'Cyan'})[k]+' wire'});
-I18N_PHR.push(['item(ns) só no esquema','item(s) only in the schematic']);
+I18N_PHR.push(['item(ns) só no esquema','item(s) only in the schematic'],['fio(s)','wire(s)'],['Não consegui baixar o arquivo','Could not download the file']);
 renderAll();

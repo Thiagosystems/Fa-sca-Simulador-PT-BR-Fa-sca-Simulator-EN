@@ -102,13 +102,13 @@ vreg:{n:'Regulador de tensão',own:'U',def:{V:5},F:[['V','Tensão de saída','se
  T:[[-60,0],[0,40],[60,0]],N:['IN','GND','OUT'],B:[-60,-22,120,62],
  draw:c=>R(-30,-18,60,36,'box',' rx="3"')+L(-60,0,-30,0)+L(60,0,30,0)+L(0,18,0,40)+T(0,-2,+c.V===3.3?'1117':'78'+String(c.V).padStart(2,'0'),c.r,'lv')+T(0,12,`${String(c.V).replace('.',DEC)} V`,c.r,'tn6')+T(-40,-4,'IN',c.r,'tn6')+T(40,-4,'OUT',c.r,'tn6')+T(8,32,'GND',c.r,'tn6'),
  an:(c,x)=>x.r(c,0,1,20000),
- der:(c,X)=>{const V0=+c.V||5,vin=X.vdc(0)-X.vdc(1),vo=Math.max(0,Math.min(V0,vin-(V0===3.3?1.1:2)));X.push(2,c.tag+'.o'+(vo>.05?':+':':-'),X.vdc(1)+vo,.05)},
+ der:(c,X)=>{const V0=+c.V||5,vin=X.vdc(0)-X.vdc(1),vo=Math.max(0,Math.min(V0,vin-(V0===3.3?1.1:2)));X.push(2,c.tag+'.o'+(vo>.05?':+':':-'),X.vdc(1)+vo,.05,1)},
  val:c=>`${String(c.V).replace('.',DEC)} V`},
 
 /* sensor de temperatura LM35 (10 mV/°C) */
 lm35:{n:'Sensor de temperatura LM35',own:'U',act:1,def:{temp:25},F:[['temp','Temperatura (°C)','num',null,LV]],T:[[-20,40],[0,40],[20,40]],N:['+Vs','Vout','GND'],B:[-26,-30,52,70],
  draw:c=>P('M-18,10V-6A18,18 0 0 1 18,-6V10Z','box')+L(-20,40,-20,10)+L(0,40,0,10)+L(20,40,20,10)+T(0,0,'LM35',c.r,'tn6')+T(0,-22,`${c.temp} °C`,c.r,'lv')+T(-26,30,'+Vs',c.r,'tn6')+T(26,30,'GND',c.r,'tn6'),
- an:(c,x)=>x.r(c,0,2,1e5),der:(c,X)=>{if(X.vdc(0)-X.vdc(2)>=4)X.push(1,c.tag+'.o:+',X.vdc(2)+(+c.temp||0)/100,100)},
+ an:(c,x)=>x.r(c,0,2,1e5),der:(c,X)=>{if(X.vdc(0)-X.vdc(2)>=4)X.push(1,c.tag+'.o:+',X.vdc(2)+(+c.temp||0)/100,100,2)},
  click:c=>{c.temp=((+c.temp||0)+10)%160;logE(`${c.tag}: ${c.temp} °C`,'a')},val:c=>`${c.temp} °C`},
 
 /* LDR (resistor que varia com a luz) */
