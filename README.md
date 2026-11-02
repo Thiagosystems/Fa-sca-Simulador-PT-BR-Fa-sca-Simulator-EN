@@ -13,7 +13,7 @@ Made by **Thiagosystems**. An electrical control, electronics, PLC and pneumatic
 ## Features
 
 **Drawing**
-- Nearly 250 items in 19 libraries (plus your own blocks): supplies, fuses and disconnectors, RCDs and circuit breakers (simplified or detailed symbol), contactors, motors, starting and speed control, contacts and timers, push buttons (momentary, latching, double NO+NC, changeover, illuminated, pull, foot pedal, emergency), detectors, signalling, electronic relays, logic, PLC, Ladder, GRAFCET, pneumatics, cables, electronics and integrated circuits.
+- More than 320 items in 23 libraries (plus your own blocks): supplies, fuses and disconnectors, RCDs and circuit breakers (simplified or detailed symbol), contactors, motors, starting and speed control, contacts and timers, push buttons (momentary, latching, double NO+NC, changeover, illuminated, pull, foot pedal, emergency), detectors, signalling, electronic relays, logic, PLC, Ladder, GRAFCET, pneumatics, cables, electronics and integrated circuits.
 - **Editable contact numbering** (e.g. 53-54, 61-62, 83-84), like CADe_SIMU.
 - CADe_SIMU-style symbols: transformer with core (1-2 / 3-4), diamond bridge rectifier (1, 2, 3+, 4−) and circuit breaker with a black square (the IEC "x" is still an option).
 - 6-terminal motor with an earth (PE) terminal, and a bridge rectifier with unfiltered, capacitor-filtered or ideal (Vdc = Vac) output.
@@ -35,13 +35,18 @@ Made by **Thiagosystems**. An electrical control, electronics, PLC and pneumatic
 - Coils below 80% do not pull in, over-voltage burns lamps, fuses and breakers trip on overload and short circuit (B, C, D curves), overload relays follow the real motor current, RCDs trip on leakage, transistors and capacitors.
 - Live diagnostics ("What it does", "Problems", "Events") with one-click fixes.
 - 2-channel oscilloscope and history chart.
-- Fault training (teacher and student modes) with a probe multimeter.
+- Breadboard mode: the same circuit built on a breadboard with colored, realistic parts (Arduino Uno, micro:bit, LEDs, resistors with color bands, ICs, sensors, displays, motors…). It stays in sync with the schematic both ways: parts plugged into the same breadboard strip become schematic wires, and the simulation runs in both views. Deleting such a wire in the schematic also undoes it on the breadboard (the part leaves the board or the jumper is removed). It can be turned off per project in Settings → Breadboard.
 
 **Integrated circuits and sensors**
 - ICs with real DIP pinouts: 74HC00, 02, 04, 08, 14 (Schmitt), 32 and 86 gates; CMOS CD4011, 4069, 4071, 4081 and 4070; 74HC74 and CD4013 flip-flops; 74HC138 (decoder), 74HC151 (multiplexer), 74HC161 (counter), **74HC595** (shift register), CD4017 (decade counter), CD4511 (BCD to 7-segment), **NE555** (timer), ULN2003, L293D (H-bridge), LM393 (comparator) and PC817 (optocoupler).
 - Pins light up green when they are high. Each IC needs VCC and GND, and burns out above its maximum supply (74HC: 6 V; CD4000: 18 V; NE555: 16 V).
 - 7-segment display (common cathode or anode), 7805, 7809, 7812 and AMS1117 regulators, LM35 temperature sensor and LDR (click to change the temperature or the light).
 - Ready-made examples **NE555 at 1.5 kHz on the oscilloscope**, **Op-amp (non-inverting amplifier)**, **NE555 LED flasher** and **74HC595 shift register with 8 LEDs** and **LED wave (NE555 + 74HC595)** (also in `Onda-de-LEDs.fais`).
+
+**Arduino, micro:bit and ATtiny in C++**
+- Program them like in the Arduino IDE (setup/loop) with ready examples and a **Serial monitor**. Libraries: Servo, LiquidCrystal, LiquidCrystal_I2C, Adafruit_NeoPixel, Keypad, IRremote, TM1637Display, Wire and Serial.
+- Tinkercad-style parts: RGB LED, Zener, slide switch, 4-pin button, DIP switch, 4×4 keypad, sensors (TMP36, PIR, ultrasonic, soil moisture, gas, flex, force, light, tilt, IR and remote), NeoPixel (single, rings, strips), servo, piezo, encoder motor, 16×2 LCD (parallel and I2C), TM1637 display, multimeter, bench supply, function generator, SPDT/DPDT relays, pMOS, 556, LM339, 4N35, 74HC10/11/20/21/27/73/75/93/132/283 and PCF8574.
+- Ready-made example **Arduino programmed in C++**.
 
 **PLC**
 - Digital and **analog** inputs and outputs (0–10 V = 0–27648, Siemens style): IW64, IW66… and QW64, QW66… on CPUs, ET 200 and analog I/O modules; A0–A5 (0–1023) on Arduino.
@@ -83,4 +88,6 @@ The organised source (core + modules) and the automated tests are in `codigo-fon
 
 ## License
 
-MIT © 2026 Thiagosystems
+© 2026 Thiagosystems. All rights reserved.
+
+Using it through the website and the app is free. Copying, cloning, modifying, redistributing or using the code as the basis for another program is not allowed without written permission. See `LICENSE`.

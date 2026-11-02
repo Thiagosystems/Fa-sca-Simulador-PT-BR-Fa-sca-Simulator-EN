@@ -16,6 +16,9 @@ O site publicado é um arquivo só (`../index.html`). Ele é **montado** a parti
 | `modulos/09-grade-rotulo-png-blocos.js` | Terminais na grade, rótulo de rede, exportar PNG, Meus blocos |
 | `modulos/10-clp-st-varias-cpus.js` | Programa em texto estruturado (ST) e várias CPUs com prefixo |
 | `modulos/11-duvidas.js` | Aba Dúvidas (ajuda pesquisável) |
+| `modulos/12-componentes-tinkercad.js` | Componentes do Tinkercad (sensores, telas, NeoPixel, servo, instrumentos, micro:bit…) |
+| `modulos/13-arduino-cpp.js` | Programa C++ do Arduino (interpretador, bibliotecas, monitor serial) |
+| `modulos/14-protoboard.js` | Modo Protoboard: vista física sincronizada com o esquema |
 
 Os módulos entram em ordem numérica, depois do núcleo. Cada um acrescenta ou ajusta funções do núcleo.
 

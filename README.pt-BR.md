@@ -13,7 +13,7 @@ Feito por **Thiagosystems**. Simulador de comandos elétricos, eletrônica, CLP 
 ## Recursos
 
 **Desenho**
-- Quase 250 itens em 19 bibliotecas (e mais os seus blocos): alimentação, fusíveis e seccionadores, DR e disjuntores (símbolo simplificado ou detalhado), contatores, motores, partida e velocidade, contatos e temporizadores, botoeiras (impulso, retenção, dupla NA+NF, comutadora, luminosa, de puxar, pedal, emergência), detectores, sinalização, relés eletrônicos, lógica, CLP, Ladder, GRAFCET, pneumática, cabos, eletrônica e circuitos integrados.
+- Mais de 320 itens em 23 bibliotecas (e mais os seus blocos): alimentação, fusíveis e seccionadores, DR e disjuntores (símbolo simplificado ou detalhado), contatores, motores, partida e velocidade, contatos e temporizadores, botoeiras (impulso, retenção, dupla NA+NF, comutadora, luminosa, de puxar, pedal, emergência), detectores, sinalização, relés eletrônicos, lógica, CLP, Ladder, GRAFCET, pneumática, cabos, eletrônica e circuitos integrados.
 - **Numeração editável dos contatos** (ex.: 53-54, 61-62, 83-84), como no CADe_SIMU.
 - Símbolos no estilo do CADe_SIMU: transformador com núcleo (1-2 / 3-4), ponte retificadora em losango (1, 2, 3+, 4−) e disjuntor com quadrado preto (o "x" da IEC continua como opção).
 - Motor de 6 terminais com borne de terra (PE) e ponte retificadora com saída sem filtro, com capacitor ou ideal (Vcc = Vca).
@@ -35,13 +35,18 @@ Feito por **Thiagosystems**. Simulador de comandos elétricos, eletrônica, CLP 
 - Bobina abaixo de 80% não atraca, lâmpada em sobretensão queima, fusível e disjuntor desarmam por sobrecarga e curto (curvas B, C, D), relé térmico pela corrente real do motor, DR por fuga, transistores e capacitores.
 - Diagnóstico ao vivo ("O que faz", "Problemas", "Eventos"), com correções em um clique.
 - Osciloscópio de 2 canais e gráfico ao longo do tempo.
-- Treino de defeitos (modo professor e aluno) com multímetro de pontas.
+- Modo Protoboard: o mesmo circuito montado numa protoboard, com peças coloridas e realistas (Arduino Uno, micro:bit, LEDs, resistores com faixas de cor, CIs, sensores, telas, motores…). Fica sincronizado com o esquema nos dois sentidos: peças encaixadas na mesma tira viram fios no esquema, e a simulação funciona nas duas vistas. Apagar no esquema um fio feito pela protoboard desfaz a ligação nela também (a peça sai da placa ou o jumper é retirado). Pode ser desligado por projeto em Configurações → Protoboard.
 
 **Circuitos integrados e sensores**
 - CIs com a pinagem real, no formato DIP: portas 74HC00, 02, 04, 08, 14 (Schmitt), 32 e 86; CMOS CD4011, 4069, 4071, 4081 e 4070; flip-flops 74HC74 e CD4013; 74HC138 (decodificador), 74HC151 (multiplexador), 74HC161 (contador), **74HC595** (registrador de deslocamento), CD4017 (contador de década), CD4511 (BCD para 7 segmentos), **NE555** (temporizador), ULN2003, L293D (ponte H), LM393 (comparador) e PC817 (optoacoplador).
 - Os pinos acendem em verde quando estão em nível alto. O CI precisa de VCC e GND e queima se passar da tensão máxima (74HC: 6 V; CD4000: 18 V; NE555: 16 V).
 - Display de 7 segmentos (cátodo ou ânodo comum), reguladores 7805, 7809, 7812 e AMS1117, sensor de temperatura LM35 e LDR (clique para mudar a temperatura ou a luz).
 - Modelos prontos **NE555 a 1,5 kHz no osciloscópio**, **Amplificador operacional (não inversor)**, **Pisca-pisca com NE555** e **Registrador 74HC595 com 8 LEDs** e **Onda de LEDs (NE555 + 74HC595)** (também no arquivo `Onda-de-LEDs.fais`).
+
+**Arduino, micro:bit e ATtiny em C++**
+- Programe como na IDE do Arduino (setup/loop) com exemplos prontos e **Monitor serial**. Bibliotecas: Servo, LiquidCrystal, LiquidCrystal_I2C, Adafruit_NeoPixel, Keypad, IRremote, TM1637Display, Wire e Serial.
+- Componentes como os do Tinkercad: LED RGB, Zener, chave deslizante, botão de 4 pinos, DIP, teclado 4×4, sensores (TMP36, PIR, ultrassônico, umidade, gás, flexível, força, luz, inclinação, IR e controle remoto), NeoPixel (LED, anéis e faixas), servo, piezo, motor com encoder, LCD 16×2 (comum e I2C), display TM1637, multímetro, fonte de bancada, gerador de função, relés SPDT/DPDT, pMOS, 556, LM339, 4N35, 74HC10/11/20/21/27/73/75/93/132/283 e PCF8574.
+- Modelo pronto **Arduino programado em C++**.
 
 **CLP**
 - Entradas e saídas digitais e **analógicas** (0–10 V = 0–27648, como na Siemens): IW64, IW66… e QW64, QW66… nas CPUs, ET 200 e nos módulos de entrada/saída analógica; A0–A5 (0–1023) no Arduino.
@@ -84,4 +89,6 @@ O código-fonte organizado (núcleo + módulos) e os testes automáticos estão 
 
 ## Licença
 
-MIT © 2026 Thiagosystems
+© 2026 Thiagosystems. Todos os direitos reservados.
+
+O uso pelo site e pelo aplicativo é livre. Copiar, clonar, modificar, redistribuir ou usar o código como base para outro programa é proibido sem autorização por escrito. Veja o arquivo `LICENSE`.

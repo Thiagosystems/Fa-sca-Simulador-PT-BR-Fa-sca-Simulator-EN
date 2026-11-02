@@ -47,11 +47,11 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:230px minmax(0,1fr) 
 .pitem:hover{border-color:var(--muted)}
 .pitem.on{border-color:var(--pick);box-shadow:0 0 0 2px color-mix(in srgb,var(--pick) 25%,transparent)}
 .pitem svg{width:48px;height:44px;overflow:visible}
-.pitem svg :is(line,path,rect,circle,ellipse,polygon){stroke:var(--ink);stroke-width:3;fill:none;stroke-linecap:round}
-.pitem svg .dot,.pitem svg .fillink{fill:var(--ink)}
-.pitem svg .dash{stroke-dasharray:6 5;stroke-width:2}
-.pitem svg text{fill:var(--ink);stroke:none;font:600 13px 'IBM Plex Mono',monospace;text-anchor:middle}
-.pitem svg .tn,.pitem svg .tn6,.pitem svg .tag{display:none}
+.pitem svg:not(.pbico) :is(line,path,rect,circle,ellipse,polygon){stroke:var(--ink);stroke-width:3;fill:none;stroke-linecap:round}
+.pitem svg:not(.pbico) .dot,.pitem svg:not(.pbico) .fillink{fill:var(--ink)}
+.pitem svg:not(.pbico) .dash{stroke-dasharray:6 5;stroke-width:2}
+.pitem svg:not(.pbico) text{fill:var(--ink);stroke:none;font:600 13px 'IBM Plex Mono',monospace;text-anchor:middle}
+.pitem svg:not(.pbico) .tn,.pitem svg:not(.pbico) .tn6,.pitem svg:not(.pbico) .tag{display:none}
 .pitem span{font-size:10.5px;line-height:1.2;text-align:center;color:var(--muted)}
 body.sim .palette{opacity:.45;pointer-events:none}
 .stage{position:relative;min-width:0;background:var(--stage)}
@@ -1006,9 +1006,9 @@ function analog(E,net){const uf=makeUF(),C=S.comps;
   R:(c,a,b,R)=>els.push({c,a,b,k:'r',g:1/Math.max(+R||0,1e-4)}),r:(c,i,j,R)=>ctx.R(c,ctx.node(c,i),ctx.node(c,j),R),rg:(c,i,R)=>ctx.R(c,ctx.node(c,i),-1,R),
   bat:(c,i,j,V,r)=>els.push({c,a:ctx.node(c,i),b:ctx.node(c,j),k:'v',g:1/Math.max(+r||0,1e-3),V:+V||0}),
   cap:(c,i,j,Cf)=>els.push({c,a:ctx.node(c,i),b:ctx.node(c,j),k:'c',C:Math.max(+Cf||0,1e-12),vp:rt.capv[c.id]||0}),
-  dio:(c,i,j,Vf,Rs)=>els.push({c,a:ctx.node(c,i),b:ctx.node(c,j),k:'d',Vf:+Vf||0,g:1/Math.max(Rs,1e-3),on:!!rt.ads[c.id]}),
+  dio:(c,i,j,Vf,Rs,key)=>els.push({c,a:ctx.node(c,i),b:ctx.node(c,j),k:'d',key:key||c.id,Vf:+Vf||0,g:1/Math.max(Rs,1e-3),on:!!rt.ads[key||c.id]}),
   bjt:(c,iC,iB,iE,pnp,beta)=>{const C_=ctx.node(c,iC),B_=ctx.node(c,iB),E_=ctx.node(c,iE);els.push({c,k:'q',p:pnp?E_:B_,n:pnp?B_:E_,x:pnp?E_:C_,y:pnp?C_:E_,beta:Math.max(1,+beta||100),gb:.1,Vf:.65,st:rt.aqs[c.id]||'off'})},
-  fet:(c,iD,iG,iS,Vth,Rds)=>els.push({c,k:'m',d:ctx.node(c,iD),gn:ctx.node(c,iG),s:ctx.node(c,iS),Vth:+Vth||2,g:1/Math.max(+Rds||0,1e-4),on:!!rt.ams[c.id]}),
+  fet:(c,iD,iG,iS,Vth,Rds,pch)=>els.push({c,k:'m',pch:!!pch,d:ctx.node(c,iD),gn:ctx.node(c,iG),s:ctx.node(c,iS),Vth:+Vth||2,g:1/Math.max(+Rds||0,1e-4),on:!!rt.ams[c.id]}),
   /* indutor: modelo companheiro (Euler implícito); a corrente do passo anterior fica em rt.indi */
   ind:(c,i,j,L,key,Rs)=>{const k=key||c.id;let a=ctx.node(c,i);const b=ctx.node(c,j);if(+Rs>0){const m=ctx.nn();ctx.R(c,a,m,+Rs);a=m}els.push({c,a,b,k:'l',L:Math.max(+L||0,1e-9),ip:(rt.indi||{})[k]||0,key:k})},
   /* amplificador operacional: entradas p/n, saída o, alimentação vp/vn (índices de terminal; null = ideal ±15 V) */
@@ -1035,7 +1035,7 @@ function analog(E,net){const uf=makeUF(),C=S.comps;
   return N?csolve(N,Yr,Yi,Br,Bi):[new Float64Array(0),new Float64Array(0)]}
  const dio=els.filter(e=>e.k==='d'),qs=els.filter(e=>e.k==='q'||e.k==='m'),oas=els.filter(e=>e.k==='o');let dc;const gv=(a,i)=>i>=0?a[i]:0;
  for(let it=0;it<40;it++){dc=pass(false);let ch=false;
-  for(const e of qs){const V=dc[0];if(e.k==='m'){const on=gv(V,e.gn)-gv(V,e.s)>=e.Vth;if(on!==e.on){e.on=on;ch=true}continue}
+  for(const e of qs){const V=dc[0];if(e.k==='m'){const on=(e.pch?gv(V,e.s)-gv(V,e.gn):gv(V,e.gn)-gv(V,e.s))>=e.Vth;if(on!==e.on){e.on=on;ch=true}continue}
    const vbe=gv(V,e.p)-gv(V,e.n),vce=gv(V,e.x)-gv(V,e.y),ib=e.st==='off'?0:e.gb*(vbe-e.Vf);let ns=e.st;
    if(e.st==='off'){if(vbe>e.Vf+1e-6)ns='act'}else if(ib<-1e-9)ns='off';else if(e.st==='act'){if(vce<.15)ns='sat'}else if((vce-.15)>e.beta*ib)ns='act';
    if(ns!==e.st){e.st=ns;ch=true}}
@@ -1059,7 +1059,7 @@ function analog(E,net){const uf=makeUF(),C=S.comps;
   else if(e.k==='c'){idc=e.C/DT*(dv-e.vp);ir=-W*e.C*ai;ii=W*e.C*ar;e.vn=dv}
   else if(e.k==='l'){idc=DT/e.L*dv+e.ip;ir=ai/(W*e.L);ii=-ar/(W*e.L);e.in=idc}
   else{idc=e.on?e.g*(dv-e.Vf):dv*1e-9;const g=1/(1/e.g+e.Vf/.02);ir=g*ar/2;ii=g*ai/2}
-  const ie=Math.hypot(idc,ir,ii),o=M(e.c.id);if(ie>o.i){o.i=ie;o.idc=idc}o.p+=Math.abs(dv*idc+ar*ir+ai*ii);if(e.k==='d'){o.on=e.on;rt.ads[e.c.id]=e.on}}
+  const ie=Math.hypot(idc,ir,ii),o=M(e.c.id);if(ie>o.i){o.i=ie;o.idc=idc}o.p+=Math.abs(dv*idc+ar*ir+ai*ii);if(e.k==='d'){o.on=e.on;rt.ads[e.key||e.c.id]=e.on}}
  let leak=0;for(const s of srcs){const dr=s.g*(phz(s,false)[0]-g0(vd,s.n)),pa=phz(s,true),xr=s.g*(pa[0]-g0(vr,s.n)),xi=s.g*(pa[1]-g0(vi,s.n)),ie=Math.hypot(dr,xr,xi);
   const id=s.k.slice(0,s.k.lastIndexOf(':')),o=M(id);if(!isE(s.p))o.isrc+=ie;if(s.p==='PE')leak+=ie}
  for(const c of C){const t=termsOf(c).length;if(t<2||domOf(c)!=='e')continue;const o=M(c.id);o.v=vabK(K(c.id,0),K(c.id,1));o.vdc=vdcK(K(c.id,0))-vdcK(K(c.id,1))}
@@ -1103,7 +1103,7 @@ function measHTML(c){const d=D(c),o=AM(c.id),row=(k,v)=>`<tr><td>${k}</td><td>${
  return`<h4>Medições ao vivo</h4><table class="mtab">${t}</table>${n}<div class="row"><button data-a="trk">${c.trk?'Parar de acompanhar no gráfico':'Acompanhar no gráfico'}</button></div>`}
 function updMeas(){const el=document.getElementById('meas');if(!el||!sel||sel.c.size!==1)return;const c=byId([...sel.c][0]);if(!c)return;const h=measHTML(c);if(el.innerHTML!==h)el.innerHTML=h}
 const lampB=c=>{const o=AM(c.id);if(!o||!EN(c.id))return 0;return Math.min(1.2,Math.pow((o.vl||o.v)/nomV(c),2))};
-const ledB=c=>{const o=AM(c.id);if(!o||!o.on)return 0;return Math.max(.08,Math.min(1,o.i/(+c.Imax||.02)))};
+let ledB=c=>{const o=AM(c.id);if(!o||!o.on||!(o.i>1e-4))return 0;return Math.max(.08,Math.min(1,o.i/(+c.Imax||.02)))};
 const COILT=['coil','relay','sol','tcoil','cyc','imp'];
 
 /* ---- valores de cada componente (parâmetros, modelo elétrico, limites) ---- */
@@ -1299,15 +1299,15 @@ const FK={open:'Interrompido (aberto por dentro)',stuck:'Colado (fica sempre fec
 const STUCKT=new Set(['kno','knc','ktno','ktnc','btn','lim','mp','ftnc','ftno']),SHORTT=new Set(['coil','relay','sol','tcoil','cyc','imp','lamp','snd','res','mot1','motdc','motor','mot6','dahl','cap','led']);
 function faultKinds(c){const k=[];if(domOf(c)==='e'&&termsOf(c).length>=2&&!['src','supply','plc','junction'].includes(c.type))k.push('open');if(STUCKT.has(c.type)&&!(c.type==='lim'&&c.f==='co'))k.push('stuck');if(SHORTT.has(c.type))k.push('short');return k}
 const TR=()=>S.train||(S.train={on:false,mode:'prof',pin:'',tries:0,found:[]});
-const fltOn=()=>mode==='sim'&&!!(S.train&&S.train.on),FL=c=>fltOn()?c.flt:null;
+const fltOn=()=>false,FL=c=>fltOn()?c.flt:null;
 const liveWires=()=>[...(fltOn()?S.wires.filter(w=>!w.flt):S.wires),...coincidentWires(),...xrefWires()];
 function condOf(c,E){const d=D(c);if(fltOn()&&c.flt){if(c.flt==='open')return[];if(c.flt==='stuck')return c.type==='mp'?rng(+c.p).map(i=>[i,i+ +c.p]):[[0,1]]}return d.cond?d.cond(c,E):[]}
 function faultList(){const r=[];S.comps.forEach(c=>{if(c.flt)r.push({id:c.id,lbl:`${c.tag||lab(c)}: ${FK[c.flt]||c.flt}`})});S.wires.forEach(w=>{if(w.flt){const a=byId(w.a.c),b=byId(w.b.c);r.push({id:w.id,w:1,lbl:`Fio de ${a?a.tag||lab(a):'?'} a ${b?b.tag||lab(b):'?'}: rompido`})}});return r}
 function wireMid(w){const a=byId(w.a.c),b=byId(w.b.c);if(!a||!b)return null;const p=tp(a,w.a.t),q=tp(b,w.b.t);return{x:(p.x+q.x)/2,y:(p.y+q.y)/2}}
-function trainOverlay(){const t=S.train;if(!t||!t.on)return'';let h='';const mark=(x,y,cls,txt)=>{h+=`<g class="tmark ${cls}" transform="translate(${x} ${y})"><circle r="10"/><text y="4">${txt}</text></g>`};
+function trainOverlay(){return'';const t=S.train;if(!t||!t.on)return'';let h='';const mark=(x,y,cls,txt)=>{h+=`<g class="tmark ${cls}" transform="translate(${x} ${y})"><circle r="10"/><text y="4">${txt}</text></g>`};
  for(const f of faultList()){const show=t.mode==='prof'||t.found.includes(f.id);if(!show)continue;const cls=t.mode==='prof'&&!t.found.includes(f.id)?'tp':'tf',txt=cls==='tf'?'✓':'!';
   if(f.w){const m=wireMid(S.wires.find(w=>w.id===f.id));if(m)mark(m.x,m.y,cls,txt)}else{const c=byId(f.id);if(c){const b=wbox(c);mark(b[0]+2,b[1]+2,cls,txt)}}}return h}
-function trainProps(){const t=S.train;if(!t||!t.on||!sel)return'';const nc=sel.c.size,nw=sel.w.size;if(nc+nw!==1)return'';
+function trainProps(){return'';const t=S.train;if(!t||!t.on||!sel)return'';const nc=sel.c.size,nw=sel.w.size;if(nc+nw!==1)return'';
  const c=nc?byId([...sel.c][0]):null,w=nw?S.wires.find(x=>x.id===[...sel.w][0]):null,it=c||w;if(!it)return'';
  if(t.mode==='prof'){if(mode==='sim')return'';const ks=c?faultKinds(c):['open'];if(!ks.length)return'';
   return`<div class="tsec"><h4>Defeito para treino</h4><label><select data-flt="1"><option value="">Nenhum defeito</option>${ks.map(k=>`<option value="${k}" ${it.flt===k?'selected':''}>${c?FK[k]:'Rompido'}</option>`).join('')}</select></label></div>`}
@@ -1320,7 +1320,7 @@ function probeOverlay(){if(!SIM()||!rt.probe)return'';let h='';const pt=k=>{if(!
  const r=probeRead();if(r&&b)h+=`<g class="pread" transform="translate(${b.x+14} ${b.y+20})"><rect x="0" y="-14" width="${r.txt.length*7.4+14}" height="20" rx="5"/><text x="7" y="0">${esc(r.txt)}</text></g>`;return h}
 function probeClick(p){let best=null,bd=1e9;for(const c of S.comps){if(domOf(c)!=='e'&&domOf(c)!=='*')continue;termsOf(c).forEach((_,i)=>{const q=tp(c,i),d=Math.hypot(q.x-p.x,q.y-p.y);if(d<bd){bd=d;best=K(c.id,i)}})}
  if(!best||bd>24/view.s)return;const pr=rt.probe;if(!pr.a||pr.b){rt.probe={a:best,b:null}}else rt.probe.b=best;renderOverlay();renderTrain()}
-function renderTrain(){const el=document.getElementById('train');if(!el)return;const t=TR();el.hidden=!t.on;const b=document.getElementById('bTrain');if(b){b.classList.toggle('on',!!t.on);b.setAttribute('aria-pressed',!!t.on)}if(!t.on)return;
+function renderTrain(){const el=document.getElementById('train');if(!el)return;el.hidden=true;return;const t=TR();el.hidden=!t.on;const b=document.getElementById('bTrain');if(b){b.classList.toggle('on',!!t.on);b.setAttribute('aria-pressed',!!t.on)}if(!t.on)return;
  const fl=faultList(),n=fl.length,sim=mode==='sim',r=sim?probeRead():null;let h='';
  const meter=`<div class="row"><button data-tr="probe" class="${probeMode?'on':''}" ${sim?'':'disabled'}>${probeMode?'Desligar o multímetro':'Medir com as pontas'}</button></div>${sim&&probeMode?`<p class="muted small">Clique perto de um terminal para a ponta vermelha (+) e em outro para a preta (−). Para medir com uma botoeira apertada, segure-a antes com Shift + clique.</p><div class="mread">${r?r.txt:'—'}</div>`:''}`;
  if(t.mode==='prof'){h=`<h3>Treino de defeitos · professor</h3><p class="muted small">Selecione um componente ou fio (com a simulação parada) e escolha um defeito no painel acima. Depois passe para o modo aluno.</p>
@@ -1338,9 +1338,7 @@ function trainInit(){const side=document.querySelector('.side'),dg=document.getE
   if(k==='aluno'){const pin=(document.getElementById('tpin')||{}).value||'';t.mode='aluno';t.pin=pin.trim();t.tries=0;t.found=[];sel=null;save();toast('Modo aluno: os defeitos estão escondidos.');renderAll();return}
   if(k==='prof'){if(t.pin&&((document.getElementById('tpin2')||{}).value||'').trim()!==t.pin){toast('Senha incorreta.',true);return}t.mode='prof';save();renderAll();return}
   if(k==='clear'){pushHist();S.comps.forEach(c=>delete c.flt);S.wires.forEach(w=>delete w.flt);t.found=[];commit();return}});
- const bar=document.querySelector('.tools');if(bar&&!document.getElementById('bTrain')){const b=document.createElement('button');b.id='bTrain';b.className='toggle';b.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg><span class="lbl2">Treino</span>';b.setAttribute('aria-label','Treino de defeitos');b.type='button';b.title='Treino de defeitos e multímetro de pontas';b.setAttribute('aria-pressed','false');
-  b.addEventListener('click',()=>{const t=TR();if(t.on&&t.mode==='aluno'){toast('Para sair do treino, volte antes ao modo professor.',true);return}t.on=!t.on;if(!t.on)probeMode=false;save();renderAll()});
-  const ref=document.getElementById('bDiag');ref&&ref.parentNode?ref.parentNode.insertBefore(b,ref):bar.appendChild(b)}}
+}
 
 /* ================= painel do osciloscópio arrastável ================= */
 function scopeDragInit(el){if(el.dataset.drag)return;el.dataset.drag='1';try{const p=JSON.parse(localStorage.getItem('faisca-scope-pos')||'null');if(p){el.style.left=p.x+'px';el.style.top=p.y+'px';el.style.right='auto';el.style.bottom='auto'}}catch(e){}
@@ -1861,14 +1859,16 @@ function loadTpl(k,noHist){if(!noHist)pushHist();S={comps:[],wires:[],seq:1};con
 const FAIS_V=1;
 let fname='esquema-faisca',toastT;
 function toast(msg,err){const t=$('#toast');t.textContent=msg;t.className=err?'err':'';t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{t.hidden=true},err?6500:3500)}
-function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000)}
+let DLC=null;const dlCap=()=>DLC||(DLC=window.claude&&typeof window.claude.use==='function'?Promise.resolve(window.claude.use('downloads')).catch(()=>null):Promise.resolve(null));
+function download(blob,name){dlCap().then(d=>{if(!d)return download0(blob,name);const n=/\.(png|pdf|json|txt|csv|svg|html|zip|md)$/i.test(name)?name:name+'.json';d.save({filename:n,data:blob}).then(()=>{},e=>{const c=e&&e.code;if(c==='declined')return;if(c==='unavailable'||c==='not_granted'||c==='capability_disabled'||c==='capability_removed'){DLC=Promise.resolve(null);return download0(blob,name)}toast('Não consegui baixar o arquivo'+(e&&e.message?': '+e.message:'.'),true)})})}
+function download0(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000)}
 /* nome de arquivo: só ASCII (sem acento), para não dar problema em nenhum sistema ou navegador */
 const safeName=s=>String(s||'').replace(/\.(fais|json)$/i,'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9_ -]+/g,'').trim().replace(/\s+/g,'-').slice(0,60)||'esquema-faisca';
 const cleanName=s=>String(s==null?'':s).replace(/[\u0000-\u001f]/g,'').trim().slice(0,60);
 const num=v=>typeof v==='number'&&Number.isFinite(v);
 
 function saveFais(){
- const doc={formato:'faisca',versao:FAIS_V,app:'Faísca',autor:'Thiagosystems',criado:new Date().toISOString(),esquema:{comps:S.comps,wires:S.wires,seq:S.seq,sheets:S.sheets,cur:S.cur,doc:S.doc,train:S.train,sp:S.sp}};
+ const doc={formato:'faisca',versao:FAIS_V,app:'Faísca',autor:'Thiagosystems',criado:new Date().toISOString(),esquema:{comps:S.comps,wires:S.wires,seq:S.seq,sheets:S.sheets,cur:S.cur,doc:S.doc,sp:S.sp,pb:S.pb,nopb:S.nopb}};
  const nome=safeName(fname)+'.fais';
  download(new Blob([JSON.stringify(doc,null,1)],{type:'application/json'}),nome);toast('Esquema salvo como '+nome)}
 
@@ -1883,7 +1883,7 @@ function cleanState(e){
   if(!idOk(c.id)||ids.has(c.id))throw new Error('O arquivo tem componentes com identificação inválida ou repetida.');
   ids.add(c.id);bump(c.id);
   const n={};for(const k of Object.keys(c)){if(!/^[A-Za-z][A-Za-z0-9_]{0,14}$/.test(k))continue;const v=c[k];
-   if(num(v))n[k]=v;else if(typeof v==='boolean')n[k]=v;else if(typeof v==='string')n[k]=k==='prog'?v.replace(/[\u0000-\u0008\u000b-\u001f]/g,'').slice(0,20000):v.replace(/[\u0000-\u001f]/g,'').slice(0,1000);
+   if(num(v))n[k]=v;else if(typeof v==='boolean')n[k]=v;else if(typeof v==='string')n[k]=k==='prog'||k==='code'?v.replace(/[\u0000-\u0008\u000b-\u001f]/g,'').slice(0,20000):v.replace(/[\u0000-\u001f]/g,'').slice(0,1000);
    else if(Array.isArray(v)&&v.length===2&&v.every(num))n[k]=v.map(x=>Math.max(-2000,Math.min(2000,x)))}
   const r=num(n.r)?((Math.round(n.r/90)*90%360)+360)%360:0;
   comps.push({...JSON.parse(JSON.stringify(DEFS[c.type].def||{})),...n,id:c.id,type:c.type,x:num(n.x)?clamp(n.x):0,y:num(n.y)?clamp(n.y):0,r,tag:typeof n.tag==='string'?n.tag:''})}
@@ -1895,12 +1895,19 @@ function cleanState(e){
   if((w.o==='v'||w.o==='h')&&num(w.m)){nw.o=w.o;nw.m=clamp(w.m)}
   if(w.flt==='open')nw.flt='open';
   if(typeof w.col==='string'&&WCOL[w.col])nw.col=w.col;
+  if(typeof w.pbc==='string'&&/^[a-z]{2,10}$/.test(w.pbc))nw.pbc=w.pbc;if(w.pb===1)nw.pb=1;
+  if(Array.isArray(w.pbp)){const q=w.pbp.filter(v=>Array.isArray(v)&&v.length===2&&v.every(num)).slice(0,60).map(v=>v.map(clamp));if(q.length)nw.pbp=q}
   wires.push(nw)}
  const st={comps,wires,seq:Math.max(num(e.seq)?Math.floor(e.seq):1,maxN+1)};
  if(Array.isArray(e.sheets)){const sh=e.sheets.filter(x=>x&&num(x.id)&&x.id>=1&&x.id<1000).slice(0,60).map(x=>({id:Math.floor(x.id),name:typeof x.name==='string'?x.name.replace(/[\u0000-\u001f]/g,'').slice(0,40):'Folha'}));if(sh.length){st.sheets=sh;st.cur=sh.some(x=>x.id===e.cur)?e.cur:sh[0].id}}
  if(e.doc&&typeof e.doc==='object'){const d={};for(const k of['wn','xr','fr'])if(typeof e.doc[k]==='boolean')d[k]=e.doc[k];for(const k of['titulo','cliente','autor','numero','rev','data','obs'])if(typeof e.doc[k]==='string')d[k]=e.doc[k].replace(/[\u0000-\u001f]/g,'').slice(0,120);st.doc=d}
  if(e.train&&typeof e.train==='object'){const t=e.train;st.train={on:!!t.on,mode:t.mode==='aluno'?'aluno':'prof',pin:typeof t.pin==='string'?t.pin.slice(0,8):'',tries:num(t.tries)?Math.max(0,Math.floor(t.tries)):0,found:Array.isArray(t.found)?t.found.filter(x=>typeof x==='string').slice(0,200):[]}}
  if(num(e.sp)&&[1,.1,.01,.001,1e-4].includes(e.sp)&&e.sp!==1)st.sp=e.sp;
+ if(e.nopb===true)st.nopb=true;
+ if(e.pb&&typeof e.pb==='object'){const b=e.pb,pt=v=>Array.isArray(v)&&v.length===2&&v.every(num)?v.map(clamp):null,end=v=>{if(!v||typeof v!=='object')return null;if(typeof v.c==='string'&&ids.has(v.c)&&Number.isInteger(v.t)&&v.t>=0&&v.t<64)return{c:v.c,t:v.t};if(typeof v.bd==='string'&&idOk(v.bd)&&Number.isInteger(v.hx)&&Number.isInteger(v.hy)&&Math.abs(v.hx)<200&&Math.abs(v.hy)<200)return{bd:v.bd,hx:v.hx,hy:v.hy};return null};
+  const pb={on:!!b.on,bds:[],w:[]};if(Array.isArray(b.bds))for(const d of b.bds.slice(0,20))if(d&&idOk(d.id)&&['full','half','mini'].includes(d.k)&&num(d.x)&&num(d.y))pb.bds.push({id:d.id,k:d.k,x:clamp(d.x),y:clamp(d.y),...(num(d.sh)&&d.sh>=1&&d.sh<1000?{sh:Math.floor(d.sh)}:{})});
+  const bid=new Set(pb.bds.map(d=>d.id));if(Array.isArray(b.w))for(const w of b.w.slice(0,3000)){if(!w||!idOk(w.id))continue;const a=end(w.a),z=end(w.b);if(!a||!z||(a.bd&&!bid.has(a.bd))||(z.bd&&!bid.has(z.bd)))continue;const nw={id:w.id,a,b:z};if(typeof w.col==='string'&&/^[a-z]{2,10}$/.test(w.col))nw.col=w.col;if(Array.isArray(w.p)){const q=w.p.map(pt).filter(Boolean).slice(0,60);if(q.length)nw.p=q}pb.w.push(nw)}
+  if(Array.isArray(b.vis))pb.vis=b.vis.filter(v=>num(v)&&v>=1&&v<1000).slice(0,60).map(Math.floor);if(num(b.vx)&&num(b.vy)&&num(b.vs)){pb.vx=b.vx;pb.vy=b.vy;pb.vs=Math.max(.2,Math.min(6,b.vs))}st.pb=pb}
  Object.defineProperty(st,'dropped',{value:dropped,enumerable:false});return st}
 
 function parseFais(txt){
@@ -2153,7 +2160,7 @@ $('#props').addEventListener('change',e=>{if(!e.target.dataset.flt||!sel)return;
 $('#props').addEventListener('click',e=>{const b=e.target.closest('[data-a="accuse"]');if(!b||!sel)return;e.stopImmediatePropagation();const t=TR(),id=sel.c.size?[...sel.c][0]:[...sel.w][0],it=byId(id)||S.wires.find(x=>x.id===id);if(!it)return;
  if(it.flt){if(!t.found.includes(id))t.found.push(id);const n=faultList().length;toast(t.found.length>=n?`Acertou! Era ${it.flt==='open'?(sel.w.size?'um fio rompido':'um componente interrompido'):it.flt==='stuck'?'um contato colado':'um componente em curto'}. Você encontrou todos os defeitos!`:`Acertou! Era ${it.flt==='open'?(sel.w.size?'um fio rompido':'um componente interrompido'):it.flt==='stuck'?'um contato colado':'um componente em curto'}. Faltam ${n-t.found.length}.`)}
  else{t.tries++;toast('Não é aqui. Continue medindo.',true)}save();renderAll()},true);
-addEventListener('keydown',e=>{if(e.target.matches&&e.target.matches('input,select,textarea'))return;if(e.key.toLowerCase()==='m'&&mode==='sim'&&TR().on){probeMode=!probeMode;rt.probe={};renderOverlay();renderTrain()}});
+addEventListener('keydown',e=>{if(e.target.matches&&e.target.matches('input,select,textarea'))return;if(false){probeMode=!probeMode;rt.probe={};renderOverlay();renderTrain()}});
 trainInit();renderTrain();
 
 /* ================= PDF vetorial (texto de verdade, selecionável) ================= */
@@ -2325,7 +2332,7 @@ function i18nInit(){I18N_MAP=new Map();const add=(a,b)=>{if(a&&a.length>=3&&!I18
 function tr(s){if(!I18N_ON||!s)return s;const t=s.trim();if(!t||!/\p{L}{2}/u.test(t))return s;let r=I18N_CACHE.get(t);
  if(r===undefined){if(t in I18N_EXACT)r=I18N_EXACT[t];else{if(!I18N_RE)i18nInit();const x=t.replace(I18N_RE,m=>I18N_MAP.get(m)!==undefined?I18N_MAP.get(m):m).replace(/(\d+(?:[.,]\d+)?) de (\d+(?:[.,]\d+)?) ?s\b/g,'$1 of $2 s').replace(/^(\d+) de (\d+) · /,'$1 of $2 · ');r=x===t?null:x}if(I18N_CACHE.size>5000)I18N_CACHE.clear();I18N_CACHE.set(t,r)}
  return r==null?s:s.replace(t,r)}
-const I18N_SKIP=el=>!!(el&&el.closest&&el.closest('script,style,textarea,input,text.tag,text.note,text.lv,text.srct,.wnum,#sheets input'));
+const I18N_SKIP=el=>!!(el&&el.closest&&el.closest('script,style,textarea,input,text.tag,text.note,text.lv,text.srct,.wnum,#sheets input,#pbv'));
 function trNode(n){if(n.nodeType===3){const p=n.parentNode;if(!p||I18N_SKIP(p))return;const v=n.nodeValue,o=tr(v);if(o!==v)n.nodeValue=o;return}
  if(n.nodeType!==1||(n.closest&&n.closest('script,style')))return;for(const a of['title','aria-label','placeholder']){const v=n.getAttribute&&n.getAttribute(a);if(v){const o=tr(v);if(o!==v)n.setAttribute(a,o)}}if(I18N_SKIP(n))return;
  for(let c=n.firstChild;c;c=c.nextSibling)trNode(c)}
