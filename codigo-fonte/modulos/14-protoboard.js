@@ -282,7 +282,7 @@ function pbWireCol(w,e1,e2){if(w.pbc&&PBW[w.pbc])return PBW[w.pbc][1];if(w.col&&
 function pbOrtho(pts){if(pts.length<2)return pts.slice();const o=[pts[0]],n=pts.length;
  if(n===2){const[a,b]=pts;if(Math.abs(a.x-b.x)<.5||Math.abs(a.y-b.y)<.5)return[a,b];const my=Math.round((a.y+b.y)/2/5)*5;return[a,{x:a.x,y:my},{x:b.x,y:my},b]}
  for(let i=1;i<n;i++){const a=o[o.length-1],b=pts[i];if(Math.abs(a.x-b.x)>=.5&&Math.abs(a.y-b.y)>=.5)o.push(i===1?{x:a.x,y:b.y}:{x:b.x,y:a.y});o.push(b)}
- const r=[o[0]];for(let i=1;i<o.length;i++){const a=r[r.length-1],b=o[i];if(Math.abs(a.x-b.x)<.5&&Math.abs(a.y-b.y)<.5)continue;if(r.length>=2){const z=r[r.length-2];if((Math.abs(z.x-a.x)<.5&&Math.abs(a.x-b.x)<.5)||(Math.abs(z.y-a.y)<.5&&Math.abs(a.y-b.y)<.5)){r[r.length-1]=b;continue}}r.push(b)}return r}
+ const r=[o[0]];for(let i=1;i<o.length;i++){const a=r[r.length-1],b=o[i];if(Math.abs(a.x-b.x)<.5&&Math.abs(a.y-b.y)<.5)continue;if(r.length>=2){const z=r[r.length-2],mid=(a.x-z.x)*(b.x-a.x)>=0&&(a.y-z.y)*(b.y-a.y)>=0;if(mid&&((Math.abs(z.x-a.x)<.5&&Math.abs(a.x-b.x)<.5)||(Math.abs(z.y-a.y)<.5&&Math.abs(a.y-b.y)<.5))){r[r.length-1]=b;continue}}r.push(b)}return r}
 function wPath(pts){const q=pbOrtho(pts);if(q.length<3)return'M'+q.map(p=>p.x+','+p.y).join('L');let d=`M${q[0].x},${q[0].y}`;
  for(let i=1;i<q.length-1;i++){const a=q[i-1],p=q[i],b=q[i+1],l1=Math.hypot(p.x-a.x,p.y-a.y),l2=Math.hypot(b.x-p.x,b.y-p.y),r=Math.min(4,l1/2,l2/2);
   const ux=(p.x-a.x)/(l1||1),uy=(p.y-a.y)/(l1||1),vx=(b.x-p.x)/(l2||1),vy=(b.y-p.y)/(l2||1);d+=`L${(p.x-ux*r).toFixed(1)},${(p.y-uy*r).toFixed(1)}Q${p.x},${p.y} ${(p.x+vx*r).toFixed(1)},${(p.y+vy*r).toFixed(1)}`}

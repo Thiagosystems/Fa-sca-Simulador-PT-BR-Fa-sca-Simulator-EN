@@ -89,6 +89,10 @@ Feito por **Thiagosystems**. Simulador de comandos elétricos, eletrônica, CLP 
 
 O código-fonte organizado (núcleo + módulos) e os testes automáticos estão em `codigo-fonte/`. Veja `codigo-fonte/LEIA-ME-DESENVOLVIMENTO.md`.
 
+## Colaboradores
+
+- **Rafael Costa** — colaborador criativo: ajuda a pensar novos recursos e a transformar ideias em prompts para o desenvolvimento.
+
 ## Licença
 
 © 2026 Thiagosystems. Todos os direitos reservados.

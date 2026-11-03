@@ -88,6 +88,10 @@ Made by **Thiagosystems**. An electrical control, electronics, PLC and pneumatic
 
 The organised source (core + modules) and the automated tests are in `codigo-fonte/`. See `codigo-fonte/LEIA-ME-DESENVOLVIMENTO.md`.
 
+## Contributors
+
+- **Rafael Costa** — creative contributor: helps come up with new features and turn ideas into prompts for development.
+
 ## License
 
 © 2026 Thiagosystems. All rights reserved.
