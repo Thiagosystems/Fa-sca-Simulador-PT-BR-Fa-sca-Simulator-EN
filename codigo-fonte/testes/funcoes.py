@@ -107,8 +107,10 @@ with sync_playwright() as p:
     ok('protoboard: clicar no corpo da peça arrasta a peça (não puxa fio)',r==[70,False],r)
     setup="(()=>{S={comps:[],wires:[],seq:1};let x=0;const A=(t,p,X,Y,r=0)=>{const c=placeComp(makeComp(t,p),x+=200,0,0);c.pbx=X;c.pby=Y;c.pbr=r;S.comps.push(c);return c};A('res',{},110,40);A('led',{},150,60);A('res',{R:1000},300,250);S.pb={on:true,bds:[{id:'pb1',k:'full',x:0,y:0}],w:[]};commit();pbV={x:100,y:150,s:1.5};pbApplyView();pbRender()})()"
     pg.evaluate(setup)
-    r=pg.evaluate("(()=>{select(mkSel([S.comps[0].id]));copySel();pasteClip();const c=S.comps[3];select(mkSel([S.comps[1].id]));dupSel();const d=S.comps[4];return[c.pby>200,d.pby>200,S.wires.filter(w=>w.pb).length]})()")
+    r=pg.evaluate("(()=>{pbPtrIn=false;ptrIn=false;select(mkSel([S.comps[0].id]));copySel();pasteClip();const c=S.comps[3];select(mkSel([S.comps[1].id]));dupSel();const d=S.comps[4];return[c.pby>200,d.pby>200,S.wires.filter(w=>w.pb).length]})()")
     ok('protoboard: copiar/colar e duplicar não caem em cima da original',r==[True,True,1],r)
+    r=pg.evaluate("(()=>{pbPtrIn=true;pbPtr={x:520,y:330};select(mkSel([S.comps[0].id]));copySel();pasteClip();const c=S.comps[S.comps.length-1];pbPtrIn=false;return[c.pbx,c.pby]})()")
+    ok('colar (Ctrl+V) vai para onde está o mouse',r==[520,330],r)
     pg.evaluate(setup);a=W(300,250);z=W(150,60);pg.mouse.click(*a);pg.mouse.click(z[0]+1,z[1]+1)
     wid=pg.evaluate("S.wires.filter(w=>!w.pb)[0].id");pg.evaluate(f"(()=>{{pbSelW={{id:'{wid}',k:'s'}};pbRender()}})()")
     e=W(150,60);t=W(160,60);pg.mouse.move(*e);pg.mouse.down();pg.mouse.move(t[0],t[1],steps=6);pg.mouse.up()
@@ -189,6 +191,11 @@ with sync_playwright() as p:
     ok('galeria: termômetro mostra a temperatura certa no LCD (24 °C)',23.4<float(r.split()[0] or 0)<24.6,r)
     pg.evaluate("(()=>{S.pb={on:true,bds:[{id:'pb1',k:'full',x:0,y:0}],w:[]};delete S.nopb;commit()})()")
     pg.click('#bPb');ok('protoboard: botão volta ao esquema',pg.evaluate("!document.body.classList.contains('pbmode')&&!document.getElementById('bTrain')"))
+    pg.evaluate("(()=>{S={comps:[],wires:[],seq:1};ensureDoc();S.pb={on:false,bds:[{id:'pb1',k:'full',x:0,y:0}],w:[]};commit();pbToggle()})()");pg.wait_for_timeout(150)
+    pg.fill('#psearch','led');pg.wait_for_timeout(150)
+    r=pg.evaluate("[document.querySelectorAll('#palette .pitem').length,document.querySelectorAll('#palette .pitem svg:not(.pbico)').length]")
+    pg.fill('#psearch','');pg.evaluate("pbToggle()")
+    ok('protoboard: busca na paleta mostra só peças da protoboard',r[0]>0 and r[1]==0,r)
     print('== MicroPython, Wi-Fi, módulos novos, osciloscópio e defeitos')
     PRE=r"""S={comps:[],wires:[],seq:1};ensureDoc();const A=(t,p,x,y)=>{const c=placeComp(makeComp(t,p||{}),x,y,0);S.comps.push(c);return c};const W=(a,i,b,j)=>S.wires.push({id:'w'+S.seq++,a:{c:a.id,t:i},b:{c:b.id,t:j}});
 const ix=(c,n)=>{const N=namesOf(c);let i=N.indexOf(n);if(i<0)i=N.findIndex(x=>String(x).replace(/^.*\./,'')===n);return i};const sleep=ms=>new Promise(r=>setTimeout(r,ms));"""
@@ -238,8 +245,8 @@ commit();startSim();await sleep(300);for(let i=0;i<3;i++){D(e).hitClick(e,30,0);
     r=A(r"""const g=A('fgen',{},300,600),R=A('res',{R:1000},700,200),sc=A('scope',{},700,600);W(g,0,R,0);W(R,1,g,1);S.pb={on:true,bds:[{id:'pb1',k:'full',x:0,y:0}],w:[]};commit();pbAutoMount(true);sc.pra='p:'+R.id+':0';sc.prg='p:'+R.id+':1';sc.trig='auto';sc.tlev=1;commit();
 startSim();await sleep(1500);const x=scopeCh(sc,0),w=waveTr()||'';const r=[Math.abs(x.dc-VD(R,0,1))<1e-6,S.wires.some(q=>q.a.c===sc.id||q.b.c===sc.id),document.querySelectorAll('.pbprobe').length,/trigger CH1/.test(w)];stopSim();return r""")
     ok('osciloscópio: pontas medem sem fios e o trigger aparece',r==[True,False,3,True],r)
-    r=A(r"""const bt=A('bat',{V:9,ri:.5},200,200),L=A('led',{},500,200);W(bt,0,L,0);W(L,1,bt,1);S.pb={on:true,bds:[{id:'pb1',k:'full',x:0,y:0}],w:[{id:'pw1',a:{bd:'pb1',hx:55,hy:8},b:{bd:'pb1',hx:58,hy:12}}]};commit();pbAutoMount(true);commit();const loose=document.querySelectorAll('#pbJ .pbblink').length;
-startSim();await sleep(2600);const smoke=document.querySelectorAll('#pbC .pbsmoke').length,burnt=!!rt.burnt[L.id];stopSim();S.pb.w.push({id:'pw9',a:{c:bt.id,t:0},b:{c:bt.id,t:1}});commit();startSim();await sleep(300);const sh=document.querySelectorAll('#pbJ .pbshort').length;stopSim();return[loose,burnt,smoke>0,sh>1]""")
+    r=A(r"""const bt=A('bat',{V:9,ri:.5},200,200),L=A('led',{},500,200);W(bt,0,L,0);W(L,1,bt,1);S.pb={on:true,bds:[{id:'pb1',k:'full',x:0,y:0}],w:[{id:'pw1',a:{bd:'pb1',hx:55,hy:8},b:{bd:'pb1',hx:58,hy:12}}]};commit();pbAutoMount(true);commit();const loose=document.querySelectorAll('#pbX .pbblink').length;
+startSim();await sleep(2600);const smoke=document.querySelectorAll('#pbC .pbsmoke').length,burnt=!!rt.burnt[L.id];stopSim();S.pb.w.push({id:'pw9',a:{c:bt.id,t:0},b:{c:bt.id,t:1}});commit();startSim();await sleep(300);const sh=document.querySelectorAll('#pbX .pbshort').length;stopSim();return[loose,burnt,smoke>0,sh>1]""")
     ok('protoboard: fio solto não pisca, LED queimado solta fumaça e o curto fica vermelho',r==[0,True,True,True],r)
     r=pg.evaluate(r"""(()=>{const p=plotParse('1 2\n3 4\ntemp:20 umid:50\nlixo\n5,6\n');return[p.order.join('|'),p.n,p.ser['valor 1'].length]})()""")
     ok('Serial Plotter: lê colunas e nome:valor',r==['valor 1|valor 2|temp|umid',4,3],r)

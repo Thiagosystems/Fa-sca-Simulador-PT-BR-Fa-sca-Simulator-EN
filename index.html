@@ -1701,7 +1701,7 @@ svg.addEventListener('pointerdown',e=>{const p=toWorld(e);ptr=p;const tEl=e.targ
  if(wEl){select(multi?toggleSel('w',wEl.dataset.w):mkSel([],[wEl.dataset.w]));return}
  if(e.pointerType==='touch'&&!selMode){if(sel&&!multi)select(null);startPan(e);return}
  drag={type:'box',x0:p.x,y0:p.y,x1:p.x,y1:p.y,add:multi,base:sel};try{svg.setPointerCapture(e.pointerId)}catch(_){}});
-svg.addEventListener('pointermove',e=>{const p=toWorld(e);ptr=p;
+svg.addEventListener('pointerleave',()=>{ptrIn=false});svg.addEventListener('pointermove',e=>{const p=toWorld(e);ptr=p;ptrIn=true;
  if(drag&&drag.type==='wire'){const w=S.wires.find(x=>x.id===drag.id),a=w&&byId(w.a.c),b=w&&byId(w.b.c);if(a&&b){const P=tp(a,w.a.t),Q=tp(b,w.b.t),m=snap(drag.o==='v'?p.y:p.x),back=(drag.o==='h'&&P.x===Q.x&&m===P.x)||(drag.o==='v'&&P.y===Q.y&&m===P.y);
   if(back){if(w.o){if(!drag.moved){pushHist();drag.moved=true}delete w.o;delete w.m;renderWires();renderOverlay()}}
   else if(w.o!==drag.o||w.m!==m){if(!drag.moved){pushHist();drag.moved=true}w.o=drag.o;w.m=m;renderWires();renderOverlay()}}return}
@@ -1735,7 +1735,7 @@ addEventListener('keydown',e=>{
  else if(k==='r'&&ed&&!e.ctrlKey&&!e.metaKey){if(tool&&tool.key){tool.r=((tool.r||0)+90)%360;renderOverlay()}else rotSel()}});
 $('#palette').addEventListener('click',e=>{const b=e.target.closest('.pitem');if(!b||mode==='sim')return;const[ci,ii]=b.dataset.p.split('.').map(Number),it=PAL[ci][1][ii];
  tool=tool&&tool.key===b.dataset.p?null:{key:b.dataset.p,proto:makeComp(it[1],it[2],it[0]),r:0};sel=null;renderAll()});
-$('#psearch').addEventListener('input',renderPalette);
+$('#psearch').addEventListener('input',()=>renderPalette());
 $('#props').addEventListener('change',e=>{const p=e.target.dataset.p;if(!p||!sel||sel.c.size!==1)return;const c=byId([...sel.c][0]);if(!c)return;pushHist();
  if(p==='tag')c.tag=e.target.value.trim().toUpperCase().slice(0,10)||c.tag;else if(e.target.type==='checkbox')c[p]=e.target.checked;else if(e.target.type==='number')c[p]=Math.max(0,+e.target.value||0);
  else c[p]=['p'].includes(p)?+e.target.value:(p==='by'||p==='sy'||p==='sy2'?e.target.value.trim().toUpperCase():e.target.value);commit()});
@@ -2007,8 +2007,15 @@ function pasteData(d,dx,dy){
   ['by','sy','sy2'].forEach(k=>{if(typeof c[k]==='string'&&c[k]){const m=c[k].match(/^(.*?)([+\-−]?)$/);if(m&&m[1]&&tmap[m[1]])c[k]=tmap[m[1]]+m[2]}})});
  const nw=[];for(const o of d.wires){const w=JSON.parse(JSON.stringify(o));if(!idmap[w.a.c]||!idmap[w.b.c])continue;w.id='w'+(S.seq++);w.a.c=idmap[w.a.c];w.b.c=idmap[w.b.c];if(num(w.m))w.m+=w.o==='v'?dy:dx;nw.push(w)}
  S.wires.push(...nw);tool=null;sel=mkSel(nc.map(c=>c.id),nw.map(w=>w.id));commit();return{c:nc.length,w:nw.length}}
+/* colar: vai para onde está o mouse (no esquema ou na protoboard); sem o mouse na tela, ao lado do original */
+let ptrIn=false,pastePt=null;
 function pasteClip(){if(mode!=='edit')return;if(!clip){toast('Nada copiado ainda. Selecione componentes e aperte Ctrl+C.',true);return}
- clip.n++;const po=pasteOffset(clip),off=2*G*clip.n,r=po?pasteData(clip,po.dx+off-2*G,po.dy+off-2*G):pasteData(clip,off,off);toast(`Colado: ${r.c} componente(s) e ${r.w} fio(s).`)}
+ clip.n++;const pb=typeof pbOn==='function'&&pbOn()&&typeof pbPtrIn!=='undefined'&&pbPtrIn,here=pb?{x:pbPtr.x,y:pbPtr.y,pb:1}:ptrIn?{x:ptr.x,y:ptr.y}:null;
+ const again=here&&pastePt&&pastePt.pb===here.pb&&Math.abs(pastePt.x-here.x)<1&&Math.abs(pastePt.y-here.y)<1;pastePt=here?{...here}:null;if(!again&&here)clip.k=0;const k=again?(clip.k=(clip.k||0)+1):0;
+ let r;if(here&&!pb){const xs=clip.comps.map(c=>c.x),ys=clip.comps.map(c=>c.y),cx=(Math.min(...xs)+Math.max(...xs))/2,cy=(Math.min(...ys)+Math.max(...ys))/2;r=pasteData(clip,snap(here.x-cx)+2*G*k,snap(here.y-cy)+2*G*k)}
+ else{const po=pasteOffset(clip),off=2*G*clip.n;r=po?pasteData(clip,po.dx+off-2*G,po.dy+off-2*G):pasteData(clip,off,off)}
+ if(pb){const nc=[...sel.c].map(byId).filter(c=>c&&num(c.pbx));if(nc.length){const P=typeof PBP!=='undefined'?PBP:10,xs=nc.map(c=>c.pbx),ys=nc.map(c=>c.pby),cx=(Math.min(...xs)+Math.max(...xs))/2,cy=(Math.min(...ys)+Math.max(...ys))/2,dx=Math.round((here.x-cx)/P)*P+2*P*k,dy=Math.round((here.y-cy)/P)*P+2*P*k;nc.forEach(c=>{c.pbx+=dx;c.pby+=dy});commit()}}
+ toast(`Colado: ${r.c} componente(s) e ${r.w} fio(s).`)}
 function dupSel(){if(mode!=='edit')return;const d=extractSel();if(!d){toast('Selecione um ou mais componentes para duplicar.',true);return}
  const r=pasteData(d,2*G,2*G);toast(`Duplicado: ${r.c} componente(s) e ${r.w} fio(s).`)}
 
@@ -4808,7 +4815,7 @@ const PBK={full:{n:63,rails:1,nm:'Protoboard'},half:{n:30,rails:1,nm:'Meia proto
 const PBW={verde:['Verde','#2f9e44'],vermelho:['Vermelho','#d32f2f'],preto:['Preto','#2a2a2a'],azul:['Azul','#1e63c9'],amarelo:['Amarelo','#e9c21b'],laranja:['Laranja','#f07c1a'],
  branco:['Branco','#eeeeee'],roxo:['Roxo','#7b3fbf'],cinza:['Cinza','#8d939b'],marrom:['Marrom','#7a4a24'],rosa:['Rosa','#e85d9a'],ciano:['Ciano','#1fb3c8']};
 const PBWC={pt:'preto',mr:'marrom',ci:'cinza',az:'azul',vd:'verde',vm:'vermelho',ae:'azul',la:'laranja',am:'amarelo',vi:'roxo',br:'branco'};
-let pbV={x:60,y:60,s:1.6},pbTool=null,pbDrag=null,pbHover=null,pbSelW=null,pbSelB=null,pbHeld=null,pbPtr={x:0,y:0},pbCol=(()=>{try{const v=localStorage.getItem('faisca-pbcol');return v&&PBW[v]?v:'verde'}catch(e){return'verde'}})();
+let pbPtrIn=false,pbV={x:60,y:60,s:1.6},pbTool=null,pbDrag=null,pbHover=null,pbSelW=null,pbSelB=null,pbHeld=null,pbPtr={x:0,y:0},pbCol=(()=>{try{const v=localStorage.getItem('faisca-pbcol');return v&&PBW[v]?v:'verde'}catch(e){return'verde'}})();
 const pbOn=()=>!!(S.pb&&S.pb.on&&!S.nopb);
 const PBNOT=new Set(['note','blkicon']);
 const pbVis=c=>!!c&&!PBNOT.has(c.type)&&(['e','*'].includes(domOf(c))||c.type==='irremote');
@@ -5098,9 +5105,9 @@ function pbJunctionsDone(ph){const done=new Set(),adj=new Map(),isJ=c=>c&&['junc
 function pbVisibleWires(ph){const JD=pbJunctionsDone(ph);const out=[],eOn=e=>e.c?onSheet(byId(e.c)):(()=>{const bd=S.pb.bds.find(b=>b.id===e.bd);return!!bd&&bdOn(bd)})();for(const w of S.wires){if(w.pb)continue;const a=byId(w.a.c),b=byId(w.b.c);if(!pbVis(a)||!pbVis(b)||!onSheet(a)||!onSheet(b))continue;if(JD.has(w.a.c)||JD.has(w.b.c))continue;if(ph.uf.f(K(w.a.c,w.a.t))===ph.uf.f(K(w.b.c,w.b.t)))continue;const p=pbEndPos(w.a),q=pbEndPos(w.b);if(!p||!q)continue;out.push({k:'s',w,id:w.id,pts:[p,...(w.pbp||[]).map(([x,y])=>({x,y})),q],col:pbWireCol(w,w.a,w.b)})}
  for(const w of S.pb.w){if(!eOn(w.a)||!eOn(w.b))continue;const p=pbEndPos(w.a),q=pbEndPos(w.b);if(!p||!q)continue;out.push({k:'p',w,id:w.id,pts:[p,...(w.p||[]).map(([x,y])=>({x,y})),q],col:w.col&&PBW[w.col]?PBW[w.col][1]:pbWireCol({},w.a,w.b)})}return out}
 function pbRender(){const sv=document.getElementById('pbv');if(!sv||!pbOn())return;pbInit();const nb=pbSheetBoard();if(pbPlaceNew()||nb){pbSync();save()}
- const ph=pbPhys(),ed=mode==='edit';let hb='',hc='',hw='';
+ const ph=pbPhys(),ed=mode==='edit';let hb='',hc='',hw='',hx='';
  for(const bd of S.pb.bds.filter(bdOn))hb+=bdSVG(bd)+(pbSelB===bd.id?(()=>{const g=bdGeo(bd);return bR(bd.x-3,bd.y-3,g.w*PBP+6,g.h*PBP+6,'none',' rx="6" stroke="var(--pick)" stroke-width="1.5" stroke-dasharray="5 3" pointer-events="none"')})():'');
- const JD=pbJunctionsDone(ph);for(const c of S.comps){if(!pbVis(c)||!num(c.pbx)||!onSheet(c)||JD.has(c.id))continue;const p=pkgOf(c);let a='';try{a=p.art(c)}catch(e){a=bR(-10,-10,20,20,'#c33')}
+ const JD=pbJunctionsDone(ph),PBFLAT=new Set(['res','diode','zener','ind','ic','dipsw']),zr=c=>pkgOf(c).sock?0:PBFLAT.has(c.type)?1:2;for(const c of S.comps.filter(c=>pbVis(c)&&num(c.pbx)).sort((a,b)=>zr(a)-zr(b))){if(!pbVis(c)||!num(c.pbx)||!onSheet(c)||JD.has(c.id))continue;const p=pkgOf(c);let a='';try{a=p.art(c)}catch(e){a=bR(-10,-10,20,20,'#c33')}
   const sel1=SC(c.id),b=p.box,burnt=SIM()&&rt.burnt&&rt.burnt[c.id],hot=SIM()&&rt.hot&&rt.hot[c.id]>0;
   hc+=`<g class="pbpart${sel1?' sel':''}${SIM()&&(actOf(c)||D(c).hitClick)?' act':''}" data-id="${c.id}" transform="translate(${c.pbx} ${c.pby}) rotate(${c.pbr||0})"><title>${esc((c.tag?c.tag+' — ':'')+lab(c).replace(c.tag||'@@','').trim()+(valTxt(c)?' · '+valTxt(c):''))}</title>`+
    `<rect class="pbhitbox" x="${b[0]}" y="${b[1]}" width="${b[2]-b[0]}" height="${b[3]-b[1]}"/>`+a+(burnt?burnFx(b):'')+(hot&&!burnt?bR(b[0],b[1],b[2]-b[0],b[3]-b[1],'none',' rx="4" stroke="#ff7a1a" stroke-width="2" opacity=".7" pointer-events="none"'):'')+
@@ -5109,9 +5116,9 @@ function pbRender(){const sv=document.getElementById('pbv');if(!sv||!pbOn())retu
    p.pins.map(([x,y],i)=>`<circle class="pbpin${ph.ins.has(K(c.id,i))?' in':''}" data-c="${c.id}" data-t="${i}" cx="${x*PBP}" cy="${y*PBP}" r="4.6"><title>${esc((c.tag||lab(c))+' · '+tn(c,i))}</title></circle>`).join('')+'</g>';
   if(c.tag&&!['junction','netl','xref'].includes(c.type)){const bb=pbBox(c);hc+=`<text class="pbtag" x="${bb[0]}" y="${bb[1]-3}">${esc(c.tag)}</text>`}}
  for(const v of pbVisibleWires(ph)){const s=pbSelW&&pbSelW.id===v.id,d=wPath(v.pts,v.k==='s'&&v.pts.length===2);hw+=`<g class="pbw${s?' sel':''}" data-w="${v.id}" data-k="${v.k}">${s?`<path d="${d}" stroke="var(--pick)" stroke-width="6" opacity=".45" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`:''}${bWire(d,v.col,2.6)}<path class="pbwhit" d="${d}"/>`+
-  bC(v.pts[0].x,v.pts[0].y,2.2,'#c4cad0',bStk('#6b7178',.6))+bC(v.pts[v.pts.length-1].x,v.pts[v.pts.length-1].y,2.2,'#c4cad0',bStk('#6b7178',.6))+(s&&ed?v.pts.slice(1,-1).map((p,i)=>!pbOnPath(p,pbOrtho(v.pts))?'':`<circle class="pbbend" data-i="${i}" cx="${p.x}" cy="${p.y}" r="3.6"/>`).join('')+[['a',v.pts[0]],['b',v.pts[v.pts.length-1]]].map(([k,p])=>`<circle class="pbendh" data-e="${k}" cx="${p.x}" cy="${p.y}" r="${Math.max(4.4,8/pbV.s)}"><title>${tr('Arraste para mudar a ponta do fio')}</title></circle>`).join(''):'')+'</g>'}
- hw+=pbDefects(ph);for(const c of S.comps)if((c.type==='mmeter'||c.type==='scope')&&num(c.pbx)&&onSheet(c))hw+=prSVG(c);
- document.getElementById('pbB').innerHTML=hb;document.getElementById('pbC').innerHTML=hc;document.getElementById('pbJ').innerHTML=hw;pbOverlay();pbBar();updHint()}
+  bC(v.pts[0].x,v.pts[0].y,2.2,'#c4cad0',bStk('#6b7178',.6))+bC(v.pts[v.pts.length-1].x,v.pts[v.pts.length-1].y,2.2,'#c4cad0',bStk('#6b7178',.6))+'</g>';if(s&&ed)hx+=`<g class="pbw sel" data-w="${v.id}" data-k="${v.k}">`+v.pts.slice(1,-1).map((p,i)=>!pbOnPath(p,pbOrtho(v.pts))?'':`<circle class="pbbend" data-i="${i}" cx="${p.x}" cy="${p.y}" r="3.6"/>`).join('')+[['a',v.pts[0]],['b',v.pts[v.pts.length-1]]].map(([k,p])=>`<circle class="pbendh" data-e="${k}" cx="${p.x}" cy="${p.y}" r="${Math.max(4.4,8/pbV.s)}"><title>${tr('Arraste para mudar a ponta do fio')}</title></circle>`).join('')+'</g>'}
+ hx+=pbDefects(ph);for(const c of S.comps)if((c.type==='mmeter'||c.type==='scope')&&num(c.pbx)&&onSheet(c))hx+=prSVG(c);
+ document.getElementById('pbB').innerHTML=hb;document.getElementById('pbC').innerHTML=hc;document.getElementById('pbJ').innerHTML=hw;document.getElementById('pbX').innerHTML=hx;pbOverlay();pbBar();updHint()}
 function pbOverlay(){const el=document.getElementById('pbO');if(!el)return;let h='';
  if(pbDrag&&pbDrag.t==='box'){const d=pbDrag;h+=bR(Math.min(d.x0,d.x1),Math.min(d.y0,d.y1),Math.abs(d.x1-d.x0),Math.abs(d.y1-d.y0),'rgba(22,104,201,.08)',` stroke="var(--pick)" stroke-width="${1/pbV.s}" stroke-dasharray="${4/pbV.s} ${3/pbV.s}"`)}
  if(pbDrag&&pbDrag.t==='end'&&pbDrag.moved){const v=pbDrag.v,o=pbDrag.which==='a'?v.pts[v.pts.length-1]:v.pts[0],q=pbHover&&pbHover.k==='e'?pbHover:pbPtr;h+=bWire(`M${o.x},${o.y}L${q.x},${q.y}`,v.col,2).replace(/<path /g,'<path opacity=".75" ')+bC(q.x,q.y,3.4,'none',' stroke="var(--pick)" stroke-width="1.4"')}
@@ -5184,7 +5191,7 @@ function pbSetup(){const stage=document.querySelector('.stage');if(!stage||docum
   <linearGradient id="pbSh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient>
   <radialGradient id="pbHi" cx=".32" cy=".28" r=".6"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/></radialGradient>
   <filter id="pbBl" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="4"/></filter></defs>
-  <rect width="100%" height="100%" fill="var(--pbbg)"/><rect width="100%" height="100%" fill="url(#pbGp)"/><g id="pbW"><g id="pbB"></g><g id="pbC"></g><g id="pbJ"></g><g id="pbO"></g></g>`;
+  <rect width="100%" height="100%" fill="var(--pbbg)"/><rect width="100%" height="100%" fill="url(#pbGp)"/><g id="pbW"><g id="pbB"></g><g id="pbJ"></g><g id="pbC"></g><g id="pbX"></g><g id="pbO"></g></g>`;
  const cv=document.getElementById('cv');cv.parentNode.insertBefore(sv,cv.nextSibling);
  const bar=document.createElement('div');bar.id='pbbar';stage.appendChild(bar);
  const css=document.createElement('style');css.textContent=`
@@ -5271,10 +5278,11 @@ body.sim #pbv .pbpart.act .pbhit{cursor:pointer}
    const ss=S.wires.filter(w=>w.pbp&&orig.c[w.a.c]&&orig.c[w.b.c]);orig.s=ss.map(w=>({w,p:w.pbp.map(q=>[...q])}));pbDrag={t:'board',bd,orig,sx:p.x,sy:p.y,moved:false};try{sv.setPointerCapture(e.pointerId)}catch(_){}pbRender();return}}
   if(e.pointerType==='touch'){if(sel||pbSelW||pbSelB){pbSelW=null;pbSelB=null;select(null)}pan();return}
   pbDrag={t:'box',x0:p.x,y0:p.y,x1:p.x,y1:p.y,add:e.shiftKey||e.ctrlKey||e.metaKey,base:sel};if(!pbDrag.add&&(sel||pbSelW||pbSelB)){pbSelW=null;pbSelB=null;select(null)}try{sv.setPointerCapture(e.pointerId)}catch(_){}});
+ sv.addEventListener('pointerleave',()=>{pbPtrIn=false});
  sv.addEventListener('pointermove',e=>{if(TP.has(e.pointerId))TP.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(pinch&&TP.size>=2){const[a,b]=[...TP.values()],r=sv.getBoundingClientRect(),d=Math.hypot(a.x-b.x,a.y-b.y),mx=(a.x+b.x)/2-r.left,my=(a.y+b.y)/2-r.top,ns=Math.min(6,Math.max(.25,pinch.s0*d/pinch.d0));
    pbV.s=ns;pbV.x=mx-(pinch.mx-pinch.vx)*ns/pinch.s0;pbV.y=my-(pinch.my-pinch.vy)*ns/pinch.s0;pbApplyView();return}
-  const p=pbWorld(e);pbPtr=p;const d=pbDrag;
+  const p=pbWorld(e);pbPtr=p;pbPtrIn=true;const d=pbDrag;
   if(d&&d.t==='wire'&&Math.hypot(e.clientX-d.sx,e.clientY-d.sy)>6)d.moved=true;
   if(d&&d.t==='box'){d.x1=p.x;d.y1=p.y;pbOverlay();return}
   if(d&&d.t==='probe'){d.moved=true;d.c['pr'+d.w]=prStr({px:p.x,py:p.y-8});const np=pbNearPin(p),h=np?null:pbHoleAt(p);pbHover=np?{pin:1,x:np.x,y:np.y,k:'e'}:h?{net:h.net,x:h.x,y:h.y,k:'e'}:null;pbRender();pbOverlay();return}
@@ -5321,7 +5329,7 @@ function pbExportSVG(){const keep=[sel,pbSelW,pbSelB,pbTool,pbHover];sel=null;pb
  let a=1e9,b=1e9,c=-1e9,d=-1e9;for(const bd of S.pb.bds.filter(bdOn)){const g=bdGeo(bd);a=Math.min(a,bd.x);b=Math.min(b,bd.y);c=Math.max(c,bd.x+g.w*PBP);d=Math.max(d,bd.y+g.h*PBP)}
  for(const o of S.comps)if(pbVis(o)&&num(o.pbx)&&onSheet(o)){const q=pbBox(o);a=Math.min(a,q[0]);b=Math.min(b,q[1]-12);c=Math.max(c,q[2]);d=Math.max(d,q[3])}
  for(const v of pbVisibleWires(pbPhys()))for(const q of v.pts){a=Math.min(a,q.x);b=Math.min(b,q.y);c=Math.max(c,q.x);d=Math.max(d,q.y+40)}
- const body=['pbB','pbC','pbJ'].map(id=>document.getElementById(id).innerHTML).join('').replace(/var\(--pick\)/g,'#1668c9').replace(/var\(--pbbg\)/g,'#eef1f5').replace(/var\(--muted\)/g,'#5d6b80');
+ const body=['pbB','pbJ','pbC','pbX'].map(id=>document.getElementById(id).innerHTML).join('').replace(/var\(--pick\)/g,'#1668c9').replace(/var\(--pbbg\)/g,'#eef1f5').replace(/var\(--muted\)/g,'#5d6b80');
  [sel,pbSelW,pbSelB,pbTool,pbHover]=keep;pbRender();if(a>c)return null;a-=20;b-=20;c+=20;d+=20;const W=c-a,H=d-b;
  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${a} ${b} ${W} ${H}" width="${W}" height="${H}" font-family="IBM Plex Sans,Arial,sans-serif">${document.querySelector('#pbv defs').outerHTML}<style>.pbtag{font-size:7px;fill:#5d6b80;font-weight:600}.pbhitbox,.pbpin,.pbwhit{fill:none;stroke:none}</style><rect x="${a}" y="${b}" width="${W}" height="${H}" fill="#f4f6f9"/>${body}</svg>`;return{svg,W,H}}
 function pbCanvas(cb){const x=pbExportSVG();if(!x){toast('A protoboard está vazia.',true);return}const k=Math.min(4,8000/Math.max(x.W,x.H)),img=new Image(),url=URL.createObjectURL(new Blob([x.svg],{type:'image/svg+xml'}));

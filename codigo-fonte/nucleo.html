@@ -1701,7 +1701,7 @@ svg.addEventListener('pointerdown',e=>{const p=toWorld(e);ptr=p;const tEl=e.targ
  if(wEl){select(multi?toggleSel('w',wEl.dataset.w):mkSel([],[wEl.dataset.w]));return}
  if(e.pointerType==='touch'&&!selMode){if(sel&&!multi)select(null);startPan(e);return}
  drag={type:'box',x0:p.x,y0:p.y,x1:p.x,y1:p.y,add:multi,base:sel};try{svg.setPointerCapture(e.pointerId)}catch(_){}});
-svg.addEventListener('pointermove',e=>{const p=toWorld(e);ptr=p;
+svg.addEventListener('pointerleave',()=>{ptrIn=false});svg.addEventListener('pointermove',e=>{const p=toWorld(e);ptr=p;ptrIn=true;
  if(drag&&drag.type==='wire'){const w=S.wires.find(x=>x.id===drag.id),a=w&&byId(w.a.c),b=w&&byId(w.b.c);if(a&&b){const P=tp(a,w.a.t),Q=tp(b,w.b.t),m=snap(drag.o==='v'?p.y:p.x),back=(drag.o==='h'&&P.x===Q.x&&m===P.x)||(drag.o==='v'&&P.y===Q.y&&m===P.y);
   if(back){if(w.o){if(!drag.moved){pushHist();drag.moved=true}delete w.o;delete w.m;renderWires();renderOverlay()}}
   else if(w.o!==drag.o||w.m!==m){if(!drag.moved){pushHist();drag.moved=true}w.o=drag.o;w.m=m;renderWires();renderOverlay()}}return}
@@ -1735,7 +1735,7 @@ addEventListener('keydown',e=>{
  else if(k==='r'&&ed&&!e.ctrlKey&&!e.metaKey){if(tool&&tool.key){tool.r=((tool.r||0)+90)%360;renderOverlay()}else rotSel()}});
 $('#palette').addEventListener('click',e=>{const b=e.target.closest('.pitem');if(!b||mode==='sim')return;const[ci,ii]=b.dataset.p.split('.').map(Number),it=PAL[ci][1][ii];
  tool=tool&&tool.key===b.dataset.p?null:{key:b.dataset.p,proto:makeComp(it[1],it[2],it[0]),r:0};sel=null;renderAll()});
-$('#psearch').addEventListener('input',renderPalette);
+$('#psearch').addEventListener('input',()=>renderPalette());
 $('#props').addEventListener('change',e=>{const p=e.target.dataset.p;if(!p||!sel||sel.c.size!==1)return;const c=byId([...sel.c][0]);if(!c)return;pushHist();
  if(p==='tag')c.tag=e.target.value.trim().toUpperCase().slice(0,10)||c.tag;else if(e.target.type==='checkbox')c[p]=e.target.checked;else if(e.target.type==='number')c[p]=Math.max(0,+e.target.value||0);
  else c[p]=['p'].includes(p)?+e.target.value:(p==='by'||p==='sy'||p==='sy2'?e.target.value.trim().toUpperCase():e.target.value);commit()});
@@ -2007,8 +2007,15 @@ function pasteData(d,dx,dy){
   ['by','sy','sy2'].forEach(k=>{if(typeof c[k]==='string'&&c[k]){const m=c[k].match(/^(.*?)([+\-−]?)$/);if(m&&m[1]&&tmap[m[1]])c[k]=tmap[m[1]]+m[2]}})});
  const nw=[];for(const o of d.wires){const w=JSON.parse(JSON.stringify(o));if(!idmap[w.a.c]||!idmap[w.b.c])continue;w.id='w'+(S.seq++);w.a.c=idmap[w.a.c];w.b.c=idmap[w.b.c];if(num(w.m))w.m+=w.o==='v'?dy:dx;nw.push(w)}
  S.wires.push(...nw);tool=null;sel=mkSel(nc.map(c=>c.id),nw.map(w=>w.id));commit();return{c:nc.length,w:nw.length}}
+/* colar: vai para onde está o mouse (no esquema ou na protoboard); sem o mouse na tela, ao lado do original */
+let ptrIn=false,pastePt=null;
 function pasteClip(){if(mode!=='edit')return;if(!clip){toast('Nada copiado ainda. Selecione componentes e aperte Ctrl+C.',true);return}
- clip.n++;const po=pasteOffset(clip),off=2*G*clip.n,r=po?pasteData(clip,po.dx+off-2*G,po.dy+off-2*G):pasteData(clip,off,off);toast(`Colado: ${r.c} componente(s) e ${r.w} fio(s).`)}
+ clip.n++;const pb=typeof pbOn==='function'&&pbOn()&&typeof pbPtrIn!=='undefined'&&pbPtrIn,here=pb?{x:pbPtr.x,y:pbPtr.y,pb:1}:ptrIn?{x:ptr.x,y:ptr.y}:null;
+ const again=here&&pastePt&&pastePt.pb===here.pb&&Math.abs(pastePt.x-here.x)<1&&Math.abs(pastePt.y-here.y)<1;pastePt=here?{...here}:null;if(!again&&here)clip.k=0;const k=again?(clip.k=(clip.k||0)+1):0;
+ let r;if(here&&!pb){const xs=clip.comps.map(c=>c.x),ys=clip.comps.map(c=>c.y),cx=(Math.min(...xs)+Math.max(...xs))/2,cy=(Math.min(...ys)+Math.max(...ys))/2;r=pasteData(clip,snap(here.x-cx)+2*G*k,snap(here.y-cy)+2*G*k)}
+ else{const po=pasteOffset(clip),off=2*G*clip.n;r=po?pasteData(clip,po.dx+off-2*G,po.dy+off-2*G):pasteData(clip,off,off)}
+ if(pb){const nc=[...sel.c].map(byId).filter(c=>c&&num(c.pbx));if(nc.length){const P=typeof PBP!=='undefined'?PBP:10,xs=nc.map(c=>c.pbx),ys=nc.map(c=>c.pby),cx=(Math.min(...xs)+Math.max(...xs))/2,cy=(Math.min(...ys)+Math.max(...ys))/2,dx=Math.round((here.x-cx)/P)*P+2*P*k,dy=Math.round((here.y-cy)/P)*P+2*P*k;nc.forEach(c=>{c.pbx+=dx;c.pby+=dy});commit()}}
+ toast(`Colado: ${r.c} componente(s) e ${r.w} fio(s).`)}
 function dupSel(){if(mode!=='edit')return;const d=extractSel();if(!d){toast('Selecione um ou mais componentes para duplicar.',true);return}
  const r=pasteData(d,2*G,2*G);toast(`Duplicado: ${r.c} componente(s) e ${r.w} fio(s).`)}
 
