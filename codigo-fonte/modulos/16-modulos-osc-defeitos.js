@@ -348,3 +348,20 @@ HELP.push(
  ['Encoder rotativo KY-040','encoder rotativo ky-040 knob girar clk dt sw','renc','Durante a simulação, clique no lado direito do encoder para girar no sentido horário, no lado esquerdo para o anti-horário e no meio para apertar o botão (SW vai para o GND). CLK e DT mudam em sequência (quadratura) como no módulo real.','if (clk != ultimo && clk == LOW) { if (digitalRead(DT) != clk) pos++; else pos--; }'],
  ['Osciloscópio com pontas e trigger','osciloscópio pontas trigger disparo nível borda canal medir onda','scope','Na protoboard, o osciloscópio tem a ponta do CH1 (amarela), a do CH2 (azul) e a garra do terra (preta): arraste até furos ou terminais. Nas propriedades, o trigger (automático, normal ou desligado), o canal, a borda e o nível deixam a onda parada na tela.','Trigger no CH1, borda de subida, nível 2,5 V: a onda quadrada do 555 fica estável.'],
  ['Defeitos visíveis na protoboard','defeito curto-circuito curto queimado fumaça erro protoboard','','Na protoboard, um curto-circuito na fonte fica piscando em vermelho (fios e a fonte) e uma peça queimada solta fumaça. Clique na peça queimada durante a simulação para trocar por uma nova.','Ligue um fio direto do + ao − da bateria: o caminho do curto aparece em vermelho.']);
+
+/* ---------- lâmpada incandescente pequena (de bancada) ---------- */
+const bulbB=c=>{if(!SIM()||!rt.A||(rt.burnt&&rt.burnt[c.id]))return 0;const v=Math.abs(VD(c,0,1)),Vn=+c.Vn||9;return Math.max(0,Math.min(1.25,(v*v)/(Vn*Vn)))};
+DEFS.bulb={n:'Lâmpada pequena',own:'H',def:{Vn:9,P:.9},F:[['Vn','Tensão nominal (V)','eng','V',LV],['P','Potência (W)','eng','W',LV]],T:V2,N:['1','2'],B:[-22,-40,44,80],
+ draw:c=>{const b=bulbB(c),on=b>.03,g=Math.min(1,b),col=`rgb(255,${Math.round(170+70*g)},${Math.round(60+90*g)})`;return L(0,-40,0,-18)+L(0,18,0,40)+C(0,0,18,'',on?` style="fill:${col};fill-opacity:${(.25+.65*g).toFixed(2)};filter:drop-shadow(0 0 ${Math.round(4+10*g)}px ${col})"`:'')+L(-12.7,-12.7,12.7,12.7)+L(-12.7,12.7,12.7,-12.7)},
+ an:(c,x)=>x.r(c,0,1,(+c.Vn||9)*(+c.Vn||9)/(+c.P||.9)),
+ burn:(c,o)=>o.p>3*(+c.P||.9)?`${fmtE(o.p,'W')} numa lâmpada de ${fmtE(+c.P,'W')}: o filamento rompeu`:null,
+ hot:(c,o)=>o.p>1.4*(+c.P||.9)?`${fmtE(o.p,'W')} numa lâmpada de ${fmtE(+c.P,'W')} (acima da tensão nominal)`:null,
+ val:c=>`${fmtE(+c.Vn,'V')} ${fmtE(+c.P,'W')}`,say:c=>{const b=bulbB(c);return b>.03?['on',`${c.tag} acesa (${Math.round(Math.min(1,b)*100)}% do brilho)`]:null}};
+PKGS.bulb=c=>({pins:[[0,0],[2,0]],box:[-12,-56,32,1],art:c=>{const b=bulbB(c),g=Math.min(1,b),on=b>.03,col=`rgb(255,${Math.round(170+70*g)},${Math.round(60+90*g)})`;
+  return bLeg(0,0,4,-10)+bLeg(20,0,16,-10)+bR(2,-20,16,12,'#b8bec6',bStk('#7d848c',.8)+' rx="1.5"')+[0,1,2].map(i=>bR(2,-19+i*4,16,1.2,'#8d949c')).join('')+
+   (on?bC(10,-36,22,col,` opacity="${(.15+.35*g).toFixed(2)}" filter="url(#pbBl)"`):'')+bP('M4,-20C4,-28 -2,-32 -2,-40A12,12 0 1 1 22,-40C22,-32 16,-28 16,-20Z',on?col:'rgba(235,240,245,.55)',bStk(on?'#ffdc7a':'#aeb5bd',.9)+(on?` fill-opacity="${(.45+.5*g).toFixed(2)}"`:''))+
+   bP('M7,-20L8,-34M13,-20L12,-34','none',bStk('#6b7178',.8))+bP('M8,-34q1,-4 2,0t2,0','none',bStk(on?'#fff6c8':'#555',on?1.6:1))}});
+{const C0=PAL.find(p=>p[0].startsWith('22.'));if(C0)C0[1].unshift(['Lâmpada pequena','bulb',{}]);const G=PBCAT.find(x=>x[0]==='Componentes básicos');if(G)G[1].splice(G[1].indexOf('led')+1,0,'bulb')}
+PKC.clear();
+Object.assign(I18N_EXACT,{'Lâmpada pequena':'Small lamp'});
+HELP.push(['Lâmpada pequena','lâmpada lampada bulbo incandescente filamento acender brilho','bulb','Lâmpada incandescente de bancada (padrão 9 V e 0,9 W). O brilho segue a tensão: na tensão nominal acende 100%; com tensão bem acima ela esquenta e queima (o filamento rompe e o circuito abre). Ajuste a tensão e a potência no painel.','Bateria de 9 V direto na lâmpada: acende forte. Com 4,5 V: brilho fraco.']);

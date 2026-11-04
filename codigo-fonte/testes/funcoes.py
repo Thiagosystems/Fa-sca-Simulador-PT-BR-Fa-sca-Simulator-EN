@@ -196,6 +196,8 @@ with sync_playwright() as p:
     r=pg.evaluate("[document.querySelectorAll('#palette .pitem').length,document.querySelectorAll('#palette .pitem svg:not(.pbico)').length]")
     pg.fill('#psearch','');pg.evaluate("pbToggle()")
     ok('protoboard: busca na paleta mostra só peças da protoboard',r[0]>0 and r[1]==0,r)
+    r=pg.evaluate("""(async()=>{const o=[];for(const V of [9,4.5,24]){S={comps:[],wires:[],seq:1};ensureDoc();const b=placeComp(makeComp('bat',{V,ri:.1}),100,200,0),l=placeComp(makeComp('bulb',{}),300,200,0);S.comps.push(b,l);S.wires.push({id:'w1',a:{c:b.id,t:0},b:{c:l.id,t:0}},{id:'w2',a:{c:l.id,t:1},b:{c:b.id,t:1}});commit();startSim();await new Promise(r=>setTimeout(r,V>20?3600:300));o.push(V>20?!!rt.burnt[l.id]:Math.round(bulbB(l)*100));stopSim()}return o})()""")
+    ok('lâmpada pequena: 9 V acende 100%, 4,5 V fraca, 24 V queima',r[0]>=97 and 20<=r[1]<=30 and r[2] is True,r)
     print('== MicroPython, Wi-Fi, módulos novos, osciloscópio e defeitos')
     PRE=r"""S={comps:[],wires:[],seq:1};ensureDoc();const A=(t,p,x,y)=>{const c=placeComp(makeComp(t,p||{}),x,y,0);S.comps.push(c);return c};const W=(a,i,b,j)=>S.wires.push({id:'w'+S.seq++,a:{c:a.id,t:i},b:{c:b.id,t:j}});
 const ix=(c,n)=>{const N=namesOf(c);let i=N.indexOf(n);if(i<0)i=N.findIndex(x=>String(x).replace(/^.*\./,'')===n);return i};const sleep=ms=>new Promise(r=>setTimeout(r,ms));"""
