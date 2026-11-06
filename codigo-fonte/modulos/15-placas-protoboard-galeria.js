@@ -199,7 +199,8 @@ void loop() {
   delay(40);
 }`,build:(a,w)=>{a('ARD','plc',360,320,{m:'ard',tag:'ARD1'});a('NP','neopx',400,560,{shape:'ring',n:12,tag:'NP1'});w('NP',0,'ARD',0);w('NP',1,'ARD',1);w('NP',2,'ARD',6)}}};
 for(const k in GAL){const g=GAL[k];window.mkTpl(k,(a,w,j,tx)=>{tx('T1',120,-20,g.n.toUpperCase());tx('N1',120,5,'Projeto pronto: veja a montagem no botão Protoboard e o programa em "Código C++…" (selecione o Arduino).');g.build(a,w);const ard=S.comps.find(c=>c.type==='plc');if(ard)ard.code=g.code;S.pb={on:true,bds:[{id:'pb1',k:'full',x:0,y:0,sh:1}],w:[],vis:[1]}})}
-{const _lt=loadTpl;loadTpl=function(k,noHist){const r=_lt(k,noHist);if(GAL[k]&&S.pb){try{pbAutoMount(true)}catch(e){console.error(e)}}return r}}
+/* modelos prontos começam sem vínculo com a protoboard; os projetos com Arduino já vêm montados (vinculados) */
+{const _lt=loadTpl;loadTpl=function(k,noHist){const r=_lt(k,noHist);if(GAL[k]&&S.pb){delete S.nopb;try{pbAutoMount(true)}catch(e){console.error(e)}commit()}else{S.nopb=true;if(S.pb)S.pb.on=false;commit()}return r}}
 {const sEl=document.getElementById('bTpl');if(sEl){const og=document.createElement('optgroup');og.label='Projetos com Arduino';for(const k in GAL){const o=document.createElement('option');o.value=k;o.textContent=GAL[k].n;og.appendChild(o)}sEl.appendChild(og)}}
 Object.assign(I18N_EXACT,{'Projetos com Arduino':'Arduino projects','Semáforo com botão de pedestre':'Traffic light with pedestrian button','Alarme com sensor de presença':'Motion sensor alarm','Termômetro com LCD':'LCD thermometer','Servo controlado por potenciômetro':'Servo controlled by a potentiometer',
  'Sensor de distância com bipe':'Distance sensor with beeper','Contador com display de 4 dígitos':'Counter with 4-digit display','Anel NeoPixel arco-íris':'NeoPixel rainbow ring',

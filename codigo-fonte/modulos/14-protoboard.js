@@ -11,7 +11,7 @@ const PBW={verde:['Verde','#2f9e44'],vermelho:['Vermelho','#d32f2f'],preto:['Pre
  branco:['Branco','#eeeeee'],roxo:['Roxo','#7b3fbf'],cinza:['Cinza','#8d939b'],marrom:['Marrom','#7a4a24'],rosa:['Rosa','#e85d9a'],ciano:['Ciano','#1fb3c8']};
 const PBWC={pt:'preto',mr:'marrom',ci:'cinza',az:'azul',vd:'verde',vm:'vermelho',ae:'azul',la:'laranja',am:'amarelo',vi:'roxo',br:'branco'};
 let pbPtrIn=false,pbV={x:60,y:60,s:1.6},pbTool=null,pbDrag=null,pbHover=null,pbSelW=null,pbSelB=null,pbHeld=null,pbPtr={x:0,y:0},pbCol=(()=>{try{const v=localStorage.getItem('faisca-pbcol');return v&&PBW[v]?v:'verde'}catch(e){return'verde'}})();
-const pbOn=()=>!!(S.pb&&S.pb.on&&!S.nopb);
+const pbOn=()=>!!(S.pb&&S.pb.on&&(!S.nopb||S.pbv));
 const PBNOT=new Set(['note','blkicon']);
 const pbVis=c=>!!c&&!PBNOT.has(c.type)&&(['e','*'].includes(domOf(c))||c.type==='irremote');
 
@@ -433,6 +433,8 @@ body.sim #pbv .pbpart.act .pbhit{cursor:pointer}
  const ref=document.getElementById('bDiag');if(ref&&!document.getElementById('bPb')){const b=document.createElement('button');b.id='bPb';b.className='toggle';b.title='Mostrar o circuito montado numa protoboard (e voltar ao esquema)';b.setAttribute('aria-label','Protoboard');b.setAttribute('aria-pressed','false');
   b.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 12h18"/><path d="M7 8.5h.01M10 8.5h.01M13 8.5h.01M16 8.5h.01M7 15.5h.01M10 15.5h.01M13 15.5h.01M16 15.5h.01"/></svg><span class="lbl2">Protoboard</span>';
   b.addEventListener('click',pbToggle);ref.parentNode.insertBefore(b,ref)}
+ /* vincular o desenho do circuito ao modo Protoboard (cada projeto começa sem vínculo) */
+ if(ref&&!document.getElementById('bLink')){const k=document.createElement('button');k.id='bLink';k.className='toggle';k.addEventListener('click',pbLinkAsk);ref.parentNode.insertBefore(k,document.getElementById('bPb')||ref)}
 
  document.getElementById('palette').addEventListener('click',e=>{const t=e.target.closest('.pbbdi');if(!t||mode==='sim')return;e.stopImmediatePropagation();pbAddBoard(t.dataset.pbk)},true);
  bar.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;const k=b.dataset.pb,menu=bar.querySelector('.pbmenu');
@@ -574,9 +576,13 @@ function pbAutoMount(silent){if(mode!=='edit')return;pbInit();pbSheetBoard();
   for(let k=1;k<ends.length;k++){S.pb.w.push({id:'pw'+(S.seq++),a:ends[k-1].e,b:ends[k].e,col});nj++}}
  commit();if(silent){requestAnimationFrame(pbFit);return}const ns=out.map(c=>c.tag||lab(c)).slice(0,4).join(', ');toast(LANG==='en'?`Auto assembly: ${placed} part(s) placed and ${nj} jumper(s).`+(out.length?` ${out.length} did not fit (${ns}).`:''):`Montagem automática: ${placed} peça(s) encaixada(s) e ${nj} jumper(s).`+(out.length?` ${out.length} não couberam (${ns}).`:''))}
 function pbFindW(id,k){const ph=pbPhys();return pbVisibleWires(ph).find(v=>v.id===id&&v.k===k)||null}
-function pbToggle(){pbInit();S.pb.on=!S.pb.on;pbTool=null;pbSelW=null;pbSelB=null;if(S.pb.on){pbPlaceNew();pbSync()}save();renderAll();if(S.pb.on)requestAnimationFrame(()=>{if(S.pb.vs){pbV={x:S.pb.vx,y:S.pb.vy,s:S.pb.vs};pbApplyView()}else pbFit()})}
+/* sem vínculo: a protoboard tem um circuito próprio, guardado em S.alt enquanto o desenho está aberto (e vice-versa) */
+let pbHistAlt=[[],[]];
+function pbSwap(){const a=S.alt||{comps:[],wires:[]};S.alt={comps:S.comps,wires:S.wires};if(S.pb)S.alt.pb=S.pb;S.comps=a.comps||[];S.wires=a.wires||[];S.pb=a.pb;const t=[hist,fut];hist=pbHistAlt[0];fut=pbHistAlt[1];pbHistAlt=t;sel=null;tool=null;if(typeof rt!=='undefined')rt=null}
+function pbToggle(){if(S.nopb){if(mode!=='edit')return;if(!S.pbv){pbSwap();S.pbv=true;pbInit();S.pb.on=true}else{if(S.pb)S.pb.on=false;pbSwap();delete S.pbv;if(S.pb)S.pb.on=false}pbTool=null;pbSelW=null;pbSelB=null;commit();if(S.pbv){pbPlaceNew();pbSync();requestAnimationFrame(()=>{if(S.pb.vs){pbV={x:S.pb.vx,y:S.pb.vy,s:S.pb.vs};pbApplyView()}else pbFit()})}save();renderAll();updUndoBtns();return}
+ pbInit();S.pb.on=!S.pb.on;pbTool=null;pbSelW=null;pbSelB=null;if(S.pb.on){pbPlaceNew();pbSync()}save();renderAll();if(S.pb.on)requestAnimationFrame(()=>{if(S.pb.vs){pbV={x:S.pb.vx,y:S.pb.vy,s:S.pb.vs};pbApplyView()}else pbFit()})}
 let pbPalOn=null;
-function pbSyncUI(){const on=pbOn();{const b=document.getElementById('bPb');if(b)b.hidden=!!S.nopb}if(pbPalOn!==on){pbPalOn=on;try{renderPalette()}catch(e){console.error(e)}}document.body.classList.toggle('pbmode',on);const b=document.getElementById('bPb');if(b){b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)}}
+function pbSyncUI(){const on=pbOn();{const k=document.getElementById('bLink');if(k){const lk=!S.nopb;const h=`<span aria-hidden="true" style="font-size:15px;line-height:1">${lk?'☑':'☐'}</span><span class="lbl2">${tr(lk?'Vinculado':'Vincular protoboard')}</span>`;if(k.dataset.h!==h){k.dataset.h=h;k.innerHTML=h}k.classList.toggle('on',lk);k.setAttribute('aria-pressed',lk);k.title=tr(lk?'O desenho está vinculado à protoboard. Clique para desvincular':'Vincular o desenho do circuito ao modo Protoboard');k.disabled=mode==='sim'}}if(pbPalOn!==on){pbPalOn=on;try{renderPalette()}catch(e){console.error(e)}}document.body.classList.toggle('pbmode',on);const b=document.getElementById('bPb');if(b){b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)}}
 
 /* ---------- ligação com o resto do programa ---------- */
 /* ---------- paleta no modo Protoboard: só peças de bancada, com o desenho da protoboard ---------- */
@@ -593,10 +599,20 @@ function bdIcon(k){const g=bdGeo({k}),W=g.w*PBP,H=g.h*PBP;return`<svg viewBox="-
   grp.forEach(([n,f],gi)=>{if(!f.length)return;h+=`<details${q||gi===0?' open':''}><summary>${n}<small>${f.length}</small></summary><div class="pgrid">${f.map(([it,ci,ii])=>`<button class="pitem" data-p="${ci}.${ii}" title="${esc(it[0])}">${pbIcon(makeComp(it[1],it[2]||{},it[0]))}<span>${esc(it[0])}</span></button>`).join('')}</div></details>`});
   $('#palette').innerHTML=h||'<p class="muted small">Nada encontrado.</p>';markPal()}}/* ---------- ligação com o resto do programa ---------- */
 /* opção por projeto: usar ou não a protoboard */
-function pbSetUse(use){if(use===!S.nopb)return;pushHist();if(use){delete S.nopb;toast('Protoboard ativada neste projeto.')}else{S.nopb=true;if(S.pb)S.pb.on=false;S.wires.forEach(w=>{delete w.pb});pbAutoS=null;toast('Protoboard desligada neste projeto. As ligações viraram fios normais do esquema.')}commit()}
-{const _sd=settingsDialog;settingsDialog=function(...a){const r=_sd(...a);try{const m=document.getElementById('modal'),ref=m&&[...m.querySelectorAll('h3.cfgh')].pop();if(ref&&!m.querySelector('#cfgPb')){const h=document.createElement('div');
-  h.innerHTML=`<h3 class="cfgh">Protoboard</h3><div class="cfgl"><label class="chk"><input type="checkbox" id="cfgPb" ${S.nopb?'':'checked'}> Usar a protoboard neste projeto (botão Protoboard e montagem sincronizada)</label></div>`;
-  const list=ref.nextElementSibling;(list||ref).after(...h.childNodes);m.querySelector('#cfgPb').addEventListener('change',e=>pbSetUse(e.target.checked))}}catch(e){console.error(e)}return r}}
+function pbLinkAsk(){if(mode!=='edit')return;const lk=!S.nopb;
+ openModal(tr(lk?'Desvincular a protoboard?':'Vincular à protoboard?'),`<p style="margin-top:0">${tr(lk?'O desenho e a protoboard deixam de ser sincronizados: cada um continua com o circuito atual e passa a ser editado separado.':'Quer vincular o desenho do circuito com o modo Protoboard? As peças do desenho e da protoboard passam a ser as mesmas e as ligações ficam sincronizadas nos dois sentidos (o que você liga num modo aparece no outro).')}</p>`,
+  `<button data-mx="1">${tr('Cancelar')}</button><button class="pri" data-ok="1">${tr(lk?'Desvincular':'Vincular')}</button>`,e=>{if(!e.target.closest('[data-ok]'))return;closeModal();pbSetUse(!lk);if(!lk){pbInit();if(!S.pb.on)pbToggle()}})}
+function pbSetUse(use){if(use===!S.nopb)return;pushHist();
+ if(use){/* vincular: o circuito da protoboard entra no desenho (peças com o mesmo nome se juntam) */
+  if(S.pbv){if(S.pb)S.pb.on=false;pbSwap();delete S.pbv}const a=S.alt;delete S.alt;delete S.nopb;
+  if(a&&(a.comps||[]).length){const ids=new Set(a.comps.map(c=>c.id));for(const c of S.comps)if(!ids.has(c.id)){delete c.pbx;delete c.pby;delete c.pbr}
+   const xs=S.comps.map(c=>c.x),ax=a.comps.map(c=>c.x),dx=xs.length?Math.max(...xs)+200-Math.min(...ax):0;
+   for(const pc of a.comps){const sc=S.comps.find(c=>c.id===pc.id);if(sc){sc.pbx=pc.pbx;sc.pby=pc.pby;sc.pbr=pc.pbr}else{pc.x=snap(pc.x+dx);S.comps.push(pc)}}
+   for(const w of a.wires||[])if(!w.pb&&!S.wires.some(x=>x.id===w.id))S.wires.push(w);S.pb=a.pb||S.pb}
+  pbInit();S.pb.on=true;toast(tr('Desenho vinculado à protoboard.'))}
+ else{/* desvincular: a protoboard fica com uma cópia própria do circuito */
+  const cp=JSON.parse(JSON.stringify({comps:S.comps,wires:S.wires,pb:S.pb||null}));if(cp.pb)cp.pb.on=true;else delete cp.pb;S.alt=cp;S.nopb=true;delete S.pbv;if(S.pb)S.pb.on=false;S.wires.forEach(w=>{delete w.pb});pbAutoS=null;toast(tr('Protoboard desvinculada: ela continua com o circuito, mas cada modo agora é editado separado.'))}
+ commit();renderAll()}
 pbSetup();
 ['bPng','bPdf'].forEach(id=>{const b=document.getElementById(id);if(b)b.addEventListener('click',e=>{if(!pbOn())return;e.stopImmediatePropagation();e.preventDefault();document.querySelectorAll('.mlist').forEach(m=>m.hidden=true);(id==='bPng'?pbPng:pbPdf)()},true)});
 /* fio criado pela protoboard e apagado no esquema: desfaz a ligação física também */
@@ -622,7 +638,7 @@ function pbRoute(ids){for(const id of ids){const w=S.wires.find(x=>x.id===id);if
   let best=null;for(let k=0;k<=30&&!best;k++)for(const o of modes)for(const sg of k?[1,-1]:[1]){const m=ctr(o)+sg*k*G;if(!routeHits(wpts(P,Q,{o,m}),obs)){best={o,m};break}}
   if(best){w.o=best.o;w.m=best.m}}catch(e){}}}
 const onSheetAll=(a,b)=>(a.sh||1)===(b.sh||1);
-{const _c=commit;commit=function(){if(S.pb&&!S.nopb){try{pbFixDup()}catch(e){console.error(e)}try{if(pbAutoS===S){const gone=[];for(const[id,ab]of pbAuto)if(!S.wires.some(w=>w.id===id))gone.push(ab);if(gone.length)pbHonor(gone)}PBNEW=[];pbSync();if(pbSchemNear()){PBNEW=S.wires.filter(w=>w.pb).map(w=>w.id)}if(PBNEW.length)pbRoute(PBNEW);PBNEW=[];pbAutoS=S;pbAuto=new Map(S.wires.filter(w=>w.pb).map(w=>[w.id,[K(w.a.c,w.a.t),K(w.b.c,w.b.t)]]))}catch(e){console.error(e)}if(pbOn()){S.pb.vx=pbV.x;S.pb.vy=pbV.y;S.pb.vs=pbV.s}}_c()}}
+{const _c=commit;commit=function(){if(S.pb&&(!S.nopb||S.pbv)){try{pbFixDup()}catch(e){console.error(e)}try{if(pbAutoS===S){const gone=[];for(const[id,ab]of pbAuto)if(!S.wires.some(w=>w.id===id))gone.push(ab);if(gone.length)pbHonor(gone)}PBNEW=[];pbSync();if(pbSchemNear()){PBNEW=S.wires.filter(w=>w.pb).map(w=>w.id)}if(PBNEW.length)pbRoute(PBNEW);PBNEW=[];pbAutoS=S;pbAuto=new Map(S.wires.filter(w=>w.pb).map(w=>[w.id,[K(w.a.c,w.a.t),K(w.b.c,w.b.t)]]))}catch(e){console.error(e)}if(pbOn()){S.pb.vx=pbV.x;S.pb.vy=pbV.y;S.pb.vs=pbV.s}}_c()}}
 {const _r=renderAll;let lastP=null;renderAll=function(){_r();pbSyncUI();if(pbOn()){if(lastP!==IDX.cur){lastP=IDX.cur;PBBC={};if(S.pb.vs){pbV={x:S.pb.vx,y:S.pb.vy,s:S.pb.vs};pbApplyView()}else requestAnimationFrame(pbFit)}pbRender()}}}
 {const _f=refresh;refresh=function(force){_f(force);if(pbOn())pbRender()}}
 {const _s=select;select=function(x){_s(x);if(pbOn())pbRender()}}
@@ -647,3 +663,8 @@ I18N_PHR.push(['Ligação desfeita também na protoboard','Connection also undon
 Object.keys(PBW).forEach(k=>{I18N_EXACT['Fio '+PBW[k][0].toLowerCase()]=({verde:'Green',vermelho:'Red',preto:'Black',azul:'Blue',amarelo:'Yellow',laranja:'Orange',branco:'White',roxo:'Purple',cinza:'Gray',marrom:'Brown',rosa:'Pink',ciano:'Cyan'})[k]+' wire'});
 I18N_PHR.push(['item(ns) só no esquema','item(s) only in the schematic'],['fio(s)','wire(s)'],['Não consegui baixar o arquivo','Could not download the file']);
 renderAll();
+Object.assign(I18N_EXACT,{'Vinculado':'Linked','Vincular protoboard':'Link breadboard','Vincular':'Link','Desvincular':'Unlink','Vincular à protoboard?':'Link to the breadboard?','Desvincular a protoboard?':'Unlink the breadboard?','Desenho vinculado à protoboard.':'Drawing linked to the breadboard.','Protoboard desvinculada: ela continua com o circuito, mas cada modo agora é editado separado.':'Breadboard unlinked: it keeps the circuit, but each mode is now edited separately.',
+ 'O desenho está vinculado à protoboard. Clique para desvincular':'The drawing is linked to the breadboard. Click to unlink','Vincular o desenho do circuito ao modo Protoboard':'Link the circuit drawing to Breadboard mode',
+ 'Quer vincular o desenho do circuito com o modo Protoboard? As peças do desenho e da protoboard passam a ser as mesmas e as ligações ficam sincronizadas nos dois sentidos (o que você liga num modo aparece no outro).':'Link the circuit drawing with Breadboard mode? The drawing and breadboard parts become the same and connections stay in sync both ways (what you connect in one mode shows in the other).',
+ 'O desenho e a protoboard deixam de ser sincronizados: cada um continua com o circuito atual e passa a ser editado separado.':'The drawing and the breadboard stop syncing: each keeps the current circuit and is edited separately.'});
+HELP.push(['Vincular desenho e protoboard','vincular vínculo desvincular sincronizar protoboard desenho separado','','Cada projeto novo começa com o desenho e a protoboard separados: você pode montar na protoboard sem mexer no desenho (e vice-versa). O botão ☐ Vincular protoboard, no canto superior direito, junta os dois: as peças passam a ser as mesmas e as ligações ficam sincronizadas nos dois sentidos. Clicar em ☑ Vinculado desvincula: cada modo fica com uma cópia do circuito e volta a ser editado separado.','Os projetos com Arduino da galeria já abrem vinculados.']);

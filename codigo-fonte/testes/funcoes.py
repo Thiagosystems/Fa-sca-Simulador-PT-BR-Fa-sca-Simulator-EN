@@ -88,7 +88,7 @@ with sync_playwright() as p:
     ok('protoboard: tirar a peça desfaz a ligação (e desfazer volta)',r==[1,3],r)
     r=pg.evaluate("""(()=>{const st=parseFais(JSON.stringify({formato:'faisca',versao:FAIS_V,esquema:{comps:S.comps,wires:S.wires,seq:S.seq,pb:S.pb}}));return[st.pb.bds.length,st.pb.w.length,st.comps[1].pbx,st.wires.filter(w=>w.pb).length]})()""")
     ok('protoboard: arquivo .fais guarda a montagem',r==[1,2,110,3],r)
-    r=pg.evaluate("""(()=>{S={comps:[],wires:[],seq:1};loadTpl('ardcpp',true);S.pb={on:true,bds:[{id:'pb1',k:'full',x:0,y:0}],w:[]};commit();return[S.comps.filter(c=>pbVis(c)&&c.pbx!=null).length,document.querySelectorAll('#pbv .pbw').length]})()""")
+    r=pg.evaluate("""(()=>{S={comps:[],wires:[],seq:1};loadTpl('ardcpp',true);delete S.nopb;S.pb={on:true,bds:[{id:'pb1',k:'full',x:0,y:0}],w:[]};commit();return[S.comps.filter(c=>pbVis(c)&&c.pbx!=null).length,document.querySelectorAll('#pbv .pbw').length]})()""")
     ok('protoboard: esquema pronto aparece montado com os fios',r[0]>=5 and r[1]>=5,r)
     r=pg.evaluate("""(()=>{S={comps:[],wires:[],seq:1};const A=(t,p,x)=>{const c=placeComp(makeComp(t,p),x,100,0);S.comps.push(c);return c};const R=A('res',{R:470},200),L=A('led',{},300);S.pb={on:true,bds:[{id:'pb1',k:'full',x:0,y:0}],w:[]};R.pbx=110;R.pby=40;R.pbr=0;L.pbx=150;L.pby=60;L.pbr=0;commit();
      const w=S.wires.find(w=>w.pb);select(mkSel([],[w.id]));delSel();return[S.wires.length,pbConn(K(R.id,1),K(L.id,0))]})()""")
@@ -138,16 +138,16 @@ with sync_playwright() as p:
     ok('baixar arquivos dentro do Claude (capacidade downloads)',r=='teste.fais.json',r)
     pg.keyboard.press('Escape');pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d=>d.close())")
     pg.evaluate("(()=>{S={comps:[],wires:[],seq:1};const A=(t,x)=>{const c=placeComp(makeComp(t,{}),x,100,0);S.comps.push(c);return c};const R=A('res',200),L=A('led',300);R.pbx=110;R.pby=40;R.pbr=0;L.pbx=150;L.pby=60;L.pbr=0;S.pb={on:true,bds:[{id:'pb1',k:'full',x:0,y:0}],w:[]};commit()})()")
-    pg.click('#bCfg');pg.wait_for_timeout(150);pg.click('#cfgPb');pg.wait_for_timeout(150)
-    r=pg.evaluate("[pbOn(),!!S.nopb,S.wires.filter(w=>w.pb).length,S.wires.length,getComputedStyle(document.getElementById('bPb')).display]")
-    pg.click('#cfgPb');pg.wait_for_timeout(100);r2=pg.evaluate("[!!S.nopb,getComputedStyle(document.getElementById('bPb')).display!=='none']");pg.keyboard.press('Escape');pg.evaluate("document.querySelectorAll('dialog[open]').forEach(d=>d.close())")
-    ok('opção: desligar a protoboard no projeto (fios viram normais) e religar',r==[False,True,0,1,'none'] and r2==[False,True],(r,r2))
+    pg.click('#bLink');pg.wait_for_timeout(150);pg.click('#modal [data-ok]');pg.wait_for_timeout(150)
+    r=pg.evaluate("[pbOn(),!!S.nopb,S.wires.filter(w=>w.pb).length,S.wires.length,getComputedStyle(document.getElementById('bPb')).display!=='none',S.alt.comps.length]")
+    pg.click('#bLink');pg.wait_for_timeout(150);pg.click('#modal [data-ok]');pg.wait_for_timeout(150);r2=pg.evaluate("[!!S.nopb,pbOn(),!!S.alt]")
+    ok('botão Vincular: desvincular (desenho fica com fios normais, protoboard continua) e vincular de novo',r==[False,True,0,1,True,2] and r2==[False,True,False],(r,r2))
     pg.evaluate("(()=>{S.pb.on=true;commit()})()")
-    r=pg.evaluate("""(()=>{const out=[];for(const t of ['ardcpp','555','eletr','onda']){loadTpl(t,true);S.pb={on:true,bds:[{id:'pb1',k:'full',x:0,y:0}],w:[]};commit();const M=()=>{startSim();const o={};for(const c of S.comps){const m=AM(c.id);o[c.id]=m?+(m.i||0).toPrecision(4):null}stopSim();return JSON.stringify(o)};
+    r=pg.evaluate("""(()=>{const out=[];for(const t of ['ardcpp','555','eletr','onda']){loadTpl(t,true);delete S.nopb;S.pb={on:true,bds:[{id:'pb1',k:'full',x:0,y:0}],w:[]};commit();const M=()=>{startSim();const o={};for(const c of S.comps){const m=AM(c.id);o[c.id]=m?+(m.i||0).toPrecision(4):null}stopSim();return JSON.stringify(o)};
       const a=M(),nw=S.wires.length;pbAutoMount();const H=pbHoles(),fora=S.comps.filter(c=>pbVis(c)&&onSheet(c)&&!pkgOf(c).sock&&pkgOf(c).pins.length&&!termsOf(c).some((_,i)=>pbIns(c,i,H))).length;
       out.push([t,M()===a,S.wires.length===nw,fora,S.pb.w.length>0,document.querySelectorAll('#pbv .pbw').length===S.pb.w.length])}return out})()""")
     ok('protoboard: montar sozinho encaixa tudo, liga com jumpers e não muda a simulação',all(x[1] and x[2] and x[3]==0 and x[4] and x[5] for x in r),r)
-    r=pg.evaluate("""(()=>{loadTpl('ardcpp',true);S.pb={on:true,bds:[{id:'pb1',k:'full',x:0,y:0}],w:[]};commit();pbAutoMount();if(!pbOn()){S.pb.on=true;commit()}pbRender();const led=S.comps.find(c=>c.type==='led'),q=pbPin(led,1),sv=document.getElementById('pbv'),bb=sv.getBoundingClientRect();
+    r=pg.evaluate("""(()=>{loadTpl('ardcpp',true);delete S.nopb;S.pb={on:true,bds:[{id:'pb1',k:'full',x:0,y:0}],w:[]};commit();pbAutoMount();if(!pbOn()){S.pb.on=true;commit()}pbRender();const led=S.comps.find(c=>c.type==='led'),q=pbPin(led,1),sv=document.getElementById('pbv'),bb=sv.getBoundingClientRect();
       tool={key:'x',proto:makeComp('res',{R:330},'Resistor')};const hy=q.y<100?q.y-10:q.y+10,ev={bubbles:true,clientX:bb.left+pbV.x+q.x*pbV.s,clientY:bb.top+pbV.y+hy*pbV.s,button:0,pointerId:1};sv.dispatchEvent(new PointerEvent('pointerdown',ev));window.dispatchEvent(new PointerEvent('pointerup',ev));
       const c=S.comps[S.comps.length-1],w=S.wires.find(w=>w.pb&&(w.a.c===c.id||w.b.c===c.id)),L=wbox(led,true),C=wbox(c,true);return[c.type,!!w,Math.hypot((L[0]+L[2])/2-(C[0]+C[2])/2,(L[1]+L[3])/2-(C[1]+C[3])/2)<400,w?routeHits(wireGeo(w),obstaclesFor(byId(w.a.c),byId(w.b.c))):true]})()""")
     ok('protoboard: peça nova vai para perto da ligada no esquema e o fio desvia',r==['res',True,True,False],r)
@@ -198,6 +198,9 @@ with sync_playwright() as p:
     ok('protoboard: busca na paleta mostra só peças da protoboard',r[0]>0 and r[1]==0,r)
     r=pg.evaluate("""(async()=>{const o=[];for(const V of [9,4.5,24]){S={comps:[],wires:[],seq:1};ensureDoc();const b=placeComp(makeComp('bat',{V,ri:.1}),100,200,0),l=placeComp(makeComp('bulb',{}),300,200,0);S.comps.push(b,l);S.wires.push({id:'w1',a:{c:b.id,t:0},b:{c:l.id,t:0}},{id:'w2',a:{c:l.id,t:1},b:{c:b.id,t:1}});commit();startSim();await new Promise(r=>setTimeout(r,V>20?3600:300));o.push(V>20?!!rt.burnt[l.id]:Math.round(bulbB(l)*100));stopSim()}return o})()""")
     ok('lâmpada pequena: 9 V acende 100%, 4,5 V fraca, 24 V queima',r[0]>=97 and 20<=r[1]<=30 and r[2] is True,r)
+    r=pg.evaluate("""(()=>{const o=[];const T=()=>S.comps.map(c=>c.type).sort().join(',');document.getElementById('bNew').click();const r=placeComp(makeComp('res',{}),300,300,0);S.comps.push(r);commit();o.push(T(),pbOn());pbToggle();o.push(T(),pbOn());const l=placeComp(makeComp('led',{}),500,300,0);l.pbx=100;l.pby=60;S.comps.push(l);commit();pbToggle();o.push(T());
+const e=cleanState(JSON.parse(JSON.stringify({comps:S.comps,wires:S.wires,seq:S.seq,pb:S.pb,nopb:S.nopb,alt:S.alt})));o.push(e.alt.comps.length);pbSetUse(true);o.push(T(),pbOn());pbSetUse(false);S.comps=S.comps.filter(c=>c.type!=='res');commit();pbToggle();o.push(T());pbToggle();return o})()""")
+    ok('projeto novo sem vínculo: desenho e protoboard separados; vincular junta; desvincular separa',r==['res',False,'',True,'res',1,'led,res',True,'led,res'],r)
     print('== valores de datasheet (como no Tinkercad)')
     r=pg.evaluate("""(async()=>{const o={};const run=async(build,ms)=>{S={comps:[],wires:[],seq:1};ensureDoc();const A=(t,p,x,y)=>{const c=placeComp(makeComp(t,p||{}),x,y,0);S.comps.push(c);return c};const W=(a,i,b,j)=>S.wires.push({id:'w'+S.seq++,a:{c:a.id,t:i},b:{c:b.id,t:j}});const r=build(A,W);commit();startSim();await new Promise(z=>setTimeout(z,ms||300));const v=r();stopSim();return v};
 o.def=[makeComp('res',{}).R,makeComp('pot',{}).R];

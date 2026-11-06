@@ -1749,7 +1749,7 @@ $('#banner').addEventListener('click',e=>{if(e.target.id==='bRearm')rearm()});
 $('#bSim').onclick=()=>mode==='sim'?stopSim():startSim();
 $('#bDiag').onclick=()=>{diagOn=!diagOn;renderAll()};
 $('#bSnd').onclick=()=>{soundOn=!soundOn;sound();renderAll()};
-$('#bNew').onclick=()=>{if(!S.comps.length){toast('Este projeto já está vazio.');return}createProj('Sem título',{comps:[],wires:[],seq:1});toast('Projeto novo criado. O anterior continua salvo em Projetos.')};
+$('#bNew').onclick=()=>{if(!S.comps.length){toast('Este projeto já está vazio.');return}createProj('Sem título',{comps:[],wires:[],seq:1,nopb:true});toast('Projeto novo criado. O anterior continua salvo em Projetos.')};
 $('#bUndo').onclick=undo;
 $('#bSel').onclick=()=>{selMode=!selMode;tool=null;renderAll()};
 $('#bDel').onclick=delSel;
@@ -1869,7 +1869,7 @@ const cleanName=s=>String(s==null?'':s).replace(/[\u0000-\u001f]/g,'').trim().sl
 const num=v=>typeof v==='number'&&Number.isFinite(v);
 
 function saveFais(){
- const doc={formato:'faisca',versao:FAIS_V,app:'Faísca',autor:'Thiagosystems',criado:new Date().toISOString(),esquema:{comps:S.comps,wires:S.wires,seq:S.seq,sheets:S.sheets,cur:S.cur,doc:S.doc,sp:S.sp,pb:S.pb,nopb:S.nopb}};
+ const doc={formato:'faisca',versao:FAIS_V,app:'Faísca',autor:'Thiagosystems',criado:new Date().toISOString(),esquema:{comps:S.comps,wires:S.wires,seq:S.seq,sheets:S.sheets,cur:S.cur,doc:S.doc,sp:S.sp,pb:S.pb,nopb:S.nopb,pbv:S.pbv,alt:S.alt}};
  const nome=safeName(fname)+'.fais';
  download(new Blob([JSON.stringify(doc,null,1)],{type:'application/json'}),nome);toast('Esquema salvo como '+nome)}
 
@@ -1904,7 +1904,8 @@ function cleanState(e){
  if(e.doc&&typeof e.doc==='object'){const d={};for(const k of['wn','xr','fr'])if(typeof e.doc[k]==='boolean')d[k]=e.doc[k];for(const k of['titulo','cliente','autor','numero','rev','data','obs'])if(typeof e.doc[k]==='string')d[k]=e.doc[k].replace(/[\u0000-\u001f]/g,'').slice(0,120);st.doc=d}
  if(e.train&&typeof e.train==='object'){const t=e.train;st.train={on:!!t.on,mode:t.mode==='aluno'?'aluno':'prof',pin:typeof t.pin==='string'?t.pin.slice(0,8):'',tries:num(t.tries)?Math.max(0,Math.floor(t.tries)):0,found:Array.isArray(t.found)?t.found.filter(x=>typeof x==='string').slice(0,200):[]}}
  if(num(e.sp)&&[1,.1,.01,.001,1e-4].includes(e.sp)&&e.sp!==1)st.sp=e.sp;
- if(e.nopb===true)st.nopb=true;
+ if(e.nopb===true)st.nopb=true;if(e.pbv===true&&e.nopb===true)st.pbv=true;
+ if(e.alt&&typeof e.alt==='object'&&Array.isArray(e.alt.comps)&&e.nopb===true){try{const a=cleanState({comps:e.alt.comps,wires:Array.isArray(e.alt.wires)?e.alt.wires:[],pb:e.alt.pb,seq:e.seq});st.alt={comps:a.comps,wires:a.wires};if(a.pb)st.alt.pb=a.pb;st.seq=Math.max(st.seq,a.seq)}catch(_){}}
  if(e.pb&&typeof e.pb==='object'){const b=e.pb,pt=v=>Array.isArray(v)&&v.length===2&&v.every(num)?v.map(clamp):null,end=v=>{if(!v||typeof v!=='object')return null;if(typeof v.c==='string'&&ids.has(v.c)&&Number.isInteger(v.t)&&v.t>=0&&v.t<64)return{c:v.c,t:v.t};if(typeof v.bd==='string'&&idOk(v.bd)&&Number.isInteger(v.hx)&&Number.isInteger(v.hy)&&Math.abs(v.hx)<200&&Math.abs(v.hy)<200)return{bd:v.bd,hx:v.hx,hy:v.hy};return null};
   const pb={on:!!b.on,bds:[],w:[]};if(Array.isArray(b.bds))for(const d of b.bds.slice(0,20))if(d&&idOk(d.id)&&['full','half','mini'].includes(d.k)&&num(d.x)&&num(d.y))pb.bds.push({id:d.id,k:d.k,x:clamp(d.x),y:clamp(d.y),...(num(d.sh)&&d.sh>=1&&d.sh<1000?{sh:Math.floor(d.sh)}:{})});
   const bid=new Set(pb.bds.map(d=>d.id));if(Array.isArray(b.w))for(const w of b.w.slice(0,3000)){if(!w||!idOk(w.id))continue;const a=end(w.a),z=end(w.b);if(!a||!z||(a.bd&&!bid.has(a.bd))||(z.bd&&!bid.has(z.bd)))continue;const nw={id:w.id,a,b:z};if(typeof w.col==='string'&&/^[a-z]{2,10}$/.test(w.col))nw.col=w.col;if(Array.isArray(w.p)){const q=w.p.map(pt).filter(Boolean).slice(0,60);if(q.length)nw.p=q}pb.w.push(nw)}
@@ -1967,7 +1968,7 @@ function initProjects(){
  let st=null;const old=LS.get('faisca-v2');if(old){try{st=cleanState(JSON.parse(old))}catch(e){}}
  if(st){setProj(addProj('Meu esquema',st),st);return}
  const id=addProj('Partida direta',{comps:[],wires:[],seq:1});
- IDX.cur=id;S={comps:[],wires:[],seq:1};hist=[];fut=[];fname='Partida direta';updChip();loadTpl('direta',true)}
+ IDX.cur=id;S={comps:[],wires:[],seq:1};hist=[];fut=[];fname='Partida direta';updChip();loadTpl('direta',true);S.nopb=true}
 
 /* janela "Projetos" */
 const dlg=$('#dProj');

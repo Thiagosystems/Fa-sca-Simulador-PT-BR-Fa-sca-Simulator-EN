@@ -87,7 +87,7 @@ with sync_playwright() as p:
     tpls = pg.evaluate("[...document.querySelectorAll('#bTpl option')].map(o=>o.value).filter(Boolean)")
     ruins = []
     for k in tpls:
-        r = pg.evaluate(f"""()=>{{loadTpl('{k}',true);delete S.pb;commit();const a=T_meas();S.pb={{on:true,bds:[{{id:'pb1',k:'full',x:0,y:0}}],w:[]}};commit();pbRender();const t0=performance.now();pbRender();const dt=performance.now()-t0;const bm=T_meas();
+        r = pg.evaluate(f"""()=>{{loadTpl('{k}',true);delete S.nopb;delete S.pb;commit();const a=T_meas();S.pb={{on:true,bds:[{{id:'pb1',k:'full',x:0,y:0}}],w:[]}};commit();pbRender();const t0=performance.now();pbRender();const dt=performance.now()-t0;const bm=T_meas();
           const inv=T_inv(),n=document.querySelectorAll('#pbv .pbpart').length,m=S.comps.filter(c=>pbVis(c)&&onSheet(c)).length;S.pb.on=false;commit();return[T_same(a,bm),inv,n===m,dt]}}""")
         if r[0] or r[1] or not r[2] or r[3] > 120: ruins.append((k, r[0][:2], r[1][:2], r[2], round(r[3])))
     ok(f'{len(tpls)} modelos prontos iguais nas duas vistas e desenhados em menos de 120 ms', not ruins, ruins[:5])
@@ -96,7 +96,7 @@ with sync_playwright() as p:
     pg.evaluate("()=>{}")
     ruins = []
     for k in tpls:
-        pg.evaluate(f"()=>{{loadTpl('{k}',true);S.pb={{on:true,bds:[{{id:'pb1',k:'full',x:0,y:0}}],w:[]}};commit()}}")
+        pg.evaluate(f"()=>{{loadTpl('{k}',true);delete S.nopb;S.pb={{on:true,bds:[{{id:'pb1',k:'full',x:0,y:0}}],w:[]}};commit()}}")
         pg.click('#bSim'); pg.wait_for_timeout(250)
         for _ in range(6):
             pg.evaluate("()=>{const g=[...document.querySelectorAll('#pbv .pbpart.act')];if(!g.length)return;const e=g[Math.floor(Math.random()*g.length)],r=e.getBoundingClientRect();const o={bubbles:true,clientX:r.left+r.width/2,clientY:r.top+r.height/2,button:0,pointerId:1};e.dispatchEvent(new PointerEvent('pointerdown',o));window.dispatchEvent(new PointerEvent('pointerup',o))}")
@@ -110,7 +110,7 @@ with sync_playwright() as p:
     exs = pg.evaluate("Object.keys(CEX)")
     ruins = []
     for nm in exs:
-        pg.evaluate(f"()=>{{loadTpl('ardcpp',true);S.pb={{on:true,bds:[{{id:'pb1',k:'full',x:0,y:0}}],w:[]}};S.comps.find(c=>c.type==='plc').code=CEX[{json.dumps(nm)}];commit()}}")
+        pg.evaluate(f"()=>{{loadTpl('ardcpp',true);delete S.nopb;S.pb={{on:true,bds:[{{id:'pb1',k:'full',x:0,y:0}}],w:[]}};S.comps.find(c=>c.type==='plc').code=CEX[{json.dumps(nm)}];commit()}}")
         pg.click('#bSim'); pg.wait_for_timeout(700)
         r = pg.evaluate("()=>{const a=S.comps.find(c=>c.type==='plc'),st=rt.mcu&&rt.mcu[a.id];return[!!st,st&&st.err?String(st.err.msg||st.err):null,(st&&st.vt)||0]}")
         pg.click('#bSim')
@@ -128,7 +128,7 @@ with sync_playwright() as p:
     print('== caos: ações aleatórias na protoboard')
     random.seed(11); ruins = []
     for k in tpls[:12] + ['ardcpp']:
-        pg.evaluate(f"()=>{{loadTpl('{k}',true);S.pb={{on:true,bds:[{{id:'pb1',k:'full',x:0,y:0}}],w:[]}};commit();pbFit()}}")
+        pg.evaluate(f"()=>{{loadTpl('{k}',true);delete S.nopb;S.pb={{on:true,bds:[{{id:'pb1',k:'full',x:0,y:0}}],w:[]}};commit();pbFit()}}")
         for i in range(110):
             x = random.randint(250, 1150); y = random.randint(110, 860); a = random.random()
             if a < .4: pg.mouse.click(x, y)
