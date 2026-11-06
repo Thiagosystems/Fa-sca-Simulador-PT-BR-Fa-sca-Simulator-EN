@@ -1103,7 +1103,8 @@ function measHTML(c){const d=D(c),o=AM(c.id),row=(k,v)=>`<tr><td>${k}</td><td>${
  return`<h4>Medições ao vivo</h4><table class="mtab">${t}</table>${n}<div class="row"><button data-a="trk">${c.trk?'Parar de acompanhar no gráfico':'Acompanhar no gráfico'}</button></div>`}
 function updMeas(){const el=document.getElementById('meas');if(!el||!sel||sel.c.size!==1)return;const c=byId([...sel.c][0]);if(!c)return;const h=measHTML(c);if(el.innerHTML!==h)el.innerHTML=h}
 const lampB=c=>{const o=AM(c.id);if(!o||!EN(c.id))return 0;return Math.min(1.2,Math.pow((o.vl||o.v)/nomV(c),2))};
-let ledB=c=>{const o=AM(c.id);if(!o||!o.on||!(o.i>1e-4))return 0;return Math.max(.08,Math.min(1,o.i/(+c.Imax||.02)))};
+/* brilho percebido: o olho vê o LED claro mesmo com poucos mA (raiz da corrente) */
+let ledB=c=>{const o=AM(c.id);if(!o||!o.on||!(o.i>1e-4))return 0;return Math.max(.08,Math.min(1,Math.sqrt(o.i/(+c.Imax||.02))))};
 const COILT=['coil','relay','sol','tcoil','cyc','imp'];
 
 /* ---- valores de cada componente (parâmetros, modelo elétrico, limites) ---- */

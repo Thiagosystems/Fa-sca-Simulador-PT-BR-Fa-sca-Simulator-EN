@@ -80,8 +80,8 @@ Object.assign(DEFS,{ic:{n:'Circuito integrado',own:'U',def:{k:'74HC00'},F:[['k',
   if(sp.clk){sp.clk(I,st,st.prev,V,vcc);const pv={};(sp.ins||[]).forEach(p=>pv[p]=I(p));st.prev=pv}
   const o=sp.ev?sp.ev(I,st,V,vcc):{},a=JSON.stringify(o);if(a!==st.sig){st.sig=a;st.out=o;return true}return false},
  der:(c,X)=>{const sp=icSpec(c);if(rt.burnt[c.id]||sp.edge)return;const st=icSt(c);if(!st.pow&&sp.fam)return;const g=(sp.gnd||1)-1,vg=X.vdc(g),V=p=>X.vdc(p-1)-vg,vcc=sp.vcc?V(sp.vcc):5;
-  for(const k in st.out){const v=st.out[k],i=+k-1;if(v===true){const h=sp.vh?sp.vh(vcc,V):vcc;X.push(i,`${c.tag}.${k}${h>.05?':+':':-'}`,vg+h,sp.rs||40)}
-   else if(v===false)X.push(i,`${c.tag}.${k}:-`,vg,sp.rs||40);else if(v==='sink')X.push(i,`${c.tag}.${k}:-`,vg+(sp.vsat||.1),sp.rsink||8);else if(v==='weak')X.push(i,`${c.tag}.${k}:+`,vg+vcc,10000)}},
+  for(const k in st.out){const v=st.out[k],i=+k-1;if(v===true){const h=sp.vh?sp.vh(vcc,V):vcc;X.push(i,`${c.tag}.${k}${h>.05?':+':':-'}`,vg+h,sp.rs||40,g)}
+   else if(v===false)X.push(i,`${c.tag}.${k}:-`,vg,sp.rs||40,g);else if(v==='sink')X.push(i,`${c.tag}.${k}:-`,vg+(sp.vsat||.1),sp.rsink||8,g);else if(v==='weak')X.push(i,`${c.tag}.${k}:+`,vg+vcc,10000,g)}},
  say:c=>{const sp=icSpec(c),st=rt.ic&&rt.ic[c.id];if(rt.burnt[c.id])return null;if(sp.fam&&!(st&&st.pow))return['w',`${c.tag} (${sp.n}) sem alimentação`];
   if(c.k==='74HC595'&&st)return['on',`${c.tag} (74HC595): registrador ${(st.sr||0).toString(2).padStart(8,'0')}, saídas ${(st.lt||0).toString(2).padStart(8,'0')}`];
   if((c.k==='CD4017'||c.k==='74HC161')&&st)return['on',`${c.tag} (${sp.n}): contagem ${st.n||0}`];

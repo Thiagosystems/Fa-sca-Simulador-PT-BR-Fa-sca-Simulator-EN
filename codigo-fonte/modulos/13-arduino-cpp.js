@@ -293,7 +293,7 @@ for(const t of ['plc','ic','mbit','nano','mega','esp32','pico']){const d=DEFS[t]
  d.tick=(c,dt)=>{let ch=tk0?tk0(c,dt):false;if(isMCU(c)&&mcuCode(c)&&mcuStep(c,dt))ch=true;return ch};
  d.an=(c,x)=>{if(an0)an0(c,x);const M=mcuOf(c),st=M&&rt&&rt.mcu&&rt.mcu[c.id];if(!st)return;for(const n in st.mode)if(st.mode[n]===2&&M.pins[n]!=null)x.r(c,M.pins[n],M.vcc,20000)};
  d.der=(c,X,N,E)=>{if(der0)der0(c,X,N,E);const M=mcuOf(c),st=M&&rt&&rt.mcu&&rt.mcu[c.id];if(!st)return;const vg=X.vdc(M.gnd),vc=M.self?M.vref:Math.max(0,X.vdc(M.vcc)-vg);
-  for(const n in st.out){if(st.mode[n]!==1||M.pins[n]==null)continue;const v=st.out[n];X.push(M.pins[n],`${c.tag}.p${n}${v>0?':+':':-'}`,vg+vc*v,25)}}}
+  for(const n in st.out){if(st.mode[n]!==1||M.pins[n]==null)continue;const v=st.out[n];X.push(M.pins[n],`${c.tag}.p${n}${v>0?':+':':-'}`,vg+vc*v,40,M.gnd)}}}
 {const _ss=startSim;startSim=function(){const r=_ss.apply(this,arguments);if(!rt)return r;rt.nuf=null;rt.mcu={};rt.dev=rt.dev||{};let any=false;for(const c of S.comps)if(isMCU(c)&&mcuCode(c)){mcuStart(c);any=true}if(any){solve();refresh(true)}return r}}
 {const sy=DEFS.plc.say;DEFS.plc.say=c=>{if(isMCU(c)&&mcuCode(c)){const st=rt.mcu&&rt.mcu[c.id];return st&&st.err?['w',`${c.tag}: ${st.err}`]:rt.run[c.id]===false?['w',`${c.tag} parado (STOP)`]:['on',`${c.tag} rodando o programa C++`]}return sy(c)}}
 /* micro:bit e ATtiny sem código: ficam parados */
@@ -303,8 +303,8 @@ DEFS.mbit.say=c=>{const st=rt.mcu&&rt.mcu[c.id];return!mcuCode(c)?['w',`${c.tag}
 
 /* LED em pino PWM: o brilho segue o ciclo de trabalho (como o olho vê o pisca rápido) */
 {const lb0=ledB;ledB=c=>{const b=lb0(c);if(!SIM()||!rt.mcu||!rt.A)return b;const pw=[];for(const id in rt.mcu){const st=rt.mcu[id],m=mcuOf(byId(id));if(!m)continue;for(const n in st.out){const d=st.out[n];if(st.mode[n]===1&&d>0&&d<1)pw.push({k:pinKey(m,n),d,v:m.vref})}}if(!pw.length)return b;
- const ka=netOf(K(c.id,0));let hit=pw.find(x=>x.k===ka),R=25;if(!hit)for(const r of S.comps){if(r.type!=='res')continue;const a=netOf(K(r.id,0)),z=netOf(K(r.id,1));const h=pw.find(x=>(a===ka&&x.k===z)||(z===ka&&x.k===a));if(h){hit=h;R+=+r.R||0;break}}
- if(!hit)return b;const I=(hit.v-(+c.Vf||1.9))/(R+10);if(I<=0)return 0;return Math.max(.05,Math.min(1,I/(+c.Imax||.02))*hit.d)}}
+ const ka=netOf(K(c.id,0));let hit=pw.find(x=>x.k===ka),R=40;if(!hit)for(const r of S.comps){if(r.type!=='res')continue;const a=netOf(K(r.id,0)),z=netOf(K(r.id,1));const h=pw.find(x=>(a===ka&&x.k===z)||(z===ka&&x.k===a));if(h){hit=h;R+=+r.R||0;break}}
+ if(!hit)return b;const I=(hit.v-((+c.Vf||2)-.3))/(R+15);if(I<=0)return 0;return Math.max(.05,Math.min(1,I/(+c.Imax||.02))*hit.d)}}
 /* ---------- monitor serial ---------- */
 function renderSerial(){let el=document.getElementById('serial');const st=SIM()&&rt.mcu?Object.entries(rt.mcu).find(([id,s])=>s&&(s.ser||s.err)):null;
  if(!st){if(el)el.hidden=true;return}if(!el){el=document.createElement('div');el.id='serial';el.innerHTML=`<div class="sh"><b>${tr('Monitor serial')}</b><button data-sx="clr">${tr('Limpar')}</button><button data-sx="min">▾</button></div><pre></pre><div class="si"><input placeholder="${tr('Enviar para o Arduino…')}"><button data-sx="send">${tr('Enviar')}</button></div>`;

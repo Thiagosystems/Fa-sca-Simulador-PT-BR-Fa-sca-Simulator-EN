@@ -198,6 +198,23 @@ with sync_playwright() as p:
     ok('protoboard: busca na paleta mostra só peças da protoboard',r[0]>0 and r[1]==0,r)
     r=pg.evaluate("""(async()=>{const o=[];for(const V of [9,4.5,24]){S={comps:[],wires:[],seq:1};ensureDoc();const b=placeComp(makeComp('bat',{V,ri:.1}),100,200,0),l=placeComp(makeComp('bulb',{}),300,200,0);S.comps.push(b,l);S.wires.push({id:'w1',a:{c:b.id,t:0},b:{c:l.id,t:0}},{id:'w2',a:{c:l.id,t:1},b:{c:b.id,t:1}});commit();startSim();await new Promise(r=>setTimeout(r,V>20?3600:300));o.push(V>20?!!rt.burnt[l.id]:Math.round(bulbB(l)*100));stopSim()}return o})()""")
     ok('lâmpada pequena: 9 V acende 100%, 4,5 V fraca, 24 V queima',r[0]>=97 and 20<=r[1]<=30 and r[2] is True,r)
+    print('== valores de datasheet (como no Tinkercad)')
+    r=pg.evaluate("""(async()=>{const o={};const run=async(build,ms)=>{S={comps:[],wires:[],seq:1};ensureDoc();const A=(t,p,x,y)=>{const c=placeComp(makeComp(t,p||{}),x,y,0);S.comps.push(c);return c};const W=(a,i,b,j)=>S.wires.push({id:'w'+S.seq++,a:{c:a.id,t:i},b:{c:b.id,t:j}});const r=build(A,W);commit();startSim();await new Promise(z=>setTimeout(z,ms||300));const v=r();stopSim();return v};
+o.def=[makeComp('res',{}).R,makeComp('pot',{}).R];
+o.led220=await run((A,W)=>{const b=A('bat',{V:5,ri:.01},100,200),R=A('res',{R:220},300,100),L=A('led',{col:'vermelha',Vf:2},500,200);W(b,0,R,0);W(R,1,L,0);W(L,1,b,1);return()=>[+(AM(L.id).i*1000).toFixed(1),+VD(L,0,1).toFixed(2)]});
+o.led9v=await run((A,W)=>{const b=A('bat',{V:9,ri:1.5},100,200),L=A('led',{col:'vermelha',Vf:2},500,200);W(b,0,L,0);W(L,1,b,1);return()=>!!rt.burnt[L.id]});
+o.ledpin=await run((A,W)=>{const m=A('plc',{m:'ard'},300,200),L=A('led',{col:'vermelha',Vf:2},600,200);const N=namesOf(m),ix=n=>N.findIndex(x=>String(x).replace(/^.*\\./,'')===n);W(m,ix('D13'),L,0);W(L,1,m,ix('GND'));m.code='void setup(){pinMode(13,OUTPUT);digitalWrite(13,HIGH);}void loop(){}';return()=>[!!rt.burnt[L.id],+(AM(L.id).i*1000).toFixed(0)]},3600);
+o.blue=await run((A,W)=>{const b=A('bat',{V:5,ri:.01},100,200),R=A('res',{R:100},300,100),L=A('led',{col:'azul',Vf:3.2},500,200);W(b,0,R,0);W(R,1,L,0);W(L,1,b,1);return()=>+VD(L,0,1).toFixed(2)});
+o.diode=await run((A,W)=>{const b=A('bat',{V:12,ri:.01},100,200),R=A('res',{R:11,Pw:50},300,100),d=A('diode',{},500,200);W(b,0,R,0);W(R,1,d,0);W(d,1,b,1);return()=>+VD(d,0,1).toFixed(2)});
+o.vreg=await run((A,W)=>{const b=A('bat',{V:40,ri:.01},100,200),u=A('vreg',{V:5},300,200);W(b,0,u,0);W(b,1,u,1);return()=>!!rt.burnt[u.id]});
+const c=makeComp('led',{col:'vermelha',Vf:2});c.col='azul';DEFS.led.onSet(c,'col');o.cor=c.Vf;return o})()""")
+    ok('padrões: resistor 1 kΩ e potenciômetro 250 kΩ (Tinkercad)',r['def']==[1000,250000],r['def'])
+    ok('LED vermelho com 220 Ω em 5 V: ~14 mA e ~1,9 V',13<r['led220'][0]<15.5 and 1.85<r['led220'][1]<2.0,r['led220'])
+    ok('LED direto na bateria de 9 V queima; direto no pino do Arduino só esquenta',r['led9v'] is True and r['ledpin'][0] is False and 40<r['ledpin'][1]<70,[r['led9v'],r['ledpin']])
+    ok('LED azul ~3 V, diodo 1N4007 ~0,95 V a 1 A, 7805 queima com 40 V, cor azul ajusta Vf para 3,2 V',2.9<r['blue']<3.2 and .9<r['diode']<1.0 and r['vreg'] is True and r['cor']==3.2,r)
+    r=pg.evaluate("""(async()=>{S={comps:[],wires:[],seq:1};ensureDoc();const A=(t,p,x,y)=>{const c=placeComp(makeComp(t,p||{}),x,y,0);S.comps.push(c);return c};const W=(a,i,b,j)=>S.wires.push({id:'w'+S.seq++,a:{c:a.id,t:i},b:{c:b.id,t:j}});
+const g=A('psub',{V:5},100,200),u=A('ic',{k:'74HC08'},500,200),R=A('res',{R:220},800,100),L=A('led',{col:'branca',Vf:3.2},900,300);W(g,0,u,13);W(g,1,u,6);W(g,0,u,0);W(g,0,u,1);W(u,2,R,0);W(R,1,L,0);W(L,1,g,1);commit();startSim();await new Promise(z=>setTimeout(z,400));const v=[+VD(u,2,6).toFixed(1),+(AM(L.id).i*1000).toFixed(1),Math.round(ledB(L)*100)];stopSim();return v})()""")
+    ok('CI com fonte de bancada isolada: saída em ~4,7 V e LED branco com 220 Ω acende bem (~8 mA)',r[0]>=4.5 and 7<r[1]<9 and r[2]>55,r)
     print('== MicroPython, Wi-Fi, módulos novos, osciloscópio e defeitos')
     PRE=r"""S={comps:[],wires:[],seq:1};ensureDoc();const A=(t,p,x,y)=>{const c=placeComp(makeComp(t,p||{}),x,y,0);S.comps.push(c);return c};const W=(a,i,b,j)=>S.wires.push({id:'w'+S.seq++,a:{c:a.id,t:i},b:{c:b.id,t:j}});
 const ix=(c,n)=>{const N=namesOf(c);let i=N.indexOf(n);if(i<0)i=N.findIndex(x=>String(x).replace(/^.*\./,'')===n);return i};const sleep=ms=>new Promise(r=>setTimeout(r,ms));"""
