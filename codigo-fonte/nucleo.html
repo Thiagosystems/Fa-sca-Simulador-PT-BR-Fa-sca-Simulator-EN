@@ -509,7 +509,7 @@ diode:{n:'Diodo',own:'V',T:V2,N:['A','K'],B:[-14,-40,28,80],draw:c=>L(0,-40,0,-8
  cond:(c,E)=>E.ds[c.id]?[[0,1]]:[],
  der:(c,X,N)=>{const a=X.set(0),k=X.set(1),hi=s=>[...s].some(l=>isHigh(pot(l))),lo=s=>[...s].some(l=>isLow(pot(l)));N.ds[c.id]=!(hi(k)&&!hi(a))&&(hi(a)||lo(k))?1:0}},
 sock:{n:'Tomada 2P+T',own:'X',act:1,T:[[-20,40],[0,40],[20,40]],N:['F','N','PE'],B:[-26,-24,52,64],
- draw:c=>P('M-20,40V14M0,40V22M20,40V14')+C(0,0,22,EN(c.id)?'en':'')+C(-8,-2,3)+C(8,-2,3)+L(0,6,0,13)+T(-20,36,'F',c.r,'tn'),
+ draw:c=>P('M-20,40V14M0,40V22M20,40V14')+C(0,0,22,EN(c.id)?'en':'')+C(-8,-2,3)+C(8,-2,3)+L(0,6,0,13)+T(-29,32,'F',c.r,'tn'),
  load:c=>rt&&rt.man[c.id]?[[0,1]]:[],click:c=>{rt.man[c.id]=!rt.man[c.id];logE(`${c.tag}: aparelho ${rt.man[c.id]?'ligado':'desligado'}`,'a')},
  say:(c,X)=>EN(c.id)?['on',`${c.tag}: aparelho ligado e funcionando`]:X.energ(0,1)?['i',`${c.tag} com tensão (clique para ligar um aparelho)`]:null},
 
@@ -1222,7 +1222,7 @@ const SCOL=['#f2b705','#16a3b5','#e0457b','#5aa2ff','#2e9e4f','#e8742a'];
 Object.assign(DEFS,{
 scope:{n:'Osciloscópio (2 canais)',own:'OSC',T:[[-60,-30],[-60,-10],[-60,10],[-60,30]],N:['CH1 +','CH1 −','CH2 +','CH2 −'],B:[-62,-36,104,72],
  draw:c=>R(-46,-34,86,68,'box',' rx="5"')+R(-38,-26,58,44,'',' rx="3" style="fill:#0d1b14"')+P('M-34,-4q7,-14 14,0t14,0t14,0',''," style=\"stroke:#f2b705\"")+P('M-34,8h50',''," style=\"stroke:#16a3b5\"")+
-  [-30,-10,10,30].map((y,i)=>L(-60,y,-46,y)).join('')+T(30,-12,'1',c.r,'tn6')+T(30,12,'2',c.r,'tn6')+T(-54,-33,'CH1',c.r,'tn6')+T(-54,7,'CH2',c.r,'tn6'),
+  [-30,-10,10,30].map((y,i)=>L(-60,y,-46,y)).join('')+T(30,-12,'1',c.r,'tn6')+T(30,12,'2',c.r,'tn6')+T(-53,-17,'CH1',c.r,'tn6')+T(-53,23,'CH2',c.r,'tn6'),
  an:(c,x)=>{x.r(c,0,1,1e6);x.r(c,2,3,1e6)},rd:()=>'',val:()=>'',
  say:c=>{const f=x=>!x?'—':x.rms>.02*Math.max(Math.abs(x.dc),1e-9)?`${fmtE(x.rms,'V')} CA`:`${fmtE(x.dc,'V')} CC`;return['m',`${c.tag}: CH1 ${f(scopeCh(c,0))} · CH2 ${f(scopeCh(c,1))}`]}}});
 function scopeCh(c,ch){if(!rt||!rt.A)return null;const a=rt.A.ph(K(c.id,ch*2)),b=rt.A.ph(K(c.id,ch*2+1));const dc=a[0]-b[0],re=a[1]-b[1],im=a[2]-b[2];return{dc,re,im,rms:Math.hypot(re,im),eff:Math.hypot(dc,re,im)}}
@@ -1395,7 +1395,7 @@ function renderDocLayer(){const el=document.getElementById('nL');if(!el)return;e
    else if(masters.includes(c)){const cs=S.comps.filter(x=>x!==c&&linkOf(x)&&x.tag===c.tag&&((linkOf(x)==='ft')===(c.type==='ftpow')));
     lines=cs.slice(0,6).map(x=>{const n=namesOf(x);const t=x.type==='mp'?`${x.p} polos`:x.type==='kco'?`${n[0]}-${n[1]}/${n[2]}`:`${n[0]}-${n[1]}`;return`${t} ${locOf(x)}`});if(cs.length>6)lines.push(`+${cs.length-6}…`)}
    else if(c.type==='xref'){const ps=S.comps.filter(x=>x!==c&&x.type==='xref'&&x.net===c.net);lines=ps.length?ps.map(x=>'→ '+locOf(x)):['sem par']}
-   if(!lines.length)continue;const dy=(!D(c).nolbl&&c.tag?13:0)+(valTxt(c)?12:0);lines.forEach((t,i)=>{h+=`<text class="xr" x="${c.x+o[0]}" y="${c.y+o[1]+dy+i*10.5}">${esc(t)}</text>`})}}
+   if(!lines.length)continue;const dy=(!D(c).nolbl&&c.tag?13:0)+(valTxt(c)?12:0);lines.forEach((t,i)=>{h+=`<text class="xr" data-xc="${c.id}" x="${c.x+o[0]}" y="${c.y+o[1]+dy+i*10.5}">${esc(t)}</text>`})}}
  if(el.innerHTML!==h)el.innerHTML=h}
 function renderFrame(){const el=document.getElementById('fL');if(!el)return;ensureDoc();if(!S.doc.fr){if(el.innerHTML)el.innerHTML='';return}const d=S.doc,shn=sheetNo(S.cur),sh=S.sheets.find(x=>x.id===S.cur)||{name:''};
  let h=`<rect class="frm" x="${FX0}" y="${FY0}" width="${FX1-FX0}" height="${FY1-FY0}"/><line class="frmc" x1="${FX0}" y1="${FY0+20}" x2="${FX1}" y2="${FY0+20}"/>`;
@@ -1590,7 +1590,8 @@ function renderPalette(){const q=($('#psearch').value||'').trim().toLowerCase();
 function markPal(){document.querySelectorAll('.pitem').forEach(b=>b.classList.toggle('on',!!(tool&&tool.key===b.dataset.p)))}
 
 /* ================= renderização ================= */
-function lblPos(c){const b=boxOf(c);return rot([b[0]+b[2]+3,4],c.r)}
+/* nome do componente: à direita do desenho. Girado, vai para a direita da caixa já girada (não fica em cima do corpo) */
+function lblPos(c){const b=boxOf(c);if(!c.r)return[b[0]+b[2]+3,4];const P=[[b[0],b[1]],[b[0]+b[2],b[1]],[b[0],b[1]+b[3]],[b[0]+b[2],b[1]+b[3]]].map(p=>rot(p,c.r)),xs=P.map(p=>p[0]),ys=P.map(p=>p[1]);return[Math.max(...xs)+3,Math.round((Math.min(...ys)+Math.max(...ys))/2)+4]}
 function rot([x,y],r){r=((r%360)+360)%360;return r===90?[-y,x]:r===180?[-x,-y]:r===270?[y,-x]:[x,y]}
 function tp(c,i){const o=rot(termsOf(c)[i],c.r);return{x:c.x+o[0],y:c.y+o[1]}}
 function wbox(o,lb){const b=boxOf(o),p=[[b[0],b[1]],[b[0]+b[2],b[1]],[b[0],b[1]+b[3]],[b[0]+b[2],b[1]+b[3]]].map(q=>rot(q,o.r)),xs=p.map(q=>q[0]+o.x),ys=p.map(q=>q[1]+o.y);return[Math.min(...xs),Math.min(...ys),Math.max(...xs)+(lb&&!D(o).nolbl?34:0),Math.max(...ys)]}

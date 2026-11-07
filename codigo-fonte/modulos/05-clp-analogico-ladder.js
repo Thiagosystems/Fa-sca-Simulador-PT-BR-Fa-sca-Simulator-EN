@@ -49,9 +49,9 @@ lcmp:{n:'Comparador ladder',dom:'l',nolbl:1,def:{op:'>=',a:'IW64',b:'13824'},
  draw:c=>{const on=SIM()&&CMPF[c.op](numOf(c.a),numOf(c.b));return L(-40,0,-20,0,on?'on':'')+L(20,0,40,0,on?'on':'')+lbox(c,-22,-18,44,36,on,'CMP '+c.op,'Int')+T(0,-24,c.a,c.r,'lv')+T(0,32,c.b,c.r,'lv')},
  cond:c=>CMPF[c.op]&&CMPF[c.op](numOf(c.a),numOf(c.b))?[[0,1]]:[]},
 lrange:{n:'Faixa ladder (IN_RANGE / OUT_RANGE)',dom:'l',nolbl:1,def:{k:'IN',v:'IW64',min:'5530',max:'22118'},
- F:[['k','Tipo','sel',[['IN','IN_RANGE (dentro da faixa)'],['OUT','OUT_RANGE (fora da faixa)']]],['v','Valor (VAL)','text'],['min','Mínimo (MIN)','text'],['max','Máximo (MAX)','text']],T:[[-40,0],[40,0]],N:['',''],B:[-40,-34,80,80],
+ F:[['k','Tipo','sel',[['IN','IN_RANGE (dentro da faixa)'],['OUT','OUT_RANGE (fora da faixa)']]],['v','Valor (VAL)','text'],['min','Mínimo (MIN)','text'],['max','Máximo (MAX)','text']],T:[[-60,0],[60,0]],N:['',''],B:[-60,-34,120,80],
  draw:c=>{const v=numOf(c.v),i=v>=numOf(c.min)&&v<=numOf(c.max),on=SIM()&&(c.k==='OUT'?!i:i);
-  return L(-40,0,-34,0,on?'on':'')+L(34,0,40,0,on?'on':'')+lbox(c,-34,-18,68,40,on,c.k==='OUT'?'OUT_RANGE':'IN_RANGE','')+T(0,12,c.v,c.r,'tn6')+T(0,-24,`${c.min} … ${c.max}`,c.r,'lv')},
+  return L(-60,0,-34,0,on?'on':'')+L(34,0,60,0,on?'on':'')+lbox(c,-34,-18,68,40,on,c.k==='OUT'?'OUT_RANGE':'IN_RANGE','')+T(0,12,c.v,c.r,'tn6')+T(0,-24,`${c.min} … ${c.max}`,c.r,'lv')},
  cond:c=>{const v=numOf(c.v),i=v>=numOf(c.min)&&v<=numOf(c.max);return(c.k==='OUT'?!i:i)?[[0,1]]:[]}},
 lmove:{n:'MOVE ladder (copiar valor)',dom:'l',nolbl:1,def:{in:'IW64',out:'QW64'},F:[['in','Entrada (IN): variável ou número','text'],['out','Saída (OUT1): variável','text']],
  T:[[-40,0],[40,0]],N:['EN','ENO'],B:[-40,-34,80,74],
@@ -63,8 +63,8 @@ lctd:{n:'Contador ladder (CTD)',own:'C',dom:'l',nolbl:1,def:{pv:3},F:[['pv','Val
  vin:(c,X,N)=>{N.vars[c.tag]=(rt.cnt[c.id]||0)<=0},der:(c,X,N)=>{if(N.vars[c.tag])X.push(2,'LAD+')},
  edge:(c,X)=>{const d=X.hasLAD(0),ld=X.hasLAD(1),p=!!rt.prev[c.id],o=rt.cnt[c.id]||0;rt.prev[c.id]=d;let n=o;if(ld)n=+c.pv||0;else if(d&&!p)n=o-1;if(n!==o){rt.cnt[c.id]=n;logE(`${c.tag} = ${n}`,'a');return true}return false}},
 lctud:{n:'Contador ladder (CTUD)',own:'C',dom:'l',nolbl:1,def:{pv:3},F:[['pv','Valor de preset (PV)','num']],
- T:[[-50,-30],[-50,-10],[-50,10],[-50,30],[50,-10],[50,10]],N:['CU','CD','R','LD','QU','QD'],B:[-50,-56,100,100],
- draw:c=>{const n=SIM()?rt.cnt[c.id]||0:0,pv=+c.pv||0,qu=SIM()&&n>=pv,qd=SIM()&&n<=0;let s=R(-30,-42,60,84,qu||qd?'en':'box')+T(0,-28,'CTUD',c.r,'lv')+T(0,-16,'Int',c.r,'tn6')+T(0,36,`CV ${n} · PV ${pv}`,c.r,'tn6')+T(0,-48,c.tag,c.r,'lv');
+ T:[[-50,-30],[-50,-10],[-50,10],[-50,30],[50,-10],[50,10]],N:['CU','CD','R','LD','QU','QD'],B:[-50,-56,100,114],
+ draw:c=>{const n=SIM()?rt.cnt[c.id]||0:0,pv=+c.pv||0,qu=SIM()&&n>=pv,qd=SIM()&&n<=0;let s=R(-30,-42,60,84,qu||qd?'en':'box')+T(0,-28,'CTUD',c.r,'lv')+T(0,-16,'Int',c.r,'tn6')+T(0,53,`CV ${n} · PV ${pv}`,c.r,'tn6')+T(0,-48,c.tag,c.r,'lv');
   [['CU',-30],['CD',-10],['R',10],['LD',30]].forEach(([t,y])=>{s+=L(-50,y,-30,y)+T(-22,y+3,t,c.r,'tn6')});
   [['QU',-10,qu],['QD',10,qd]].forEach(([t,y,on])=>{s+=L(30,y,50,y,on?'on':'')+T(21,y+3,t,c.r,'tn6')});return s},
  vin:(c,X,N)=>{const n=rt.cnt[c.id]||0,pv=+c.pv||0;N.vars[c.tag]=n>=pv;N.vars[c.tag+'.QU']=n>=pv;N.vars[c.tag+'.QD']=n<=0},

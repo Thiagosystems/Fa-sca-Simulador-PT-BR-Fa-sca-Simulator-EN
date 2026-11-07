@@ -4,7 +4,10 @@ const DEV=c=>{if(!rt)return{};rt.dev=rt.dev||{};return rt.dev[c.id]||(rt.dev[c.i
 const VD=(c,i,j)=>SIM()&&rt.A?rt.A.vdc(K(c.id,i))-rt.A.vdc(K(c.id,j)):0;
 const PWR=(c,i,j,min)=>SIM()&&rt.A&&!rt.burnt[c.id]&&VD(c,i,j)>=(min||3);
 const TT=(x,y,s,c,cl)=>T(x,y,s,c.r,cl||'tn6');
-const PINS=(c,list)=>list.map(([x,y,n])=>L(x,y,x,y<0?y+12:y-12)+TT(x+(x<0?-3:3),y<0?y+20:y-14,n,c)).join('');
+/* rótulo do pino fixo no desenho (gira junto, como nos CIs) para não cobrir o terminal nem o corpo */
+const PINL=(x,y,n)=>`<text x="${x+3}" y="${y}" class="tn6 pinl" style="text-anchor:start">${esc(n)}</text>`;
+/* side: rótulo ao lado do fio do pino (quando o corpo fica longe ou é redondo) */
+const PINS=(c,list,side)=>list.map(([x,y,n])=>L(x,y,x,y<0?y+12:y-12)+(side?PINL(x,y<0?y+11:y-6,n):T(x,y<0?y+24:y-17,n,0,'tn6 pinl'))).join('');
 const bodyBox=(x,y,w,h,cl)=>R(x,y,w,h,cl||'box',' rx="4"');
 const vNorton=(x,c,i,j,I,gs)=>x.bat(c,i,j,I/gs,1/gs);
 {const DS2=id=>SIM()&&rt.res&&rt.res.ds&&rt.res.ds[id];void DS2}
@@ -18,7 +21,7 @@ zener:{n:'Diodo Zener',own:'D',def:{Vz:5.1,Pmax:.5},F:[['Vz','Tensão Zener (V)'
 ledrgb:{n:'LED RGB',own:'LED',def:{ca:false},F:[['ca','Ânodo comum (desmarcado = cátodo comum)','bool']],T:[[-40,40],[-20,40],[0,40],[20,40]],N:c=>['R',c.ca?'+ (ânodo)':'− (cátodo)','G','B'],B:[-48,-34,80,74],
  an:(c,x)=>{[[0,1.9],[2,2.2],[3,3.0]].forEach(([i,vf])=>c.ca?x.dio(c,1,i,vf,10,c.id+':'+i):x.dio(c,i,1,vf,10,c.id+':'+i))},
  draw:c=>{const b=i=>{if(!SIM()||!rt.A)return 0;const v=(c.ca?-1:1)*VD(c,i,1)-[1.9,0,2.2,3][i];return Math.max(0,Math.min(1,v/10/.02))},r=b(0),g=b(2),bl=b(3),on=r+g+bl>.02,col=`rgb(${Math.round(80+175*r)},${Math.round(80+175*g)},${Math.round(80+175*bl)})`;
-  return PINS(c,[[-40,40,'R'],[-20,40,c.ca?'+':'−'],[0,40,'G'],[20,40,'B']])+P('M-28,8V-10A18,18 0 0 1 8,-10V8Z','',on?` style="fill:${col};filter:drop-shadow(0 0 8px ${col})"`:' style="fill:color-mix(in srgb,var(--muted) 18%,transparent)"')+L(-34,8,14,8)+L(-40,28,-40,8)+L(-20,28,-20,8)+L(0,28,0,8)+L(20,28,20,8)},
+  return PINS(c,[[-40,40,'R'],[-20,40,c.ca?'+':'−'],[0,40,'G'],[20,40,'B']],1)+P('M-28,8V-10A18,18 0 0 1 8,-10V8Z','',on?` style="fill:${col};filter:drop-shadow(0 0 8px ${col})"`:' style="fill:color-mix(in srgb,var(--muted) 18%,transparent)"')+L(-34,8,14,8)+L(-40,28,-40,8)+L(-20,28,-20,8)+L(0,28,0,8)+L(20,28,20,8)},
  hot:(c,o)=>o.i>.05?`${fmtE(o.i,'A')} num LED (máximo 20 mA por cor)`:null},
 /* ---------- entrada ---------- */
 slsw:{n:'Chave deslizante (SPDT)',own:'S',act:1,T:[[-20,40],[0,40],[20,40]],N:['1','C','2'],B:[-34,-24,68,64],
@@ -37,10 +40,10 @@ dipsw:{n:'Interruptor DIP',own:'S',act:1,def:{n:4,sw:0},F:[['n','Chaves','sel',[
  click:()=>{},hitClick:(c,x)=>{const n=+c.n||4,x0=-Math.floor(n/2)*20,i=Math.round((x-x0)/20);if(i<0||i>=n)return;rt.dip=rt.dip||{};rt.dip[c.id]=(rt.dip[c.id]||0)^(1<<i);logE(`${c.tag}: chave ${i+1} ${(rt.dip[c.id]>>i)&1?'ON':'OFF'}`,'a')}},
 kp4:{n:'Teclado 4×4',own:'S',act:1,T:[[-80,100],[-60,100],[-40,100],[-20,100],[0,100],[20,100],[40,100],[60,100]],N:['L1','L2','L3','L4','C1','C2','C3','C4'],B:[-94,-100,168,200],
  draw:c=>{const k=SIM()&&rt.kp&&rt.kp[c.id];let s=bodyBox(-90,-96,160,180)+TT(-10,-82,'TECLADO 4×4',c);const K4='123A456B789C*0#D';
-  for(let r=0;r<4;r++)for(let q=0;q<4;q++){const x=-70+q*40,y=-66+r*36,on=k&&k.r===r&&k.c===q;s+=R(x,y,30,28,on?'en':'',' rx="4" style="fill:var(--panel2)"')+T(x+15,y+19,K4[r*4+q],c.r,'lv')}
+  for(let r=0;r<4;r++)for(let q=0;q<4;q++){const x=-85+q*40,y=-66+r*36,on=k&&k.r===r&&k.c===q;s+=R(x,y,30,28,on?'en':'',' rx="4" style="fill:var(--panel2)"')+T(x+15,y+19,K4[r*4+q],c.r,'lv')}
   ['L1','L2','L3','L4','C1','C2','C3','C4'].forEach((n,i)=>{const x=-80+i*20;s+=L(x,100,x,84)+TT(x,80,n,c)});return s},
  cond:c=>{const k=rt&&rt.kp&&rt.kp[c.id];return k?[[k.r,4+k.c]]:[]},click:()=>{},
- hitClick:(c,x,y)=>{const q=Math.floor((x+70)/40),r=Math.floor((y+66)/36);if(q<0||q>3||r<0||r>3)return;rt.kp=rt.kp||{};rt.kp[c.id]={r,c:q,key:'123A456B789C*0#D'[r*4+q]};logE(`${c.tag}: tecla ${rt.kp[c.id].key}`,'a');return 'hold'},
+ hitClick:(c,x,y)=>{const q=Math.floor((x+85)/40),r=Math.floor((y+66)/36);if(q<0||q>3||r<0||r>3)return;rt.kp=rt.kp||{};rt.kp[c.id]={r,c:q,key:'123A456B789C*0#D'[r*4+q]};logE(`${c.tag}: tecla ${rt.kp[c.id].key}`,'a');return 'hold'},
  release:c=>{if(rt.kp)delete rt.kp[c.id]}},
 pdiode:{n:'Fotodiodo',own:'D',act:1,def:{lux:50},F:[['lux','Luz (%)','num',null,LV]],T:V2,N:['A','K'],B:[-20,-40,46,80],
  draw:c=>L(0,-40,0,8)+P('M-10,8H10L0,-8Z','fillink')+L(-10,-8,10,-8)+L(0,-8,0,40)+P('M-22,-20l8,6M-22,-8l8,6')+TT(16,-20,`${c.lux}%`,c),
@@ -51,22 +54,22 @@ ptrans:{n:'Sensor de luz ambiente (fototransistor)',own:'Q',act:1,def:{lux:50},F
 flex:{n:'Sensor flexível',own:'R',act:1,def:{bend:0},F:[['bend','Dobra (%)','num',null,LV]],T:V2,N:['1','2'],B:[-20,-40,40,80],
  draw:c=>L(0,-40,0,-26)+L(0,26,0,40)+P(`M0,-26Q${8+((+c.bend||0)/10)},0 0,26`,'thick')+TT(14,0,`${c.bend}%`,c),
  an:(c,x)=>x.r(c,0,1,25000+75000*Math.max(0,Math.min(100,+c.bend||0))/100),click:c=>{c.bend=((+c.bend||0)+25)%125;logE(`${c.tag}: dobra ${c.bend}%`,'a')},val:c=>fmtE(25000+750*(+c.bend||0),'Ω')},
-fsr:{n:'Sensor de força (FSR)',own:'R',act:1,def:{f:0},F:[['f','Força (N)','num',null,LV]],T:V2,N:['1','2'],B:[-22,-40,44,80],
+fsr:{n:'Sensor de força (FSR)',own:'R',act:1,def:{f:0},F:[['f','Força (N)','num',null,LV]],T:V2,N:['1','2'],B:[-22,-40,58,80],
  draw:c=>L(0,-40,0,-18)+L(0,18,0,40)+C(0,0,16,+c.f>0?'en':'')+C(0,0,8)+TT(22,4,`${c.f} N`,c),
  an:(c,x)=>{const f=+c.f||0;x.r(c,0,1,f<=.05?1e7:3000/f)},click:c=>{const f=+c.f||0;c.f=f>=10?0:f>=5?10:f>=1?5:1;logE(`${c.tag}: força ${c.f} N`,'a')},val:c=>`${c.f} N`},
 tmp36:{n:'Sensor de temperatura TMP36',own:'U',act:1,def:{temp:25},F:[['temp','Temperatura (°C)','num',null,LV]],T:[[-20,40],[0,40],[20,40]],N:['+Vs','Vout','GND'],B:[-26,-30,52,70],
- draw:c=>P('M-18,10V-6A18,18 0 0 1 18,-6V10Z','box')+L(-20,40,-20,10)+L(0,40,0,10)+L(20,40,20,10)+TT(0,0,'TMP',c)+T(0,-22,`${c.temp} °C`,c.r,'lv'),
+ draw:c=>P('M-18,10V-6A18,18 0 0 1 18,-6V10Z','box')+L(-20,40,-20,10)+L(0,40,0,10)+L(20,40,20,10)+TT(0,0,'TMP36',c),
  an:(c,x)=>x.r(c,0,2,1e5),der:(c,X)=>{if(X.vdc(0)-X.vdc(2)>=2.7)X.push(1,c.tag+'.o:+',X.vdc(2)+.5+(+c.temp||0)/100,100,2)},
  click:c=>{c.temp=(((+c.temp||0)+50+10)%175)-50;logE(`${c.tag}: ${c.temp} °C`,'a')},val:c=>`${c.temp} °C`},
 tilt:{n:'Sensor de inclinação',own:'S',act:1,T:V2,N:['1','2'],B:[-20,-40,40,80],
  draw:c=>{const t=SIM()&&rt.btn[c.id];return L(0,-40,0,-18)+L(0,18,0,40)+R(-12,-18,24,36,'box',' rx="10"')+C(0,t?-8:8,6,'fillink')+L(-6,14,6,14)},
  cond:c=>rt&&rt.btn[c.id]?[]:[[0,1]],click:c=>{rt.btn[c.id]=!rt.btn[c.id];logE(`${c.tag} ${rt.btn[c.id]?'inclinado (aberto)':'em pé (fechado)'}`,'a')}},
 soil:{n:'Sensor de umidade do solo',own:'U',act:1,def:{hum:30},F:[['hum','Umidade (%)','num',null,LV]],T:[[-20,-60],[0,-60],[20,-60]],N:['VCC','GND','SIG'],B:[-30,-60,60,124],
- draw:c=>PINS(c,[[-20,-60,'VCC'],[0,-60,'GND'],[20,-60,'SIG']])+bodyBox(-24,-46,48,40)+P('M-14,-6V56l4,6l4,-6V-6M14,-6V56l-4,6l-4,-6V-6','box')+TT(0,-24,`${c.hum}%`,c),
+ draw:c=>PINS(c,[[-20,-60,'VCC'],[0,-60,'GND'],[20,-60,'SIG']])+bodyBox(-32,-48,64,42)+P('M-14,-6V56l4,6l4,-6V-6M14,-6V56l-4,6l-4,-6V-6','box')+TT(0,-24,`${c.hum}%`,c),
  an:(c,x)=>x.r(c,0,1,2e4),der:(c,X)=>{const v=X.vdc(0)-X.vdc(1);if(v>=2.5)X.push(2,c.tag+'.o:+',X.vdc(1)+v*.9*Math.max(0,Math.min(100,+c.hum||0))/100,200,1)},
  click:c=>{c.hum=((+c.hum||0)+20)%120;logE(`${c.tag}: umidade ${c.hum}%`,'a')},val:c=>`${c.hum}% umidade`},
 gas:{n:'Sensor de gás',own:'U',act:1,def:{gas:0},F:[['gas','Concentração de gás (%)','num',null,LV]],T:[[-20,-40],[0,-40],[20,-40],[-20,40],[0,40],[20,40]],N:['A1','H1','B1','A2','H2','B2'],B:[-34,-40,68,80],
- draw:c=>PINS(c,[[-20,-40,'A'],[0,-40,'H'],[20,-40,'B'],[-20,40,'A'],[0,40,'H'],[20,40,'B']])+C(0,0,26,+c.gas>0?'en':'box')+C(0,0,16)+P('M-10,-4h20M-10,4h20','dash'),
+ draw:c=>PINS(c,[[-20,-40,'A'],[0,-40,'H'],[20,-40,'B'],[-20,40,'A'],[0,40,'H'],[20,40,'B']],1)+C(0,0,26,+c.gas>0?'en':'box')+C(0,0,16)+P('M-10,-4h20M-10,4h20','dash'),
  an:(c,x)=>{x.r(c,0,3,.01);x.r(c,2,5,.01);x.r(c,1,4,33);x.r(c,0,2,1e5/(1+Math.max(0,+c.gas||0)/2))},click:c=>{c.gas=((+c.gas||0)+25)%125;logE(`${c.tag}: gás ${c.gas}%`,'a')},val:c=>`${c.gas}% gás`},
 pir:{n:'Sensor PIR (presença)',own:'U',act:1,def:{hold:3},F:[['hold','Tempo ligado (s)','num',null,LV]],T:[[-20,60],[0,60],[20,60]],N:['SINAL','VCC','GND'],B:[-40,-40,80,104],
  draw:c=>{const on=SIM()&&(DEV(c).t||0)>0;return PINS(c,[[-20,60,'S'],[0,60,'+'],[20,60,'−']])+bodyBox(-36,-8,72,56)+P('M-26,-8A26,30 0 0 1 26,-8Z',on?'en':'box')+P('M-16,-18h32M-20,-28h40','dash')+TT(0,30,on?'MOVIMENTO':'PIR',c)},
@@ -79,7 +82,7 @@ ping:{n:'Sensor de distância ultrassônico (PING)',own:'U',act:1,def:{dist:100}
  draw:c=>PINS(c,[[-20,40,'GND'],[0,40,'5V'],[20,40,'SIG']])+bodyBox(-50,-28,100,56)+C(-24,-4,16)+C(24,-4,16)+TT(0,-14,`${c.dist} cm`,c),
  an:(c,x)=>x.r(c,1,0,330),click:c=>DEFS.hcsr04.click(c),val:c=>`${c.dist} cm`},
 irrx:{n:'Sensor infravermelho (receptor IR)',own:'U',T:[[-20,40],[0,40],[20,40]],N:['OUT','GND','VCC'],B:[-30,-34,60,74],
- draw:c=>{const on=SIM()&&rt.ir&&rt.simT-rt.ir.t<.3;return PINS(c,[[-20,40,'OUT'],[0,40,'GND'],[20,40,'VCC']])+bodyBox(-22,-26,44,44,on?'en':'box')+C(0,-6,10)+TT(0,14,'IR',c)},
+ draw:c=>{const on=SIM()&&rt.ir&&rt.simT-rt.ir.t<.3;return PINS(c,[[-20,40,'OUT'],[0,40,'GND'],[20,40,'VCC']],1)+bodyBox(-22,-26,44,44,on?'en':'box')+C(0,-6,10)+TT(0,14,'IR',c)},
  an:(c,x)=>x.r(c,2,1,2e4),der:(c,X)=>{const v=X.vdc(2)-X.vdc(1);if(v>=2.5)X.push(0,c.tag+'.o:+',X.vdc(1)+v,1000,1)}},
 irremote:{n:'Controle remoto infravermelho',own:'RC',act:1,dom:'x',T:[],B:[-50,-100,100,200],
  draw:c=>{let s=R(-46,-96,92,192,'box',' rx="14"');const KB=IRKEYS;for(let i=0;i<KB.length;i++){const r=Math.floor(i/3),q=i%3,x=-36+q*26,y=-80+r*24,on=SIM()&&rt.ir&&rt.ir.k===i&&rt.simT-rt.ir.t<.3;s+=R(x,y,20,18,on?'en':'',' rx="5" style="fill:var(--panel2)"')+T(x+10,y+12.5,KB[i][0],c.r,'tn6')}return s},
@@ -90,7 +93,7 @@ vibm:{n:'Motor de vibração',own:'M',def:{Vn:3},F:[['Vn','Tensão nominal (V)',
  an:(c,x)=>x.r(c,0,1,(+c.Vn||3)/.08),say:c=>Math.abs(VD(c,0,1))>.4*(+c.Vn||3)?['on',`${c.tag} vibrando`]:null},
 encm:{n:'Motor CC com codificador (encoder)',own:'M',def:{Vn:6,rpm:200,cpr:12},F:[['Vn','Tensão nominal (V)','eng','V',LV],['rpm','Rotação nominal (rpm)','num',null,LV],['cpr','Pulsos por volta (encoder)','num',null,LV]],
  T:[[-40,60],[-20,60],[0,60],[20,60],[40,60],[60,60]],N:['M+','M−','GND','VCC','A','B'],B:[-56,-50,128,114],
- draw:c=>{const d=DEV(c),w=SIM()?Math.round(d.rpm||0):0;return PINS(c,[[-40,60,'M+'],[-20,60,'M−'],[0,60,'GND'],[20,60,'VCC'],[40,60,'A'],[60,60,'B']])+bodyBox(-50,-40,120,82)+C(-10,0,24,Math.abs(w)>1?'en':'')+T(-10,5,'M',c.r,'lv')+TT(40,-16,'ENC',c)+TT(40,4,`${w} rpm`,c)},
+ draw:c=>{const d=DEV(c),w=SIM()?Math.round(d.rpm||0):0;return PINS(c,[[-40,60,'M+'],[-20,60,'M−'],[0,60,'GND'],[20,60,'VCC'],[40,60,'A'],[60,60,'B']])+bodyBox(-50,-40,120,88)+C(-10,0,24,Math.abs(w)>1?'en':'')+T(-10,5,'M',c.r,'lv')+TT(40,-16,'ENC',c)+TT(40,4,`${w} rpm`,c)},
  an:(c,x)=>{x.r(c,0,1,(+c.Vn||6)/.15);x.r(c,3,2,1e4)},
  tick:(c,dt)=>{if(!rt.A)return false;const d=DEV(c),v=VD(c,0,1),tgt=v/(+c.Vn||6)*(+c.rpm||200);d.rpm=(d.rpm||0)+(tgt-(d.rpm||0))*Math.min(1,dt/.15);d.ph=(d.ph||0)+d.rpm/60*dt*(+c.cpr||12)*4;const st=((Math.floor(d.ph)%4)+4)%4,a=st===1||st===2,b=st>=2;if(a!==d.a||b!==d.b||Math.abs(d.rpm-tgt)>.5){d.a=a;d.b=b;return true}return false},
  der:(c,X)=>{const d=DEV(c),v=X.vdc(3)-X.vdc(2);if(v<2.5)return;X.push(4,c.tag+'.a'+(d.a?':+':':-'),X.vdc(2)+(d.a?v:0),200,2);X.push(5,c.tag+'.b'+(d.b?':+':':-'),X.vdc(2)+(d.b?v:0),200,2)},
@@ -108,18 +111,18 @@ neopx:{n:'NeoPixel',own:'NP',def:{n:1,shape:'px'},F:[['shape','Formato','sel',[[
  T:c=>c.shape==='px'?[[-20,40],[0,40],[20,40],[40,40]]:[[-20,npH(c)],[0,npH(c)],[20,npH(c)],[40,npH(c)]],N:['+5V','GND','DIN','DOUT'],
  B:c=>{if(c.shape==='ring'){const r=npR(c);return[-r-10,-r-10,2*r+20,r+10+npH(c)]}if(c.shape==='strip'){const w=(+c.n||8)*20;return[-30,-24,Math.max(w+20,90),npH(c)+24]}return[-30,-24,80,64]},
  draw:c=>{const n=c.shape==='px'?1:Math.max(1,Math.min(64,+c.n||8)),col=DEV(c).px||[],pw=!SIM()||PWR(c,0,1,3.5),dot=(x,y,i,r)=>{const v=col[i]||0,rr=(v>>16)&255,g=(v>>8)&255,b=v&255,on=SIM()&&pw&&v;return C(x,y,r,'',on?` style="fill:rgb(${rr},${g},${b});stroke:rgb(${rr},${g},${b});filter:drop-shadow(0 0 5px rgb(${rr},${g},${b}))"`:' style="fill:color-mix(in srgb,var(--muted) 15%,transparent)"')};
-  let s='';const h=npH(c);[[-20,'+'],[0,'−'],[20,'IN'],[40,'OUT']].forEach(([x,t])=>s+=L(x,h,x,h-10)+TT(x,h-14,t,c));
+  let s='';const h=npH(c);[[-20,'+'],[0,'−'],[20,'IN'],[40,'OUT']].forEach(([x,t])=>s+=L(x,h,x,h-10)+PINL(x,h-6,t));
   if(c.shape==='ring'){const r=npR(c);s+=C(0,0,r+8,'box')+C(0,0,r-8,'')+L(-20,h-10,-20,r+2)+L(0,h-10,0,r+6)+L(20,h-10,20,r+6)+L(40,h-10,40,r-2);for(let i=0;i<n;i++){const a=-Math.PI/2+i*2*Math.PI/n;s+=dot(Math.cos(a)*r,Math.sin(a)*r,i,Math.min(6,Math.PI*r/n*.8))}}
   else if(c.shape==='strip'){s+=R(-26,-18,Math.max(n*20+12,86),26,'box',' rx="3"');for(let i=0;i<n;i++)s+=dot(-12+i*20,-5,i,6);s+=P(`M-20,8V${h-10}M0,8V${h-10}M20,8V${h-10}M40,8V${h-10}`)}
   else{s+=R(-26,-20,72,40,'box',' rx="6"')+dot(10,-2,0,10)+P(`M-20,20V${h-10}M0,20V${h-10}M20,20V${h-10}M40,20V${h-10}`)}return s},
  an:(c,x)=>{x.r(c,0,1,2000);x.r(c,2,1,1e6)}},
 lcd:{n:'LCD 16×2',own:'LCD',T:LCDT(),N:['GND','VCC','V0','RS','RW','E','D0','D1','D2','D3','D4','D5','D6','D7','LED+','LED−'],B:[-180,-90,360,170],
- draw:c=>{let s=LCDBODY(c);LCDT().forEach(([x,y],i)=>{s+=L(x,y,x,62)+`<text x="${x}" y="74" class="tn6" transform="rotate(-90 ${x} 74)" style="text-anchor:end">${['GND','VCC','V0','RS','RW','E','D0','D1','D2','D3','D4','D5','D6','D7','A','K'][i]}</text>`});return s.replace('y="74"','y="74"')},
+ draw:c=>{let s=LCDBODY(c);LCDT().forEach(([x,y],i)=>{s+=L(x,y,x,54)+`<text x="${x+2}" y="49" class="tn6" transform="rotate(-90 ${x+2} 49)" style="text-anchor:start">${['GND','VCC','V0','RS','RW','E','D0','D1','D2','D3','D4','D5','D6','D7','A','K'][i]}</text>`});return s.replace('y="74"','y="74"')},
  an:(c,x)=>{x.r(c,1,0,5000);x.dio(c,14,15,2.8,60,c.id+':bl')},val:()=>''},
-lcdi2c:{n:'LCD 16×2 (I2C)',own:'LCD',def:{addr:'0x27'},F:[['addr','Endereço I2C','text']],T:[[-180,0],[-180,20],[-180,40],[-180,60]],N:['GND','VCC','SDA','SCL'],B:[-180,-90,360,170],
- draw:c=>{let s=LCDBODY(c,true);[['GND',0],['VCC',20],['SDA',40],['SCL',60]].forEach(([n,y])=>{s+=L(-180,y,-164,y)+TT(-150,y+3,n,c)});return s},an:(c,x)=>x.r(c,1,0,5000),val:c=>c.addr},
+lcdi2c:{n:'LCD 16×2 (I2C)',own:'LCD',def:{addr:'0x27'},F:[['addr','Endereço I2C','text']],T:[[-200,0],[-200,20],[-200,40],[-200,60]],N:['GND','VCC','SDA','SCL'],B:[-200,-90,380,170],
+ draw:c=>{let s=LCDBODY(c,true);[['GND',0],['VCC',20],['SDA',40],['SCL',60]].forEach(([n,y])=>{s+=L(-200,y,-176,y)+TT(-158,y+3,n,c)});return s},an:(c,x)=>x.r(c,1,0,5000),val:c=>c.addr},
 tm1637:{n:'Display de 4 dígitos (TM1637)',own:'DS',T:[[-20,40],[0,40],[20,40],[40,40]],N:['CLK','DIO','VCC','GND'],B:[-80,-40,160,92],
- draw:c=>{const d=DEV(c),pw=!SIM()||PWR(c,2,3,3);let s=bodyBox(-76,-36,152,60)+PINS(c,[[-20,40,'CLK'],[0,40,'DIO'],[20,40,'VCC'],[40,40,'GND']]);
+ draw:c=>{const d=DEV(c),pw=!SIM()||PWR(c,2,3,3);let s=bodyBox(-76,-36,152,64)+PINS(c,[[-20,40,'CLK'],[0,40,'DIO'],[20,40,'VCC'],[40,40,'GND']]);
   for(let k=0;k<4;k++)s+=SEG7(-60+k*32,-30,(SIM()&&pw&&d.seg)?d.seg[k]||0:0,'#e23d3d')+(k===1?C(-60+k*32+28,-12,2,SIM()&&pw&&d.colon?'':'',SIM()&&pw&&d.colon?' style="fill:#e23d3d;stroke:none"':' style="fill:color-mix(in srgb,var(--muted) 25%,transparent);stroke:none"')+C(-60+k*32+28,0,2,'',SIM()&&pw&&d.colon?' style="fill:#e23d3d;stroke:none"':' style="fill:color-mix(in srgb,var(--muted) 25%,transparent);stroke:none"'):'');return s},
  an:(c,x)=>x.r(c,2,3,2000)},
 /* ---------- potência ---------- */
@@ -132,7 +135,7 @@ usba:{n:'Conector USB A (5 V)',own:'X',T:[[-40,40],[-20,40],[0,40],[20,40]],N:['
 /* ---------- instrumentos ---------- */
 mmeter:{n:'Multímetro',own:'MM',def:{m:'V'},F:[['m','Função','sel',[['V','Voltímetro (V)'],['A','Amperímetro (A)'],['R','Ohmímetro (Ω)']]]],T:[[-40,60],[0,60],[40,60]],N:['COM','VΩ','A'],B:[-56,-60,112,124],
  draw:c=>{const r=SIM()?mmRead(c):'',m=c.m||'V';return bodyBox(-52,-56,104,100,'')+R(-44,-48,88,30,'',' rx="3" style="fill:#0d1b14"')+`<text x="40" y="-27" class="lv" style="fill:#7cf2a0;text-anchor:end;font-size:13px">${esc(r||'— — —')}</text>`+
-  TT(-30,-6,m==='V'?'● V':'○ V',c)+TT(0,-6,m==='R'?'● Ω':'○ Ω',c)+TT(30,-6,m==='A'?'● A':'○ A',c)+C(-40,26,6,'box')+C(0,26,6,m!=='A'?'en':'box')+C(40,26,6,m==='A'?'en':'box')+L(-40,32,-40,60)+L(0,32,0,60)+L(40,32,40,60)+TT(-40,46,'COM',c)+TT(0,46,'VΩ',c)+TT(40,46,'A',c)},
+  TT(-30,-6,m==='V'?'● V':'○ V',c)+TT(0,-6,m==='R'?'● Ω':'○ Ω',c)+TT(30,-6,m==='A'?'● A':'○ A',c)+C(-40,26,6,'box')+C(0,26,6,m!=='A'?'en':'box')+C(40,26,6,m==='A'?'en':'box')+L(-40,32,-40,60)+L(0,32,0,60)+L(40,32,40,60)+TT(-40,14,'COM',c)+TT(0,14,'VΩ',c)+TT(40,14,'A',c)},
  an:(c,x)=>{const m=c.m||'V';if(m==='A'){x.r(c,2,0,.01);x.r(c,1,0,1e7)}else if(m==='R')x.bat(c,1,0,1,1000);else x.r(c,1,0,1e7)},val:c=>({V:'V',A:'A',R:'Ω'})[c.m||'V'],
  say:c=>{const r=mmRead(c);return r?['m',`${c.tag} marca ${r}`]:null}},
 psub:{n:'Fonte de bancada',own:'G',def:{V:12,Ilim:1},F:[['V','Tensão (V)','eng','V',LV],['Ilim','Limite de corrente (A)','eng','A',LV]],T:[[-20,60],[20,60]],N:['+','−'],B:[-60,-50,120,114],
@@ -145,9 +148,9 @@ psub:{n:'Fonte de bancada',own:'G',def:{V:12,Ilim:1},F:[['V','Tensão (V)','eng'
  val:c=>`${fmtE(+c.V,'V')} ${fmtE(+c.Ilim,'A')}`},
 fgen:{n:'Gerador de função',own:'G',def:{w:'sq',f:1,Vpp:5,off:2.5},F:[['w','Forma de onda','sel',[['sin','Senoidal'],['sq','Quadrada'],['tri','Triangular'],['saw','Dente de serra']]],['f','Frequência (Hz)','eng','Hz',LV],['Vpp','Amplitude pico a pico (V)','eng','V',LV],['off','Nível CC (offset, V)','eng','V',LV]],
  T:[[-20,60],[20,60]],N:['+','COM'],B:[-62,-50,124,114],
- draw:c=>{const w=c.w||'sq',wave={sin:'M-36,-14q6,-16 12,0t12,0t12,0t12,0',sq:'M-36,-6v-12h12v24h12v-24h12v24h12v-12',tri:'M-36,-6l6,-12l12,24l12,-24l12,24l6,-12',saw:'M-36,6l16,-24v24l16,-24v24l16,-24v24'}[w];
-  return bodyBox(-58,-46,116,90)+R(-48,-38,96,40,'',' rx="3" style="fill:#0d1b14"')+P(wave,''," style=\"stroke:#f2b705\"")+`<text x="44" y="-4" class="tn6" style="fill:#7cf2a0;text-anchor:end">${fmtE(+c.f,'Hz')} · ${fmtE(+c.Vpp,'V')}pp</text>`+
-  L(-20,40,-20,60)+L(20,40,20,60)+C(-20,30,5,'',' style="fill:#d7263d;stroke:none"')+C(20,30,5,'fillink')+TT(-20,22,'+',c)+TT(20,22,'COM',c)},
+ draw:c=>{const w=c.w||'sq',wave={sin:'M-36,-9q6,-12 12,0t12,0t12,0t12,0',sq:'M-36,-9v-8h12v16h12v-16h12v16h12v-8',tri:'M-36,-9l6,-8l12,16l12,-16l12,16l6,-8',saw:'M-36,-1l16,-16v16l16,-16v16l16,-16v16'}[w];
+  return bodyBox(-58,-46,116,90)+R(-48,-38,96,40,'',' rx="3" style="fill:#0d1b14"')+P(wave,''," style=\"stroke:#f2b705\"")+`<text x="44" y="-28" class="tn6" style="fill:#7cf2a0;text-anchor:end">${fmtE(+c.f,'Hz')} · ${fmtE(+c.Vpp,'V')}pp</text>`+
+  L(-20,40,-20,60)+L(20,40,20,60)+C(-20,30,5,'',' style="fill:#d7263d;stroke:none"')+C(20,30,5,'fillink')+TT(-31,33,'+',c)+TT(35,33,'COM',c)},
  an:(c,x)=>x.bat(c,0,1,fgenV(c),50),val:c=>`${fmtE(+c.f,'Hz')}`},
 /* ---------- controle de potência ---------- */
 pmos:{n:'MOSFET canal P',own:'Q',T:[[20,-40],[-40,0],[20,40]],N:['D (dreno)','G (gate)','S (fonte)'],B:[-42,-40,72,80],def:{Vth:2,Rds:.05,Idmax:10,Pmax:30},
@@ -164,7 +167,7 @@ rly2:{n:'Relé DPDT',own:'K',def:{Vn:5,Rc:70},F:[['Vn','Tensão da bobina (V)','
  load:()=>[[0,1]],outF:(c,en)=>en,an:(c,x)=>x.r(c,0,1,+c.Rc||70),cond:(c,E)=>E.out[c.tag]?[[2,4],[5,7]]:[[2,3],[5,6]],pull:()=>.7},
 /* ---------- conectores ---------- */
 hdr8:{n:'Conector de 8 pinos',own:'J',T:c=>{const t=[];for(let i=0;i<8;i++)t.push([-20,-80+i*20]);for(let i=0;i<8;i++)t.push([20,-80+i*20]);return t},N:c=>{const t=[];for(let i=1;i<=8;i++)t.push(String(i));for(let i=1;i<=8;i++)t.push(i+"'");return t},B:[-26,-90,52,180],
- draw:c=>{let s=R(-8,-90,16,180,'box',' rx="2"');for(let i=0;i<8;i++){const y=-80+i*20;s+=L(-20,y,-6,y)+L(6,y,20,y)+R(-4,y-4,8,8,'fillink')+TT(-24,y+3,String(i+1),c)}return s},
+ draw:c=>{let s=R(-8,-90,16,180,'box',' rx="2"');for(let i=0;i<8;i++){const y=-80+i*20;s+=L(-20,y,-6,y)+L(6,y,20,y)+R(-4,y-4,8,8,'fillink')+TT(-13,y-4,String(i+1),c)}return s},
  cond:()=>{const o=[];for(let i=0;i<8;i++)o.push([i,8+i]);return o}}
 });
 /* a fonte de bancada limita a corrente antes de qualquer proteção ou queima ser avaliada */

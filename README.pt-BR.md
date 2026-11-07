@@ -51,6 +51,7 @@ Feito por **Thiagosystems**. Simulador de comandos elétricos, eletrônica, CLP 
 - **Serial Plotter**: o botão Gráfico do monitor serial desenha os números recebidos (várias colunas ou nome:valor).
 - Componentes como os do Tinkercad: LED RGB, Zener, chave deslizante, botão de 4 pinos, DIP, teclado 4×4, sensores (TMP36, PIR, ultrassônico, umidade, gás, flexível, força, luz, inclinação, IR e controle remoto), NeoPixel (LED, anéis e faixas), servo, piezo, motor com encoder, LCD 16×2 (comum e I2C), display TM1637, **display OLED 128×64**, **lâmpada pequena** (brilho pela tensão, queima com sobretensão), **módulo relé 5 V**, **ponte H L298N**, **motor de passo 28BYJ-48 com ULN2003**, **encoder rotativo KY-040**, multímetro, fonte de bancada, gerador de função, relés SPDT/DPDT, pMOS, 556, LM339, 4N35, 74HC10/11/20/21/27/73/75/93/132/283 e PCF8574.
 - Modelo pronto **Arduino programado em C++**.
+- **Textos sempre legíveis ao girar**: nomes e valores nunca ficam de cabeça para baixo; o texto de dentro do corpo (fases, inversor, sensores) fica em pé e centralizado; rótulos de pino ficam dentro do corpo, sem cobrir fios nem terminais. Na protoboard, o nome dos chips gira junto com a peça, como na peça real.
 
 **CLP**
 - Entradas e saídas digitais e **analógicas** (0–10 V = 0–27648, como na Siemens): IW64, IW66… e QW64, QW66… nas CPUs, ET 200 e nos módulos de entrada/saída analógica; A0–A5 (0–1023) no Arduino.

@@ -63,14 +63,14 @@ const ovName=s=>s[0]==='~'?`<tspan text-decoration="overline">${esc(s.slice(1))}
 function icPins(c){const sp=icSpec(c),n=sp.pins.length;return{sp,n,g:dipGeo(n)}}
 Object.assign(DEFS,{ic:{n:'Circuito integrado',own:'U',def:{k:'74HC00'},F:[['k','Circuito integrado','sel',Object.keys(ICS).map(k=>[k,`${k} — ${ICS[k].d}`])]],
  T:c=>{const{sp,n,g}=icPins(c);return sp.pins.map((_,i)=>g.pos(i+1))},N:c=>icSpec(c).pins.map((p,i)=>`${i+1} ${p.replace('~','/')}`),
- B:c=>{const{g}=icPins(c);return[-82,g.y0-22,164,(g.h-1)*20+44]},
+ B:c=>{const{g}=icPins(c);return[-82,g.y0-22,164,(g.h-1)*20+44+(c.k==='PC817'?12:0)]},
  act:()=>false,
  draw:c=>{const{sp,n,g}=icPins(c),top=g.y0-14,bot=g.y0+(g.h-1)*20+14;let s=R(-50,top,100,bot-top,'box',' rx="3"')+P(`M-7,${top}A7,7 0 0 0 7,${top}`);
   const A=SIM()&&rt.A&&!rt.burnt[c.id]?rt.A:null,gi=(sp.gnd||1)-1,vg=A?A.vdc(K(c.id,gi)):0,vcc=A&&sp.vcc?A.vdc(K(c.id,sp.vcc-1))-vg:5;
   sp.pins.forEach((nm,i)=>{const p=i+1,[x,y]=g.pos(p),L0=x<0,hi=A&&p!==sp.vcc&&p!==sp.gnd&&vcc>1&&A.vdc(K(c.id,i))-vg>vcc/2;
    s+=L(x,y,L0?-50:50,y,hi?'on':'')+`<text x="${L0?-64:64}" y="${y-3}" class="tn6">${p}</text><text x="${L0?-46:46}" y="${y+3}" class="icn" style="text-anchor:${L0?'start':'end'}">${ovName(nm)}</text>`});
-  if(c.k==='PC817')s+=`<text x="0" y="${top-6}" class="icp">PC817</text>`+P('M-22,-6H-14M-22,6H-14M-18,-6V-4l-5,-6h10z')+L(-23,-1,-13,-1)+P('M-8,-4l6,2M-8,4l6,2','dash')+L(4,-10,4,10)+P('M4,-4l10,-6M4,4l10,6M10,8l4,2l-1,-4');
-  else s+=`<text x="0" y="0" class="icp" transform="rotate(-90 0 0)">${esc(sp.n)}</text>`;return s},
+  if(c.k==='PC817')s+=`<text x="0" y="${bot+12}" class="icp">PC817</text>`+`<g transform="translate(0 ${(top+bot)/2})">`+P('M-22,-6H-14M-22,6H-14M-18,-6V-4l-5,-6h10z')+L(-23,-1,-13,-1)+P('M-8,-4l6,2M-8,4l6,2','dash')+L(4,-10,4,10)+P('M4,-4l10,-6M4,4l10,6M10,8l4,2l-1,-4')+'</g>';
+  else{const cy=(top+bot)/2;s+=`<text x="0" y="${cy}" class="icp" transform="rotate(-90 0 ${cy})">${esc(sp.n)}</text>`}return s},
  an:(c,x)=>{const sp=icSpec(c),g=(sp.gnd||1)-1;if(sp.vcc)x.r(c,sp.vcc-1,g,1e5);(sp.ins||[]).forEach(p=>x.r(c,p-1,g,1e6));if(sp.an)sp.an(c,x)},
  edge:(c,X)=>{const sp=icSpec(c);if(rt.burnt[c.id])return false;if(sp.edge)return sp.edge(c,X);const st=icSt(c),g=(sp.gnd||1)-1,fam=FAM[sp.fam],deg=pinDeg();
   const V=p=>X.vdc(p-1)-X.vdc(g),vcc=sp.vcc?V(sp.vcc):5;
@@ -107,13 +107,13 @@ vreg:{n:'Regulador de tensão',own:'U',def:{V:5},F:[['V','Tensão de saída','se
 
 /* sensor de temperatura LM35 (10 mV/°C) */
 lm35:{n:'Sensor de temperatura LM35',own:'U',act:1,def:{temp:25},F:[['temp','Temperatura (°C)','num',null,LV]],T:[[-20,40],[0,40],[20,40]],N:['+Vs','Vout','GND'],B:[-26,-30,52,70],
- draw:c=>P('M-18,10V-6A18,18 0 0 1 18,-6V10Z','box')+L(-20,40,-20,10)+L(0,40,0,10)+L(20,40,20,10)+T(0,0,'LM35',c.r,'tn6')+T(0,-22,`${c.temp} °C`,c.r,'lv')+T(-26,30,'+Vs',c.r,'tn6')+T(26,30,'GND',c.r,'tn6'),
+ draw:c=>P('M-18,10V-6A18,18 0 0 1 18,-6V10Z','box')+L(-20,40,-20,10)+L(0,40,0,10)+L(20,40,20,10)+T(0,0,'LM35',c.r,'tn6')+T(-26,30,'+Vs',c.r,'tn6')+T(26,30,'GND',c.r,'tn6'),
  an:(c,x)=>x.r(c,0,2,1e5),der:(c,X)=>{if(X.vdc(0)-X.vdc(2)>=4)X.push(1,c.tag+'.o:+',X.vdc(2)+(+c.temp||0)/100,100,2)},
  click:c=>{c.temp=((+c.temp||0)+10)%160;logE(`${c.tag}: ${c.temp} °C`,'a')},val:c=>`${c.temp} °C`},
 
 /* LDR (resistor que varia com a luz) */
 ldr:{n:'LDR (sensor de luz)',own:'LDR',act:1,def:{lux:50},F:[['lux','Luz (%)','num',null,LV]],T:V2,N:['1','2'],B:[-24,-40,48,80],
- draw:c=>L(0,-40,0,-18)+L(0,18,0,40)+R(-8,-18,16,36,'box')+P('M-22,-20l8,8M-20,-8l8,8')+P('M-14,-12l2,-4l2,4M-12,0l2,-4l2,4','fillink')+T(0,-24,`${c.lux}%`,c.r,'tn6'),
+ draw:c=>L(0,-40,0,-18)+L(0,18,0,40)+R(-8,-18,16,36,'box')+P('M-22,-20l8,8M-20,-8l8,8')+P('M-14,-12l2,-4l2,4M-12,0l2,-4l2,4','fillink'),
  an:(c,x)=>x.r(c,0,1,Math.pow(10,6-4*Math.max(0,Math.min(100,+c.lux||0))/100)),
  click:c=>{c.lux=((+c.lux||0)+25)%125;logE(`${c.tag}: luz ${c.lux}%`,'a')},val:c=>`${c.lux}% luz`}});
 

@@ -21,7 +21,7 @@ Object.assign(DEFS.rect,{T:[[-40,0],[40,0],[0,-40],[0,40]],N:['1','2','3','4'],B
  const f=d.F.find(x=>x[0]==='sym');if(f)f[3]=[['','Padrão (quadrado, como no CADe_SIMU)'],['iec','IEC (com x)'],['det','Detalhado (térmico + magnético)']]}
 
 /* identificação da ponte acima do terminal 2, fora dos fios */
-{const lp=lblPos;lblPos=function(c){return c.type==='rect'?rot([46,-20],c.r):c.type==='mot6'&&c.pe?rot([46,52],c.r):lp(c)}}
+{const lp=lblPos;lblPos=function(c){return c.type==='rect'?rot([46,-20],c.r):c.type==='mot6'&&c.pe?rot([64,38],c.r):lp(c)}}
 /* ================= motor de 6 terminais com borne de terra (PE) ================= */
 {const d=DEFS.mot6,T0=d.T,N0=d.N,D0=d.draw,B0=d.B;d.def={...d.def,pe:false};
  d.T=c=>c.pe?[...fv(T0,c),[60,0]]:fv(T0,c);d.N=c=>c.pe?[...fv(N0,c),'PE']:fv(N0,c);d.B=c=>{const b=fv(B0,c);return c.pe?[b[0],b[1],b[2]+30,b[3]]:b};

@@ -19,7 +19,7 @@ const opSay=(c,o,k,nm)=>{const a=o&&o.opa&&o.opa[k];if(!a)return null;return a.s
 DEFS.opamp={n:'Amplificador operacional',own:'U',def:{m:'lm358'},F:[['m','Modelo','sel',Object.keys(OPM).map(k=>[k,k==='ideal'?'Ideal (±15 V se V+ e V− ficarem soltos)':OPM[k].n])]],
  T:[[-40,-20],[-40,20],[60,0],[0,-40],[0,40]],N:['− (inversora)','+ (não inversora)','saída','V+','V−'],B:[-40,-40,100,80],
  draw:c=>{const o=SIM()&&rt.A?rt.A.m[c.id]:null,a=o&&o.opa&&o.opa[c.id+':2'],on=a&&a.st==='lin';
-  return L(-40,-20,-30,-20)+L(-40,20,-30,20)+L(50,0,60,0)+L(0,-40,0,-21)+L(0,40,0,21)+P('M-30,-34L50,0L-30,34Z',on?'en':'box')+T(-22,-16,'−',c.r,'lv')+T(-22,24,'+',c.r,'lv')+T(6,-30,'V+',c.r,'tn6')+T(6,36,'V−',c.r,'tn6')},
+  return L(-40,-20,-30,-20)+L(-40,20,-30,20)+L(50,0,60,0)+L(0,-40,0,-21)+L(0,40,0,21)+P('M-30,-34L50,0L-30,34Z',on?'en':'box')+T(-22,-16,'−',c.r,'lv')+T(-22,24,'+',c.r,'lv')+T(11,-27,'V+',c.r,'tn6')+T(11,31,'V−',c.r,'tn6')},
  an:(c,x)=>{const m=OPM[c.m]||OPM.lm358,dg=pinDeg(),sup=dg[K(c.id,3)]&&dg[K(c.id,4)];if(!sup&&c.m!=='ideal')return;x.r(c,0,1,1e8);x.opa(c,2,1,0,sup?3:null,sup?4:null,m,c.id+':2')},
  say:c=>{const m=OPM[c.m]||OPM.lm358,dg=pinDeg();if(c.m!=='ideal'&&!(dg[K(c.id,3)]&&dg[K(c.id,4)]))return['w',`${c.tag} (${m.n}) sem alimentação: ligue V+ e V−`];return opSay(c,AM(c.id),c.id+':2',`${c.tag} (${m.n})`)},
  burn:(c,o)=>{const m=OPM[c.m];if(!m||!m.max||!rt.A)return null;const v=rt.A.vdc(K(c.id,3))-rt.A.vdc(K(c.id,4));return v>m.max*1.05?`alimentação de ${fmtE(v,'V')} (máximo ${fmtE(m.max,'V')})`:null},
