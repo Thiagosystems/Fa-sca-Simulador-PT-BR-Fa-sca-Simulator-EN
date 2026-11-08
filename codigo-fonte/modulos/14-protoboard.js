@@ -179,7 +179,7 @@ const PKGS={
  rly2:c=>({pins:[[0,0],[0,3],[1,0],[2,0],[3,0],[1,3],[2,3],[3,3]],box:[-7,-3,37,33],art:c=>{const on=pbActive(c);return bR(-6,-2,42,34,'#1e56b0',' rx="2"')+bShade(-6,-2,42,34,2)+bTc(15,13,'DPDT',6,'#fff',' font-weight="700"')+bTc(15,22,'5 V',4.4,'#dfe6f5')+bC(31,4,2,on?'#ff3b3b':'#5a1d1d')}}),
  hdr8:c=>({pins:[...pbRow(8,0),...pbRow(8,1)],box:[-6,-6,76,16],art:()=>hdrStrip(0,0,8)+hdrStrip(0,10,8)}),
  ic:c=>{const n=termsOf(c).length,h=n/2;return{pins:dipPins(n),box:[-6,-2,(h-1)*10+6,32],art:c=>pbDip(h,c.k||'IC')}},
- opamp:c=>({pins:[[1,3],[2,3],[2,0],[1,0],[3,3]],dum:[[0,3],[3,0],[0,0]],box:[-6,-2,36,32],art:()=>pbDip(4,'LM741')}),
+ opamp:c=>({pins:[[1,3],[2,3],[2,0],[1,0],[3,3]],dum:[[0,3],[3,0],[0,0]],box:[-6,-2,36,32],art:c=>pbDip(4,({lm358:'LM358',lm741:'LM741',tl072:'TL072'})[c.m]||'AMP OP')}),
  mbit:c=>({pins:[[2,16],[6,16],[10,16],[14,16],[18,16]],sock:1,box:[-2,-8,202,180],art:c=>{const d=DEV(c),m=SIM()?d.mx||[]:[],ba=SIM()&&d.ba,bb=SIM()&&d.bb,R='#e5173f';
   let s=bR(90,-7,20,10,'#cfcfcf',bStk('#a5a5a5',.6)+' rx="1.5"')+bR(0,0,200,178,'#1c1c1c',' rx="10"')+bP('M0,10Q0,0 10,0H40L0,38Z',R)+bP('M46,0H62L46,15Z',R)+bP('M67,0H79L67,11Z',R);
   s+=bR(84,22,32,17,'none',` rx="8.5" stroke="${R}" stroke-width="3"`)+bC(93,30.5,2.6,R)+bC(107,30.5,2.6,R);

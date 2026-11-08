@@ -47,10 +47,10 @@ function cParse(src){const tk=cLex(src);let p=0;const fnRet={};const UT=new Set(
   if(t.t==='op'&&t.v==='('){if(isType()&&!(tk[p].t==='id'&&!TYH(tk[p].v))){const ty=readType();eat(')');const e=unary();return{k:'cast',ty:numTy(ty),cty:ty,e}}const e=expr();eat(')');return e}
   if(t.t==='op'&&t.v==='{'){const items=[];if(!is('}'))do{if(is('}'))break;items.push(assign())}while(is(',')&&++p);eat('}');return{k:'arr',items,ty:'obj'}}
   if(t.t==='id'){if(TYH(t.v)&&is('(')){p++;const a=args();return{k:'ctor',cls:t.v,a,ty:t.v==='String'?'str':numTy(t.v)}}if(ENT.has(t.v)&&is('::')){p++;const m=nx();return{k:'v',n:m.v,ty:'int'}}
-   return{k:'v',n:t.v,ty:tyOf(t.v)?numTy(tyOf(t.v)):fnRet[t.v]?numTy(fnRet[t.v]):'int'}}
+   return{k:'v',n:t.v,ty:tyOf(t.v)?numTy(tyOf(t.v)):fnRet[t.v]?numTy(fnRet[t.v]):'int',u:U32T.has(tyOf(t.v)||'')}}
   err(t.t==='eof'?'o código terminou antes da hora (faltou fechar algo?)':`não esperava "${t.v}"`,t)}
  function args(){const a=[];if(!is(')'))do{a.push(assign())}while(is(',')&&++p);eat(')');return a}
- function post(){let e=prim();for(;;){if(is('(')){const ln=pk().ln;p++;const a=args();e={k:'call',ln,f:e,a,ty:e.k==='v'&&fnRet[e.n]?numTy(fnRet[e.n]):e.k==='m'?'any':'any'};continue}
+ function post(){let e=prim();for(;;){if(is('(')){const ln=pk().ln;p++;const a=args();e={k:'call',ln,f:e,a,ty:e.k==='v'&&fnRet[e.n]?numTy(fnRet[e.n]):e.k==='m'?'any':'any',u:e.k==='v'&&(e.n==='millis'||e.n==='micros'||U32T.has(fnRet[e.n]||''))};continue}
    if(is('[')){p++;const i=expr();eat(']');e={k:'idx',o:e,i,ty:e.ty==='str'?'char':e.k==='v'&&tyOf(e.n)?numTy(tyOf(e.n)):'any'};continue}
    if(is('.')||is('->')||is('::')){p++;const m=nx();e={k:'m',o:e,n:m.v,ty:'any'};continue}
    if(is('++')||is('--')){const o=nx().v;e={k:'post',o,e,ty:e.ty};continue}return e}}
@@ -58,7 +58,7 @@ function cParse(src){const tk=cLex(src);let p=0;const fnRet={};const UT=new Set(
   if(is('~')){p++;return{k:'u',o:'~',e:unary(),ty:'int'}}if(is('++')||is('--')){const o=nx().v;const e=unary();return{k:'pre',o,e,ty:e.ty}}if(is('&')||is('*')){p++;return unary()}return post()}
  const BIN=[['||'],['&&'],['|'],['^'],['&'],['==','!='],['<','<=','>','>='],['<<','>>'],['+','-'],['*','/','%']];
  function bin(l){if(l>=BIN.length)return unary();let a=bin(l+1);while(pk().t==='op'&&BIN[l].includes(pk().v)){const o=nx().v,b=bin(l+1);
-   const ty=['==','!=','<','<=','>','>=','&&','||'].includes(o)?'bool':o==='+'&&(a.ty==='str'||b.ty==='str')?'str':a.ty==='float'||b.ty==='float'?'float':'int';a={k:'b',o,a,b,ty}}return a}
+   const ty=['==','!=','<','<=','>','>=','&&','||'].includes(o)?'bool':o==='+'&&(a.ty==='str'||b.ty==='str')?'str':a.ty==='float'||b.ty==='float'?'float':'int';a={k:'b',o,a,b,ty,u:ty==='int'&&(o==='+'||o==='-'||o==='*')&&!!(a.u||b.u)}}return a}
  function tern(){const c=bin(0);if(is('?')){p++;const a=assign();eat(':');const b=assign();return{k:'?',c,a,b,ty:a.ty==='float'||b.ty==='float'?'float':a.ty}}return c}
  function assign(){const l=tern();if(pk().t==='op'&&['=','+=','-=','*=','/=','%=','&=','|=','^=','<<=','>>='].includes(pk().v)){const o=nx().v,r=assign();return{k:'as',o,l,r,ty:l.ty}}return l}
  function expr(){let e=assign();while(is(',')&&!0){p++;const b=assign();e={k:'seq',a:e,b,ty:b.ty}}return e}
@@ -112,6 +112,8 @@ function cParse(src){const tk=cLex(src);let p=0;const fnRet={};const UT=new Set(
 
 /* ---------- execução ---------- */
 const BRK={},CONT={};class RET{constructor(v){this.v=v}}
+/* aritmética de unsigned long dá a volta em 32 bits, como no Arduino (millis() - inicio) */
+const U32T=new Set(['unsigned long','uint32_t','unsigned','size_t','unsigned long int']);
 const wrapT=(ty,v)=>{if(typeof v!=='number')return v;switch(ty){case'int':case'short':case'int16_t':return((Math.trunc(v)+32768)&65535)-32768;case'unsigned int':case'word':case'uint16_t':case'unsigned short':return Math.trunc(v)&65535;
  case'long':case'int32_t':return Math.trunc(v)|0;case'unsigned long':case'uint32_t':case'unsigned':case'size_t':return Math.trunc(v)>>>0;case'byte':case'uint8_t':case'unsigned char':return Math.trunc(v)&255;case'char':case'int8_t':return((Math.trunc(v)+128)&255)-128;
  case'bool':case'boolean':return v?1:0;case'float':case'double':return v;default:return v}};
@@ -211,7 +213,7 @@ function mcuRuntime(c,prog,M){let API=null;const S0=rt.mcu[c.id],G={},cfg=M;let 
   case'?':return(yield* ev(e.c))?yield* ev(e.a):yield* ev(e.b);
   case'seq':yield* ev(e.a);return yield* ev(e.b);
   case'as':{let v=yield* ev(e.r);if(e.o!=='='){const o=yield* ev(e.l);v=binop(e.o.slice(0,-1),o,v,e.l.ty,e.r.ty)}yield* store(e.l,v);return v}
-  case'b':{if(e.o==='&&'){const a=yield* ev(e.a);return a?((yield* ev(e.b))?1:0):0}if(e.o==='||'){const a=yield* ev(e.a);return a?1:((yield* ev(e.b))?1:0)}const a=yield* ev(e.a),b=yield* ev(e.b);return binop(e.o,a,b,e.a.ty,e.b.ty)}}
+  case'b':{if(e.o==='&&'){const a=yield* ev(e.a);return a?((yield* ev(e.b))?1:0):0}if(e.o==='||'){const a=yield* ev(e.a);return a?1:((yield* ev(e.b))?1:0)}const a=yield* ev(e.a),b=yield* ev(e.b);const r=binop(e.o,a,b,e.a.ty,e.b.ty);return e.u&&typeof r==='number'?Math.trunc(r)>>>0:r}}
   throw{msg:'expressão não suportada'}}
  const binop=(o,a,b,ta,tb)=>{const sx=x=>typeof x==='string'?x:x&&x.__str!=null?x.__str:null;if(o==='+'&&(typeof a==='string'||typeof b==='string')){const f=(x,t)=>typeof x==='string'?x:t==='char'?String.fromCharCode(x):t==='float'?(+x).toFixed(2):String(x);return f(a,ta)+f(b,tb)}
   if((o==='=='||o==='!=')&&(typeof a==='string'||typeof b==='string')){const r=String(sx(a)??a)===String(sx(b)??b);return(o==='=='?r:!r)?1:0}

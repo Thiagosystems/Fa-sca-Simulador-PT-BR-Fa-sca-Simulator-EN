@@ -272,6 +272,8 @@ startSim();await sleep(2600);const smoke=document.querySelectorAll('#pbC .pbsmok
     ok('protoboard: fio solto não pisca, LED queimado solta fumaça e o curto fica vermelho',r==[0,True,True,True],r)
     r=pg.evaluate(r"""(()=>{const p=plotParse('1 2\n3 4\ntemp:20 umid:50\nlixo\n5,6\n');return[p.order.join('|'),p.n,p.ser['valor 1'].length]})()""")
     ok('Serial Plotter: lê colunas e nome:valor',r==['valor 1|valor 2|temp|umid',4,3],r)
+    r=pg.evaluate(r"""(async()=>{const sl=ms=>new Promise(q=>setTimeout(q,ms));loadTpl('ard_semaforo',true);commit();startSim();await sl(1800);const s=S.comps.find(c=>c.type==='tact'),L=S.comps.filter(c=>c.type==='led');const on=()=>L.map(c=>rt.A.m[c.id]&&rt.A.m[c.id].i>.005?1:0).join('');const a=on();simPress(s.id);await sl(500);rt.pressed.delete(s.id);const b=on();stopSim();return[a,b]})()""")
+    ok('semáforo: botão de pedestre adianta o amarelo (millis() - inicio sem sinal)',r==['001','010'],r)
     ok('nenhum erro de JavaScript',not erros,erros)
     b.close()
 print('\nFALHAS:',len(falhas));sys.exit(1 if falhas else 0)
