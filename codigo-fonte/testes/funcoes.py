@@ -274,6 +274,9 @@ startSim();await sleep(2600);const smoke=document.querySelectorAll('#pbC .pbsmok
     ok('Serial Plotter: lê colunas e nome:valor',r==['valor 1|valor 2|temp|umid',4,3],r)
     r=pg.evaluate(r"""(async()=>{const sl=ms=>new Promise(q=>setTimeout(q,ms));loadTpl('ard_semaforo',true);commit();startSim();await sl(1800);const s=S.comps.find(c=>c.type==='tact'),L=S.comps.filter(c=>c.type==='led');const on=()=>L.map(c=>rt.A.m[c.id]&&rt.A.m[c.id].i>.005?1:0).join('');const a=on();simPress(s.id);await sl(500);rt.pressed.delete(s.id);const b=on();stopSim();return[a,b]})()""")
     ok('semáforo: botão de pedestre adianta o amarelo (millis() - inicio sem sinal)',r==['001','010'],r)
+    r=pg.evaluate(r"""(async()=>{const sl=ms=>new Promise(q=>setTimeout(q,ms));const N=(t,p,x,y)=>{const c=placeComp(makeComp(t,p||{},''),x,y,0);S.comps.push(c);return c};let wn=0;const W=(a,ta,b,tb)=>S.wires.push({id:'sw'+(++wn),a:{c:a.id,t:ta},b:{c:b.id,t:tb}});
+S={comps:[],wires:[],seq:1,nopb:true};const p=N('src',{v:'L1'},0,0),m=N('src',{v:'N'},0,400),s=N('soft',{t:1},300,200),bt=N('btn',{},700,200),l1=N('lamp',{},900,400),l2=N('lamp',{},1100,400);W(p,0,s,6);W(m,0,s,7);W(s,9,bt,0);W(bt,1,s,10);W(p,0,s,11);W(s,12,l1,0);W(l1,1,m,0);W(p,0,s,13);W(s,14,l2,0);W(l2,1,m,0);commit();startSim();await sl(300);const a=[ON(s.tag),EN(l1.id),EN(l2.id)];simPress(bt.id);await sl(400);const b=[ON(s.tag),EN(l1.id),EN(l2.id)];await sl(1800);const c=[ON(s.tag),EN(l1.id),EN(l2.id)];stopSim();return[a,b,c]})()""")
+    ok('soft starter: DI1-DI2 dá a partida, 13-14 fecha ligado e 23-24 no fim da rampa',r==[[False,False,False],[True,True,False],[True,True,True]],r)
     ok('nenhum erro de JavaScript',not erros,erros)
     b.close()
 print('\nFALHAS:',len(falhas));sys.exit(1 if falhas else 0)

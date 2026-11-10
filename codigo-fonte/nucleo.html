@@ -632,11 +632,23 @@ motdc:{n:'Motor de corrente contínua',own:'M',T:[[-20,-60],[20,-60]],N:['A1','A
  mot:(c,X)=>{const a=X.set(0),b=X.set(1);if(!energ(a,b))return{st:'off'};if(hasPot(a,'P')&&hasPot(b,'Z'))return{st:'run',dir:'cw',seq:'A1 positivo'};if(hasPot(b,'P')&&hasPot(a,'Z'))return{st:'run',dir:'ccw',seq:'A1 negativo'};return{st:'run',dir:'cw',seq:'alimentado'}}},
 
 /* ---------- potência / partida / velocidade ---------- */
-soft:{n:'Soft-starter',own:'SS',def:{t:3},F:[['t','Rampa de aceleração (s)','num']],T:[[-40,-40],[0,-40],[40,-40],[-40,40],[0,40],[40,40],[80,-20],[80,20]],N:['L1','L2','L3','T1','T2','T3','A1','A2'],B:[-54,-40,148,80],
- draw:c=>P('M-40,-40V-22M0,-40V-22M40,-40V-22M-40,40V22M0,40V22M40,40V22M80,-20H60M80,20H60')+R(-54,-22,114,44,EN(c.id)?'en':'box',' rx="4"')+P('M-44,12L-24,-10H-12')+T(20,4,'SOFT',c.r,'ms')+T(66,-24,'A1',c.r,'tn'),
- load:()=>[[6,7]],outF:(c,en)=>en,cond:(c,E)=>E.out[c.tag]?[[0,3],[1,4],[2,5]]:[],
- tick:c=>{const r=rt.ramp[c.id]||0,en=rt.res.en[c.id],n=en?Math.min(+c.t||1,r+.1):0;rt.ramp[c.id]=n;return false},
- say:c=>{if(!EN(c.id))return null;const r=rt.ramp[c.id]||0,t=+c.t||1;return['on',r<t-1e-6?`${c.tag} acelerando em rampa: ${Math.round(r/t*100)}%`:`${c.tag} em regime (rampa concluída)`]}},
+soft:{n:'Soft-starter',own:'SS',def:{t:3},F:[['t','Rampa de aceleração (s)','num']],
+ /* bornes 0–7 como antes (L1 L2 L3 T1 T2 T3 A1 A2); novos: PE, DI1, DI2, 13-14 (em funcionamento) e 23-24 (fim de rampa) */
+ T:[[-100,-60],[-80,-60],[-60,-60],[-100,60],[-80,60],[-60,60],[20,-60],[40,-60],[-40,60],[160,-20],[160,0],[20,60],[60,60],[80,60],[120,60]],
+ N:['L1','L2','L3','T1','T2','T3','A1','A2','PE','DI1','DI2','13','14','23','24'],B:[-122,-60,294,120],
+ draw:c=>{const on=ON(c.tag),fim=on&&(rt.ramp[c.id]||0)>=(+c.t||1)-1e-6,k=(a,b,f,l1,l2)=>P(`M${a},60V26H${a+8}`)+P(f?`M${a+8},26H${b-8}`:`M${a+8},26L${b-9},17`,f?'on':'')+P(`M${b-8},26H${b}V60`)+T(a+7,36,l1,c.r,'tn6')+T(b-7,36,l2,c.r,'tn6');
+  return R(-120,-40,260,80,EN(c.id)?'en':'box',' rx="4"')+R(-112,-26,62,52,'',' style="fill:none"')+
+   P('M-100,-60V60M-80,-60V60M-60,-60V60',on?'on':'')+P('M-90,-8H-70L-80,6Z','fillink')+P('M-90,7H-70')+P('M-112,-2H-85')+
+   T(-94,-30,'L1',c.r,'tn6')+T(-74,-30,'L2',c.r,'tn6')+T(-54,-30,'L3',c.r,'tn6')+T(-94,36,'T1',c.r,'tn6')+T(-74,36,'T2',c.r,'tn6')+T(-54,36,'T3',c.r,'tn6')+
+   P('M-40,60V0H-50','dash')+T(-34,-3,'PE',c.r,'tn6')+P('M-20,-40V40','dash')+
+   P('M20,-60V-40M40,-60V-40M160,-20H140M160,0H140')+T(20,-31,'A1',c.r,'tn6')+T(40,-31,'A2',c.r,'tn6')+T(128,-17,'DI1',c.r,'tn6')+T(128,3,'DI2',c.r,'tn6')+
+   `<text x="60" y="0" class="ms">SOFT STARTER</text>`+k(20,60,on,'13','14')+k(80,120,fim,'23','24')},
+ load:()=>[[6,7]],
+ /* parte com A1-A2 alimentado; se DI1/DI2 estiverem ligados, precisa também do comando entre DI1 e DI2 (contato fechado ou tensão) */
+ outF:(c,en,x)=>{if(!en)return false;const w=S.wires.some(q=>[q.a,q.b].some(e=>e&&e.c===c.id&&(e.t===9||e.t===10)));return!w||!x||x.root(9)===x.root(10)||x.energ(9,10)},
+ cond:(c,E)=>{if(!E.out[c.tag])return[];const r=[[0,3],[1,4],[2,5],[11,12]];if((rt.ramp[c.id]||0)>=(+c.t||1)-1e-6)r.push([13,14]);return r},
+ tick:c=>{const r=rt.ramp[c.id]||0,t=+c.t||1,run=!!(rt.res&&rt.res.out[c.tag]),n=run?Math.min(t,r+.1):0;rt.ramp[c.id]=n;return(r<t-1e-6)!==(n<t-1e-6)},
+ say:c=>{if(!EN(c.id))return null;if(!ON(c.tag))return['i',`${c.tag} alimentado, aguardando o comando em DI1-DI2`];const r=rt.ramp[c.id]||0,t=+c.t||1;return['on',r<t-1e-6?`${c.tag} acelerando em rampa: ${Math.round(r/t*100)}%`:`${c.tag} em regime (rampa concluída)`]}},
 inv:{n:'Inversor de frequência',own:'U',act:1,def:{hz:60},F:[['hz','Frequência de saída (Hz)','num']],T:[[-40,-60],[0,-60],[40,-60],[-40,60],[0,60],[40,60],[100,-30],[100,-10],[100,10],[100,30]],N:['L1','L2','L3','U','V','W','+24V','DI1 avante','DI2 reverso','0V'],B:[-54,-60,168,120],
  draw:c=>{const s=DS(c.id);return P('M-40,-60V-34M0,-60V-34M40,-60V-34M-40,60V34M0,60V34M40,60V34M100,-30H74M100,-10H74M100,10H74M100,30H74')+R(-54,-34,128,68,s?'en':'box',' rx="4"')+T(10,-14,'~ / ~',c.r,'ms')+T(10,4,`${c.hz} Hz`,c.r,'ms')+T(10,20,s===1?'AVANTE':s===2?'REVERSO':'PARADO',c.r,'tn6')+T(78,-33,'+24',c.r,'tn6')+T(80,-13,'DI1',c.r,'tn6')+T(80,7,'DI2',c.r,'tn6')+T(78,27,'0V',c.r,'tn6')},
  click:c=>{rt.local[c.id]=!rt.local[c.id];logE(`${c.tag}: comando local ${rt.local[c.id]?'LIGA':'DESLIGA'} (IHM)`,'a')},
