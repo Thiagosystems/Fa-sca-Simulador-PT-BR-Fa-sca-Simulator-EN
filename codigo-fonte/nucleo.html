@@ -335,6 +335,7 @@ body.hide-pal main>.palette,body.hide-side main>.side,body.hide-bar>.top{display
 body.sim #paneTabs .psim{background:var(--err);color:#fff}
 @media (max-width:900px){#paneTabs .pl,#paneTabs .pr{display:none}}
 @media print{#paneTabs{display:none}}
+details.howto{margin:0 0 8px}details.howto>summary{list-style:none;cursor:pointer;display:block;text-align:center;padding:8px 10px;border:1px solid var(--line,#2a3442);border-radius:8px;font-weight:600;background:var(--panel2,transparent)}details.howto>summary::-webkit-details-marker{display:none}details.howto>summary::before{content:'?';display:inline-block;width:18px;height:18px;line-height:18px;border-radius:50%;margin-right:8px;font-size:12px;background:var(--pick,#4a9);color:#fff}details.howto[open]>summary{margin-bottom:8px}
 </style>
 </head>
 <body>
@@ -601,7 +602,7 @@ sens:{n:'Sensor',own:'B',act:c=>!c.by,def:{k:'ind',l:'no',by:''},F:[['k','Tipo',
 /* ---------- sinalização ---------- */
 lamp:{n:'Sinaleiro',own:'H',def:{col:'amarela',sh:'lamp'},F:[['col','Cor','sel',Object.keys(LCOL)],['sh','Formato','sel',[['lamp','Lâmpada'],['led','Indicador LED']]]],T:V2,N:['X1','X2'],B:[-16,-40,32,80],
  draw:c=>{const on=EN(c.id),k=LCOL[c.col]||LCOL.amarela,st=on?` style="fill:${k};filter:drop-shadow(0 0 7px ${k})"`:` style="fill:${k}33"`;
-  if(c.sh==='led')return L(0,-40,0,-8)+P('M-9,-8H9L0,7Z','',st)+L(-9,7,9,7)+L(0,7,0,40)+P('M10,-6l7,-7m-4,0h4v4M12,2l7,-7m-4,0h4v4')+TL(c.r,'X1','X2');
+ 
   return L(0,-40,0,-13)+C(0,0,13,'',st)+L(-9,-9,9,9)+L(-9,9,9,-9)+L(0,13,0,40)+TL(c.r,'X1','X2')},
  load:()=>[[0,1]],say:c=>EN(c.id)?['on',`${c.tag} (${c.col}) acesa`]:null},
 snd:{n:'Sinalização acústica',own:'H',def:{k:'horn'},F:[['k','Tipo','sel',[['horn','Buzina'],['siren','Sirene / alarme'],['buzzer','Campainha (buzzer)']]]],T:V2,N:['X1','X2'],B:[-20,-40,48,80],
@@ -912,7 +913,7 @@ function sound(){const on=soundOn&&mode==='sim'&&rt&&rt.res&&S.comps.find(c=>c.t
 function analyze(){const I=[],sum=[],C=S.comps,add=(lvl,msg,why,ids=[])=>I.push({lvl,msg,why,ids});if(!C.length)return{issues:I,summary:sum};
  const cnt={};allWires().forEach(w=>[w.a,w.b].forEach(e=>{const k=K(e.c,e.t);cnt[k]=(cnt[k]||0)+1}));
  const of=(...t)=>C.filter(c=>t.includes(c.type)),has=t=>C.some(c=>c.type===t);
- const hasSrc=C.some(c=>D(c).src&&!['exh','lrail','rrail','lin','clk','v32','v52','air'].includes(c.type));
+ const hasSrc=C.some(c=>D(c).src&&domOf(c)!=='p'&&!['exh','lrail','rrail','lin','clk','v32','v52','air'].includes(c.type));
  if(!hasSrc&&C.some(c=>domOf(c)==='e'&&termsOf(c).length))add('info','Nenhuma fonte de alimentação elétrica','Sem fases, neutro, +24 V ou bateria nada será energizado.');
  C.forEach(c=>{const n=termsOf(c).length;if(!n)return;
   if(c.type==='junction'){const k=cnt[K(c.id,0)]||0;if(k<2)add('aviso',`Ponto de conexão com ${k} fio${k===1?'':'s'}`,'Um ponto de conexão serve para dividir o circuito, então precisa de pelo menos 2 fios.',[c.id]);return}
@@ -1184,7 +1185,7 @@ for(const k in ANA){const a=ANA[k],d=DEFS[k];if(!d)continue;const{def,F,...rest}
  if(def)d.def={...(d.def||{}),...def};if(F)d.F=[...(d.F||[]),...F]}
 /* lâmpada com brilho proporcional à potência real */
 DEFS.lamp.draw=c=>{const b=lampB(c),k=LCOL[c.col]||LCOL.amarela,st=b>0?` style="fill:${k};fill-opacity:${Math.min(1,.15+b).toFixed(2)};filter:drop-shadow(0 0 ${Math.round(2+b*9)}px ${k})"`:` style="fill:${k}33"`;
- if(c.sh==='led')return L(0,-40,0,-8)+P('M-9,-8H9L0,7Z','',st)+L(-9,7,9,7)+L(0,7,0,40)+P('M10,-6l7,-7m-4,0h4v4M12,2l7,-7m-4,0h4v4')+TL(c.r,'X1','X2');
+
  return L(0,-40,0,-13)+C(0,0,13,'',st)+L(-9,-9,9,9)+L(-9,9,9,-9)+L(0,13,0,40)+TL(c.r,'X1','X2')};
 
 /* ---- biblioteca nova: eletrônica e medição ---- */
@@ -1436,7 +1437,7 @@ function bomDesc(c){const same=t=>S.comps.filter(x=>x.tag===c.tag&&x.type===t),a
   case'bat':return`Bateria ${V(c.V)}`;case'psu':return`Fonte ${V(c.V)} ${A(c.Imax)}`;case'xfmr':return`Transformador ${V(c.Vp)}/${V(c.Vs)}`;case'xfmr3':return`Transformador trifásico ${V(c.Vp)}/${V(c.Vs)}`;
   case'plc':return PM[c.m].n==='CPU CLP'?'CLP (CPU 8E/8S)':`${PM[c.m].ard?'Placa ':'CLP / módulo '}${PM[c.m].n}`;
   case'tstrip':return`Régua de bornes com ${c.nt} bornes`;case'sens':return`Sensor ${{ind:'indutivo',cap:'capacitivo',foto:'fotoelétrico',bar:'barreira fotoelétrica',pres:'de presença 230 V'}[c.k]} ${c.l==='nc'?'NF':'NA'}`;
-  case'lim':return`Fim de curso ${{no:'NA',nc:'NF',co:'comutador'}[c.f]}`;case'v32':return`Válvula 3/2 ${{sol:'solenoide',btn:'botão',lim:'rolete'}[c.act]}`;case'v52':return`Válvula 5/2 ${{sol:'solenoide',sol2:'duplo solenoide',btn:'botão',lim:'rolete'}[c.act]}`;
+  case'lim':return`Fim de curso ${{no:'NA',nc:'NF',co:'comutador'}[c.f]}`;case'v32':return`Válvula 3/2 ${c.na?'NA ':''}${{sol:'solenoide',btn:'botão',lim:'rolete',lev:'alavanca',pil:'piloto'}[c.act]}`;case'v52':return`Válvula 5/2 ${{sol:'solenoide',sol2:'duplo solenoide',btn:'botão',lim:'rolete',lev:'alavanca',pil:'piloto',pil2:'duplo piloto'}[c.act]}`;
   case'inv':return`Inversor de frequência ${V(c.Vout)}`;case'npn':case'pnp':return`${c.nm||D(c).n} (β ${c.beta})`;
  }return`${c.nm||D(c).n}${D(c).val&&D(c).val(c)?' '+D(c).val(c):''}`}
 function bomRows(){const g={};for(const c of S.comps){if(BOMSKIP.has(c.type)||(c.type==='mp'&&c.k==='k'))continue;const d=bomDesc(c);(g[d]=g[d]||[]).push(c.tag||'—')}
@@ -1631,7 +1632,7 @@ function renderOverlay(){let h='';
  if(mode==='edit'&&!tool){const w=selWire(),H=w&&whandle(w);if(H)h+=`<g class="wh" data-w="${w.id}" data-o="${H.o}" transform="translate(${H.x} ${H.y})" style="pointer-events:all;cursor:${H.o==='v'?'ns-resize':'ew-resize'}"><circle r="16" fill="transparent" stroke="none"/><circle class="whc" r="6"/></g>`}
  h+=trainOverlay()+probeOverlay()+connOverlay();$('#oL').innerHTML=h}
 function renderProps(){const el=$('#props'),dis=mode==='sim'?'disabled':'';
- if(!sel){el.innerHTML=`<h3>Como usar</h3><ol class="help"><li>Busque ou escolha um item na paleta e clique no esquema para posicionar.</li><li>Clique numa bolinha azul (terminal) e depois em outra para ligar um fio. Clicar no vazio cria um ponto de conexão. O botão direito cancela o fio.</li><li>Arraste no vazio para selecionar vários itens de uma vez; Shift ou Ctrl + clique adiciona ou tira da seleção; Del apaga tudo o que estiver selecionado.</li><li>Contatos seguem a bobina com a mesma identificação, por exemplo K1. Válvulas seguem o solenoide (Y1) e fins de curso seguem o cilindro (A1+).</li><li>Clique num fio e arraste a bolinha azul do meio para mudar o trajeto dele.</li><li>Aperte Simular e clique nos componentes para operar.</li></ol>${mode==='edit'&&(S.wires.length||clip)?`<div class="row">${clip?`<button data-a="paste">Colar</button>`:''}${S.wires.length?`<button data-a="avoid" title="Procura um caminho que não passe por cima de outros componentes">Desviar fios</button>`:''}</div>`:''}<p class="keys"><kbd>R</kbd> girar &nbsp;<kbd>Del</kbd> excluir &nbsp;<kbd>Ctrl+A</kbd> selecionar tudo &nbsp;<kbd>Ctrl+C</kbd> copiar &nbsp;<kbd>Ctrl+V</kbd> colar &nbsp;<kbd>Ctrl+D</kbd> duplicar &nbsp;<kbd>Ctrl+Z</kbd> desfazer &nbsp;<kbd>Ctrl+Y</kbd> refazer &nbsp;<kbd>Ctrl+S</kbd> salvar .fais &nbsp;<kbd>Ctrl+O</kbd> abrir &nbsp;<kbd>Esc</kbd> cancelar &nbsp;botão direito ou do meio arrastado: mover a vista</p>`;return}
+ if(!sel){el.innerHTML=`<details class="howto"${window.howOpen?' open':''}><summary>Como usar</summary><ol class="help"><li>Busque ou escolha um item na paleta e clique no esquema para posicionar.</li><li>Clique numa bolinha azul (terminal) e depois em outra para ligar um fio. Clicar no vazio cria um ponto de conexão. O botão direito cancela o fio.</li><li>Arraste no vazio para selecionar vários itens de uma vez; Shift ou Ctrl + clique adiciona ou tira da seleção; Del apaga tudo o que estiver selecionado.</li><li>Contatos seguem a bobina com a mesma identificação, por exemplo K1. Válvulas seguem o solenoide (Y1) e fins de curso seguem o cilindro (A1+).</li><li>Clique num fio e arraste a bolinha azul do meio para mudar o trajeto dele.</li><li>Aperte Simular e clique nos componentes para operar.</li></ol><p class="keys"><kbd>R</kbd> girar &nbsp;<kbd>Del</kbd> excluir &nbsp;<kbd>Ctrl+A</kbd> selecionar tudo &nbsp;<kbd>Ctrl+C</kbd> copiar &nbsp;<kbd>Ctrl+V</kbd> colar &nbsp;<kbd>Ctrl+D</kbd> duplicar &nbsp;<kbd>Ctrl+Z</kbd> desfazer &nbsp;<kbd>Ctrl+Y</kbd> refazer &nbsp;<kbd>Ctrl+S</kbd> salvar .fais &nbsp;<kbd>Ctrl+O</kbd> abrir &nbsp;<kbd>Esc</kbd> cancelar &nbsp;botão direito ou do meio arrastado: mover a vista</p></details>${mode==='edit'&&(S.wires.length||clip)?`<div class="row">${clip?`<button data-a="paste">Colar</button>`:''}${S.wires.length?`<button data-a="avoid" title="Procura um caminho que não passe por cima de outros componentes">Desviar fios</button>`:''}</div>`:''}`;const dt=el.querySelector('details.howto');if(dt)dt.addEventListener('toggle',()=>{window.howOpen=dt.open});return}
  const nc=sel.c.size,nw=sel.w.size;
  if(nc+nw>1){el.innerHTML=`<h3>${nc+nw} itens selecionados</h3><p class="muted small">${nc} componente(s) e ${nw} fio(s). Arraste um componente selecionado para mover todos juntos.</p><div class="row">${nc?`<button data-a="rot" ${dis}>Girar</button>`:''}<button data-a="del" class="danger" ${dis}>Excluir seleção</button></div>${nc?`<div class="row"><button data-a="copy" ${dis}>Copiar</button><button data-a="dup" ${dis}>Duplicar</button>${clip?`<button data-a="paste" ${dis}>Colar</button>`:''}</div>`:''}${nw?`<div class="row"><button data-a="avoid" ${dis} title="Procura um caminho que não passe por cima de outros componentes">Desviar fios</button></div>`:''}`;return}
  if(nw){const w=selWire();let al=true;if(w){const a=byId(w.a.c),b=byId(w.b.c);if(a&&b){const p=tp(a,w.a.t),q=tp(b,w.b.t);al=p.x===q.x||p.y===q.y}}

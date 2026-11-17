@@ -69,3 +69,11 @@ function fitCnt(g,list,r){const shapes=[...g.querySelectorAll('rect:not(.hit),ci
 /* rótulos de pino (PINS) desenhados por cima do corpo do módulo */
 for(const t of Object.keys(DEFS)){const d=DEFS[t];if(typeof d.draw!=='function'||d._pinl)continue;const f0=d.draw;d._pinl=1;
  d.draw=c=>{const s=f0(c);if(typeof s!=='string'||s.indexOf('pinl')<0)return s;const L=[];const r=s.replace(/<text [^>]*class="tn6 pinl"[^>]*>[^<]*<\/text>/g,m=>{L.push(m);return''});return r+L.join('')}}
+
+/* terminal com fio ligado: a bolinha vira um pontinho (o fio fica em destaque) */
+{const st=document.createElement('style');st.textContent='#world .comp .term.cn{fill:var(--pick);stroke:transparent;stroke-width:7}';document.head.appendChild(st)}
+function markConn(){const L=document.getElementById('cL');if(!L)return;const on=new Set();for(const w of S.wires||[])for(const e of[w.a,w.b])if(e&&e.c!=null&&e.t!=null)on.add(e.c+'|'+e.t);
+ for(const g of L.querySelectorAll('g.comp')){const id=g.dataset.id;for(const t of g.querySelectorAll('circle.term')){const k=on.has(id+'|'+t.dataset.t);t.classList.toggle('cn',k);t.setAttribute('r',k?'1.8':'4.5')}}}
+{const _rc2=renderComps;renderComps=function(){_rc2();try{markConn()}catch(e){console.error(e)}}}
+if(typeof renderWires==='function'){const _rw=renderWires;renderWires=function(){_rw();try{markConn()}catch(e){console.error(e)}}}
+renderAll();

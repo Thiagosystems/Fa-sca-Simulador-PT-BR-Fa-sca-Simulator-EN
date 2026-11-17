@@ -35,7 +35,8 @@ function renderHandles(){const w=document.getElementById('world');if(!w)return;l
  const ids=selIds();if(mode!=='edit'||!ids.length||(drag&&drag.type!=='comp'&&!rsz)){g.innerHTML='';return}
  const b=rsz?rsz.live:selBox(ids);if(!b){g.innerHTML='';return}const k=6/view.s,pad=6/view.s,[x0,y0,x1,y1]=[b[0]-pad,b[1]-pad,b[2]+pad,b[3]+pad];
  let h=`<rect class="rbox" x="${x0}" y="${y0}" width="${x1-x0}" height="${y1-y0}" style="stroke-width:${1.2/view.s};stroke-dasharray:${5/view.s} ${4/view.s}"/>`;
- for(const[c,x,y]of[['tl',x0,y0],['tr',x1,y0],['bl',x0,y1],['br',x1,y1]])h+=`<rect class="rh" data-k="${c}" x="${x-k}" y="${y-k}" width="${2*k}" height="${2*k}" rx="${2/view.s}" style="stroke-width:${1.5/view.s}"><title>Arraste para diminuir ou aumentar a seleção</title></rect>`;
+ /* sem os quadradinhos nos cantos (o tamanho da seleção muda pelos botões 50%/75%/100% do painel) */
+ if(false)for(const[c,x,y]of[['tl',x0,y0],['tr',x1,y0],['bl',x0,y1],['br',x1,y1]])h+=`<rect class="rh" data-k="${c}" x="${x-k}" y="${y-k}" width="${2*k}" height="${2*k}" rx="${2/view.s}" style="stroke-width:${1.5/view.s}"><title>Arraste para diminuir ou aumentar a seleção</title></rect>`;
  if(rsz)h+=`<text class="rpct" x="${x1+10/view.s}" y="${y1+16/view.s}" style="font-size:${13/view.s}px">${Math.round(rsz.f*100)}%</text>`;
  g.innerHTML=h}
 {const _ro=renderOverlay;renderOverlay=function(){_ro();renderHandles()}}
@@ -53,7 +54,7 @@ addEventListener('keydown',e=>{if(rsz&&e.key==='Escape'){applyScale(rsz.sn,1,rsz
 /* painel: tamanho da seleção */
 {const _rp=renderProps;renderProps=function(){_rp();const ids=selIds();if(mode!=='edit'||!ids.length)return;const el=$('#props');if(!el||!el.insertAdjacentHTML)return;
  const s=[...new Set(ids.map(id=>Math.round(SCL(byId(id))*100)))],cur=s.length===1?`${s[0]}%`:'misto';
- el.insertAdjacentHTML('beforeend',`<div class="tsec"><h4>Tamanho ${ids.length>1?'da seleção':'do componente'} <span class="muted small">(${cur})</span></h4><div class="row">${[50,75,100].map(v=>`<button data-sc="${v}">${v}%</button>`).join('')}</div><div class="row"><button data-fitsel="1">Caber na folha</button></div><p class="muted small">Ou arraste um dos quadradinhos nos cantos da seleção. Os fios continuam ligados.</p></div>`)}}
+ el.insertAdjacentHTML('beforeend',`<div class="tsec"><h4>Tamanho ${ids.length>1?'da seleção':'do componente'} <span class="muted small">(${cur})</span></h4><div class="row">${[50,75,100].map(v=>`<button data-sc="${v}">${v}%</button>`).join('')}</div><div class="row"><button data-fitsel="1">Caber na folha</button></div><p class="muted small">Os fios continuam ligados.</p></div>`)}}
 $('#props').addEventListener('click',e=>{const b=e.target.closest('[data-sc],[data-fitsel]');if(!b)return;e.stopImmediatePropagation();if(mode!=='edit'){toast('Pare a simulação para redimensionar.',true);return}
  if(b.dataset.fitsel)fitToSheet(selIds());else scaleTo(+b.dataset.sc)},true);
 
