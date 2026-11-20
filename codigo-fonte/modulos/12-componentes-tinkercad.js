@@ -133,7 +133,9 @@ usba:{n:'Conector USB A (5 V)',own:'X',T:[[-40,40],[-20,40],[0,40],[20,40]],N:['
  draw:c=>PINS(c,[[-40,40,'5V'],[-20,40,'D−'],[0,40,'D+'],[20,40,'GND']])+R(-52,-26,82,48,'box',' rx="3"')+R(-44,-16,66,14,'',' style="fill:var(--panel2)"')+TT(-10,14,'USB',c),
  an:(c,x)=>x.bat(c,0,3,5,.2),val:()=>'5 V'},
 /* ---------- instrumentos ---------- */
-mmeter:{n:'Multímetro',own:'MM',def:{m:'V'},F:[['m','Função','sel',[['V','Voltímetro (V)'],['A','Amperímetro (A)'],['R','Ohmímetro (Ω)']]]],T:[[-40,60],[0,60],[40,60]],N:['COM','VΩ','A'],B:[-56,-60,112,124],
+mmeter:{n:'Multímetro',own:'MM',act:1,def:{m:'V'},F:[['m','Função','sel',[['V','Voltímetro (V)'],['A','Amperímetro (A)'],['R','Ohmímetro (Ω)']],LV]],
+ /* durante a simulação, clicar no multímetro gira a chave: V → Ω → A */
+ click:c=>{c.m={V:'R',R:'A',A:'V'}[c.m||'V'];logE(`${c.tag}: chave em ${{V:'V (tensão)',R:'Ω (resistência)',A:'A (corrente)'}[c.m]}`,'a');save();try{renderProps()}catch(_){}},T:[[-40,60],[0,60],[40,60]],N:['COM','VΩ','A'],B:[-56,-60,112,124],
  draw:c=>{const r=SIM()?mmRead(c):'',m=c.m||'V';return bodyBox(-52,-56,104,100,'')+R(-44,-48,88,30,'',' rx="3" style="fill:#0d1b14"')+`<text x="40" y="-27" class="lv" style="fill:#7cf2a0;text-anchor:end;font-size:13px">${esc(r||'— — —')}</text>`+
   TT(-30,-6,m==='V'?'● V':'○ V',c)+TT(0,-6,m==='R'?'● Ω':'○ Ω',c)+TT(30,-6,m==='A'?'● A':'○ A',c)+C(-40,26,6,'box')+C(0,26,6,m!=='A'?'en':'box')+C(40,26,6,m==='A'?'en':'box')+L(-40,32,-40,60)+L(0,32,0,60)+L(40,32,40,60)+TT(-40,14,'COM',c)+TT(0,14,'VΩ',c)+TT(40,14,'A',c)},
  an:(c,x)=>{const m=c.m||'V';if(m==='A'){x.r(c,2,0,.01);x.r(c,1,0,1e7)}else if(m==='R')x.bat(c,1,0,1,1000);else x.r(c,1,0,1e7)},val:c=>({V:'V',A:'A',R:'Ω'})[c.m||'V'],
@@ -235,7 +237,7 @@ DYN.add('fgen');DYN.add('servo');DYN.add('encm');
 
 /* ---------- micro:bit ---------- */
 DEFS.mbit={n:'micro:bit',own:'U',act:1,T:[[-80,80],[-40,80],[0,80],[40,80],[80,80]],N:['P0','P1','P2','3V','GND'],B:[-100,-80,200,170],
- draw:c=>{const d=DEV(c),m=SIM()?d.mx||[]:[];let s=R(-96,-76,192,140,'box',' rx="10"');for(let y=0;y<5;y++)for(let x=0;x<5;x++){const on=m[y*5+x];s+=R(-26+x*12,-50+y*12,6,8,'',on?' style="fill:#ff3030;filter:drop-shadow(0 0 4px #ff3030);stroke:none"':' style="fill:color-mix(in srgb,var(--muted) 25%,transparent);stroke:none"')}
+ draw:c=>{const d=DEV(c),m=SIM()?mbMx(c,mbPlug(c)):[];let s=R(-96,-76,192,140,'box',' rx="10"');for(let y=0;y<5;y++)for(let x=0;x<5;x++){const on=m[y*5+x];s+=R(-26+x*12,-50+y*12,6,8,'',on?' style="fill:#ff3030;filter:drop-shadow(0 0 4px #ff3030);stroke:none"':' style="fill:color-mix(in srgb,var(--muted) 25%,transparent);stroke:none"')}
   const ba=SIM()&&d.ba,bb=SIM()&&d.bb;s+=C(-66,-14,12,ba?'en':'box')+T(-66,-34,'A',c.r,'lv')+C(66,-14,12,bb?'en':'box')+T(66,-34,'B',c.r,'lv');
   [['0',-80],['1',-40],['2',0],['3V',40],['GND',80]].forEach(([n,x])=>{s+=R(x-14,40,28,24,'',' rx="3" style="fill:#d4b45a;stroke:var(--ink)"')+L(x,64,x,80)+TT(x,56,n,c)});return s},
  click:()=>{},hitClick:(c,x,y)=>{const d=DEV(c);if(Math.hypot(x+66,y+14)<16){d.ba=true;logE(`${c.tag}: botão A`,'a');return 'hold'}if(Math.hypot(x-66,y+14)<16){d.bb=true;logE(`${c.tag}: botão B`,'a');return 'hold'}},

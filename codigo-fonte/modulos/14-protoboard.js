@@ -34,8 +34,18 @@ function rBands(R){R=Math.abs(+R)||0;if(R<.1)return[0,0,0];let e=Math.floor(Math
 const multCol=e=>e===-1?'#c9a227':e===-2?'#c0c0c0':RBC[e];
 
 /* dígito de 7 segmentos (bits: a=1,b=2,...,g=64, dp=128) */
-function pbSeg(x,y,w,h,bits,col,off){const t=Math.max(1.4,w*.16),s=(on,d)=>`<path d="${d}" stroke="${on?col:off}" stroke-width="${t}" stroke-linecap="round" fill="none"${on?` style="filter:drop-shadow(0 0 1.5px ${col})"`:''}/>`,m=h/2,k=w*.12;
- return`<g transform="translate(${x} ${y})">`+s(bits&1,`M${t+k},0H${w-t}`)+s(bits&2,`M${w},${t}V${m-t}`)+s(bits&4,`M${w-k},${m+t}V${h-t}`)+s(bits&8,`M${t-k},${h}H${w-t-k}`)+s(bits&16,`M${-k},${m+t}V${h-t}`)+s(bits&32,`M0,${t}V${m-t}`)+s(bits&64,`M${t-k/2},${m}H${w-t-k/2}`)+(bits&128?bC(w+t,h,t*.7,col):bC(w+t,h,t*.7,off))+'</g>'}
+/* display de 7 segmentos: desenhado reto e inclinado por igual (8°), como um display real; segmentos com folga nas pontas */
+/* micro:bit: ao simular, o cabo USB desce e encaixa (como no Tinkercad); sem programa, mostra a carinha feliz (código padrão do Tinkercad) */
+const MB_HAPPY=[0,0,0,0,0, 0,1,0,1,0, 0,0,0,0,0, 1,0,0,0,1, 0,1,1,1,0];
+function mbPlug(c){if(!SIM()){delete DEV(c).usb0;return 0}const d=DEV(c),n=performance.now();if(d.usb0==null)d.usb0=n;const e=Math.min(1,(n-d.usb0)/650);if(e<1&&!mbPlug.q){mbPlug.q=1;requestAnimationFrame(()=>{mbPlug.q=0;try{if(pbOn())pbRender();else renderComps()}catch(_){}})}return 1-Math.pow(1-e,3)}
+function mbMx(c,pl){const d=DEV(c);if(typeof mcuCode==='function'&&mcuCode(c))return d.mx||[];return pl>=1?MB_HAPPY:[]}
+function mbUsb(p){const dy=(1-p)*-46;return`<g transform="translate(0 ${dy.toFixed(1)})">${bR(93,-30,14,24,'#c9ced3',bStk('#8e959b',.6)+' rx="1"')}${bR(95,-27,10,3,'#7d848a')}${bR(87,-62,26,34,'#1f1f1f',' rx="3"')}${bR(91,-58,18,26,'#2c2c2c',' rx="2"')}${bR(95,-96,10,36,'#1a1a1a',' rx="3"')}${bR(97,-120,6,26,'#1a1a1a',' rx="3"')}${bP('M100,-116l-2,5h2l-1,4l3,-6h-2l1,-3z','#f2c200')}</g>`}
+function pbMeter(val,u){const on=SIM();return bR(-22,-72,74,82,'#1e2124',' rx="6"')+bR(-22,-72,74,82,'none',bStk('#000',.8)+' rx="6"')+bR(-16,-66,62,30,'#0f1210',' rx="3"')+bR(-13,-63,56,24,on?'#cfe3c3':'#9fae98',' rx="1.5"')+
+ `<text x="39" y="-45" font-size="11" font-weight="700" font-family="'IBM Plex Mono',monospace" text-anchor="end" fill="#1d2a15">${esc(on?(val||'0 '+u).replace(/\s/g,''):'')}</text>`+
+ bC(15,-20,11,'#2b2f33',bStk('#3a3f44',1))+bTc(15,-16,u,12,'#e6e8ea',' font-weight="700"')+bTc(15,-2,u==='V'?tr('VOLTÍMETRO'):tr('AMPERÍMETRO'),3.6,'#8a9096')+
+ bC(0,0,5.5,'#c62828',bStk('#7a1414',1))+bC(0,0,2,'#3a0a0a')+bC(30,0,5.5,'#2b2b2b',bStk('#000',1))+bC(30,0,2,'#000')}
+function pbSeg(x,y,w,h,bits,col,off){const t=Math.max(1.4,w*.16),g=t*.75,m=h/2,s=(on,d)=>`<path d="${d}" stroke="${on?col:off}" stroke-width="${t}" stroke-linecap="round" fill="none"${on?` style="filter:drop-shadow(0 0 1.5px ${col})"`:''}/>`,sk=-Math.tan(8*Math.PI/180);
+ return`<g transform="translate(${x} ${y}) matrix(1 0 ${sk.toFixed(4)} 1 ${(-sk*h).toFixed(2)} 0)">`+s(bits&1,`M${g},0H${w-g}`)+s(bits&2,`M${w},${g}V${m-g}`)+s(bits&4,`M${w},${m+g}V${h-g}`)+s(bits&8,`M${g},${h}H${w-g}`)+s(bits&16,`M0,${m+g}V${h-g}`)+s(bits&32,`M0,${g}V${m-g}`)+s(bits&64,`M${g},${m}H${w-g}`)+'</g>'+bC(x+w+t*1.5,y+h,t*.7,bits&128?col:off)}
 
 /* ---------- pacotes físicos: terminais (em passos de 0,1") e desenho ---------- */
 const pbRow=(n,y=0,x0=0)=>rng(n).map(i=>[x0+i,y]);
@@ -107,9 +117,9 @@ const PKGS={
   if(lk==='coin')return{pins:[[0,0],[1,0]],box:[-22,-66,32,1],art:c=>bWire('M0,0C0,-14 -2,-22 -4,-30','#d32f2f',1.6)+bWire('M10,0C10,-14 8,-22 6,-30','#2a2a2a',1.6)+bR(-20,-64,30,34,'#222',' rx="4"')+bC(-5,-47,13,'#c9ced3',bStk('#8b939b',.8))+bC(-5,-47,13,'url(#pbHi)')+bTc(-5,-46,'CR2032',4.4,'#444')+bTc(-5,-40,`${fmtE(+c.V,'V')}`,4.4,'#444')};
   if(lk==='potato'||lk==='lemon'){const pot=lk==='potato';return{pins:[[0,0],[1,0]],box:[-40,-86,50,1],art:c=>bP(pot?'M-34,-50C-40,-74 -10,-86 8,-76C26,-66 22,-40 4,-36C-12,-32 -30,-34 -34,-50Z':'M-36,-58C-36,-76 -12,-84 4,-78C18,-73 24,-64 22,-54C20,-42 6,-36 -10,-37C-26,-38 -36,-46 -36,-58Z',pot?'#c49a5c':'#f4d23a',bStk(pot?'#8f6a35':'#c9a520',1))+
    (pot?bC(-20,-62,2,'#8f6a35')+bC(0,-52,1.6,'#8f6a35'):bC(22,-56,3,'#c9a520'))+bR(-22,-90,4,26,'#d7843a')+bR(-2,-90,4,26,'#a9b0b8')+bWire('M-20,-88C-20,-60 0,-30 0,0','#d32f2f',1.6)+bWire('M0,-88C4,-60 10,-30 10,0','#2a2a2a',1.6)}}
-  return{pins:[[0,0],[1,0]],box:[-42,-82,112,1],art:c=>bR(2,-78,42,52,'#d98a4a')+bR(44,-78,66,52,'#2b2b2b',' rx="2"')+bR(2,-78,108,52,'none',bStk('#1e1e1e',.8)+' rx="2"')+
+  return{pins:[[0,0],[1,0]],box:[-42,-82,112,1],art:c=>bR(2,-78,42,52,'#d08a4f',' rx="2"')+bR(40,-78,70,52,'#333',' rx="3"')+bR(40,-78,6,52,'#333')+
    `<text x="80" y="-52" font-size="19" fill="#fff" text-anchor="middle" transform="rotate(90 80 -52)" font-weight="600">${esc(fmtE(+c.V,'V').replace(' ',''))}</text>`+
-   bR(-14,-74,16,14,'#cfcfcf',bStk('#9a9a9a',.6)+' rx="1"')+bR(-14,-44,16,14,'#cfcfcf',bStk('#9a9a9a',.6)+' rx="1"')+bC(8,-67,3.6,'none',bStk('#5a3a1a',.7))+bTc(8,-65.4,'−',5,'#5a3a1a')+bC(8,-37,3.6,'none',bStk('#5a3a1a',.7))+bTc(8,-35.2,'+',5,'#5a3a1a')+
+   bR(-14,-75,6,16,'#9d9d9d',' rx="1"')+bR(-8,-73,10,12,'#c8c8c8',' rx="1"')+bR(-14,-45,8,16,'#8a8a8a',' rx="1"')+bR(-6,-43,8,12,'#c8c8c8',' rx="1"')+bC(10,-67,4.6,'none',bStk('#9a5b26',.8))+bR(7.4,-67.5,5.2,1,'#9a5b26')+bC(10,-37,4.6,'none',bStk('#9a5b26',.8))+bR(7.4,-37.5,5.2,1,'#9a5b26')+bR(9.5,-40,1,5.2,'#9a5b26')+
    bR(-22,-80,8,56,'#2b2b2b',' rx="1"')+bWire('M-22,-37C-36,-37 -8,-10 0,0','#d32f2f',1.5)+bWire('M-22,-67C-42,-67 4,-14 10,0','#2a2a2a',1.5)}},
  solar:c=>({pins:[[0,0],[1,0]],box:[-32,-80,42,1],art:c=>{let s=bWire('M0,0C0,-10 -2,-18 -4,-26','#d32f2f',1.6)+bWire('M10,0C10,-10 8,-18 6,-26','#2a2a2a',1.6)+bR(-30,-78,70,50,'#c9ced3',' rx="2"')+bR(-27,-75,64,44,'#1c3c7a');for(let i=1;i<4;i++)s+=bR(-27+i*16,-75,.8,44,'#8aa4d6');for(let j=1;j<3;j++)s+=bR(-27,-75+j*14.6,64,.8,'#8aa4d6');return s+bShade(-27,-75,64,44,1)}}),
  pot:c=>({pins:[[0,0],[2,0],[1,0]],box:[-6,-34,26,1],art:c=>{const a=-135+270*Math.min(100,Math.max(0,+c.pos||0))/100;return bLeg(0,-5,0,0)+bLeg(10,-5,10,0)+bLeg(20,-5,20,0)+bR(-5,-32,30,27,'#2d64b1',' rx="2"')+bShade(-5,-32,30,27,2)+
@@ -130,7 +140,7 @@ const PKGS={
   for(let r=0;r<4;r++)for(let q=0;q<4;q++){const x=-70+q*40,y=-66+r*36,on=k&&k.r===r&&k.c===q,ch=K4[r*4+q],lt=/[A-D]/.test(ch);s+=`<rect x="${x}" y="${y}" width="30" height="28" rx="5" fill="${on?'#9aa2aa':lt?'#c62828':'#e9ecef'}" data-hx="${x+15}" data-hy="${y+14}" class="pbhit"/>`+bTc(x+15,y+19.5,ch,13,lt?'#fff':'#222',' pointer-events="none" font-weight="600"')}
   return s+bR(-45,86,70,4,'#c9a227')}}),
  seg7:c=>({pins:[...pbRow(5,0),...pbRow(5,6)],box:[-6,-2,46,62],art:c=>{const A=pbOnS()&&!rt.burnt[c.id]?rt.A:null,on=i=>A&&(c.ca?-1:1)*(A.vdc(K(c.id,i))-A.vdc(K(c.id,2)))>1.6,col=pbLedCol(c),bits=[3,4,8,6,5,1,0,9].reduce((b,i,k)=>b|(on(i)?1<<k:0),0);
-  return bR(-5,2,50,56,'#262626',' rx="1.5"')+bShade(-5,2,50,56,1.5)+pbSeg(10,10,18,38,bits,col,'#3b3b3b')}}),
+  return bR(-5,2,50,56,'#262626',' rx="1.5"')+bShade(-5,2,50,56,1.5)+pbSeg(8,10,18,38,bits,col,'#3b3b3b')}}),
  gas:c=>({pins:[...pbRow(3,0),...pbRow(3,3)],box:[-12,-6,32,36],art:c=>bC(10,15,21,'#8a5a2b')+bC(10,15,16,'#b8bec4',bStk('#8b939b',.8))+bP('M-2,7L22,23M-2,23L22,7M10,-1V31M-6,15H26','none',' stroke="#8b939b" stroke-width=".7"')+bC(10,15,16,'url(#pbHi)')+(+c.gas>0?bC(10,15,6,'#ff7a1a',' opacity=".6" filter="url(#pbBl)"'):'')}),
  pir:c=>({pins:pbRow(3),box:[-12,-48,32,1],art:c=>{const on=SIM()&&(DEV(c).t||0)>0;return bLeg(0,-6,0,0)+bLeg(10,-6,10,0)+bLeg(20,-6,20,0)+bR(-11,-46,42,40,'#1c6e3a',' rx="2"')+bC(10,-28,16,'#f4f4f0',bStk('#c8c8c0',.8))+bP('M-6,-28H26M10,-44V-12M-1,-40L21,-16M21,-40L-1,-16','none',' stroke="#dcdcd4" stroke-width=".8"')+bC(10,-28,16,'url(#pbHi)')+bC(26,-10,2,on?'#ff3b3b':'#5a1d1d',on?' style="filter:drop-shadow(0 0 2px #ff3b3b)"':'')}}),
  hcsr04:c=>({pins:pbRow(4),box:[-28,-50,58,1],art:c=>{const cyl=x=>bC(x,-28,13,'#c4cad0',bStk('#8b939b',.8))+bC(x,-28,10,'#2d2d2d')+bP(`M${x-8},-28H${x+8}M${x},-36V-20`,'none',' stroke="#555" stroke-width=".7"')+bC(x,-28,13,'url(#pbHi)');
@@ -155,37 +165,54 @@ const PKGS={
   return rng(4).map(i=>bLeg(i*10,-8,i*10,0)).join('')+bR(-6,-30,42,22,'#1b1b1b',' rx="1.5"')+rng(4).map(i=>bTc(i*10,-12,['GND','VCC','SDA','SCL'][i],3.4,'#ddd')).join('')+
    bR(-180,-148,186,120,'#1f6e3a',' rx="3"')+bShade(-180,-148,186,120,3)+bR(-168,-132,162,90,'#2b2b2b',' rx="2"')+lcdScreen(-160,-122,146,62,lines,bl)}}),
  tm1637:c=>({pins:pbRow(4),box:[-26,-60,56,1],art:c=>{const d=DEV(c),pw=!SIM()||PWR(c,2,3,3),lit=SIM()&&pw&&d.seg;let s=rng(4).map(i=>bLeg(i*10,-8,i*10,0)).join('')+bR(-24,-58,78,50,'#1d5fa8',' rx="2"')+bR(-20,-54,70,34,'#1b1b1b',' rx="1"');
-  for(let k=0;k<4;k++)s+=pbSeg(-14+k*16,-48,9,22,lit?d.seg[k]||0:0,'#ff3030','#3a2020');s+=bC(15.5,-42,1.3,lit&&d.colon?'#ff3030':'#3a2020')+bC(15.5,-32,1.3,lit&&d.colon?'#ff3030':'#3a2020');
+  for(let k=0;k<4;k++)s+=pbSeg(-14+k*16,-48,9,22,lit?d.seg[k]||0:0,'#ff3030','#3a2020');s+=bC(16.6,-42,1.3,lit&&d.colon?'#ff3030':'#3a2020')+bC(15.2,-32,1.3,lit&&d.colon?'#ff3030':'#3a2020');
   return s+rng(4).map(i=>bTc(i*10,-11,['CLK','DIO','VCC','GND'][i],3.4,'#fff')).join('')}}),
  usba:c=>({pins:pbRow(4),box:[-8,-46,38,1],art:()=>rng(4).map(i=>bLeg(i*10,-8,i*10,0)).join('')+bR(-6,-14,42,8,'#4a2d6b',' rx="1"')+bR(-4,-44,38,32,'#c4cad0',' rx="1.5"')+bR(1,-38,28,12,'#2b2b2b')+bR(3,-34,24,3,'#c9a227')+bShade(-4,-44,38,32,1.5)}),
  mmeter:c=>({pins:[[0,0],[3,0],[6,0]],sock:1,box:[-18,-156,78,9],art:c=>{const r=SIM()?mmRead(c):'',m=c.m||'V',ang={V:-40,R:0,A:40}[m]||0;return bR(-16,-154,92,162,'#f0b429',' rx="9"')+bR(-10,-148,80,150,'#33363b',' rx="6"')+bR(-4,-142,68,30,'#b9d3a8',' rx="2"')+
-  `<text x="60" y="-121" font-size="13" font-family="'IBM Plex Mono',monospace" text-anchor="end" fill="#1d2a15">${esc(r||'0.000')}</text>`+bC(30,-76,20,'#1d1d1d')+`<g transform="rotate(${ang} 30 -76)">${bR(28,-96,4,16,'#e9ecef',' rx="1.5"')}</g>`+bTc(10,-100,'V',6,'#fff')+bTc(30,-104,'Ω',6,'#fff')+bTc(50,-100,'A',6,'#fff')+
-  [[0,'#111','COM'],[30,'#c62828','VΩ'],[60,'#c62828','A']].map(([x,k,t])=>bC(x,0,5.5,k,bStk('#999',1.2))+bC(x,0,2,'#000')+bTc(x,-10,t,5,'#fff')).join('')}}),
- psub:c=>({pins:[[0,0],[3,0]],sock:1,box:[-32,-104,62,9],art:c=>{const o=SIM()&&rt.A&&rt.A.m[c.id],d=DEV(c);return bR(-30,-102,90,110,'#d5dae0',' rx="5"')+bShade(-30,-102,90,110,5)+bR(-24,-96,78,20,'#0d1b14',' rx="2"')+bR(-24,-72,78,20,'#0d1b14',' rx="2"')+
-  `<text x="50" y="-81" font-size="11" font-family="'IBM Plex Mono',monospace" text-anchor="end" fill="#7cf2a0">${esc(o?fmtE(Math.abs(VD(c,0,1)),'V'):fmtE(+c.V,'V'))}</text><text x="50" y="-57" font-size="11" font-family="'IBM Plex Mono',monospace" text-anchor="end" fill="${d.cc?'#ff8a3d':'#7cf2a0'}">${esc(o?fmtE(o.i,'A'):fmtE(+c.Ilim,'A'))}</text>`+
-  bC(-8,-32,9,'#333')+bC(32,-32,9,'#333')+bC(0,0,5.5,'#c62828',bStk('#999',1.2))+bC(30,0,5.5,'#111',bStk('#999',1.2))+bTc(0,-10,'+',7,'#333')+bTc(30,-10,'−',7,'#333')}}),
- fgen:c=>({pins:[[0,0],[3,0]],sock:1,box:[-34,-104,64,9],art:c=>{const w=c.w||'sq',wave={sin:'M-20,-82q6,-12 12,0t12,0t12,0t12,0t12,0',sq:'M-20,-82v-8h12v16h12v-16h12v16h12v-8',tri:'M-20,-82l6,-8l12,16l12,-16l12,16l6,-8',saw:'M-20,-74l12,-16v16l12,-16v16l12,-16v16l12,-16v16'}[w];
-  return bR(-32,-102,94,110,'#2d333b',' rx="5"')+bR(-26,-96,82,40,'#0b1a12',' rx="2"')+bP(wave,'none',' stroke="#6cf09a" stroke-width="1.6"')+bTc(15,-61,`${fmtE(+c.f,'Hz')} · ${fmtE(+c.Vpp,'V')}pp`,6,'#6cf09a')+bC(-10,-34,8,'#555')+bC(14,-34,8,'#555')+bC(38,-34,8,'#555')+
-  bC(0,0,5.5,'#c62828',bStk('#999',1.2))+bC(30,0,5.5,'#111',bStk('#999',1.2))+bTc(0,-10,'+',7,'#ddd')+bTc(30,-10,'COM',5,'#ddd')}}),
+  `<text x="60" y="-121" font-size="13" font-family="'IBM Plex Mono',monospace" text-anchor="end" fill="#1d2a15">${esc(r||'0.000')}</text>`+bC(30,-76,20,'#1d1d1d')+`<g transform="rotate(${ang} 30 -76)">${bR(28,-96,4,16,'#e9ecef',' rx="1.5"')}</g>`+bTc(10,-100,'V',m==='V'?7:6,m==='V'?'#ffd34d':'#9aa0a6')+bTc(30,-104,'Ω',m==='R'?7:6,m==='R'?'#ffd34d':'#9aa0a6')+bTc(50,-100,'A',m==='A'?7:6,m==='A'?'#ffd34d':'#9aa0a6')+(SIM()?bTc(30,-56,tr('clique: trocar escala'),4.2,'#9aa0a6'):'')+
+  [[0,'#111','COM',1],[30,'#c62828','VΩ',m!=='A'],[60,'#c62828','A',m==='A']].map(([x,k,t,u])=>bC(x,0,5.5,k,bStk(u?'#ffd34d':'#999',u?1.6:1.2))+bC(x,0,2,'#000')+bTc(x,-10,t,5,u?'#fff':'#9aa0a6')).join('')}}),
+ /* fonte de bancada no estilo do Tinkercad: dois mostradores, botões com escala, lâmpadas CV/CC, chave ON e bornes */
+ psub:c=>({pins:[[0,0],[3,0]],sock:1,box:[-66,-108,176,16],art:c=>{const o=SIM()&&rt.A&&rt.A.m[c.id],d=DEV(c),on=SIM(),v=o?Math.abs(VD(c,0,1)):+c.V,i=o?o.i:0,
+   kn=(x,y,f)=>{let t='';for(let k=0;k<36;k++){const a=k*10*Math.PI/180;t+=`<line x1="${(x+Math.cos(a)*12.2).toFixed(1)}" y1="${(y+Math.sin(a)*12.2).toFixed(1)}" x2="${(x+Math.cos(a)*14).toFixed(1)}" y2="${(y+Math.sin(a)*14).toFixed(1)}" stroke="#555" stroke-width=".7"/>`}const a=(135+270*Math.max(0,Math.min(1,f)))*Math.PI/180;return bC(x,y,14,'#e9ebed',bStk('#9aa0a6',.8))+t+bC(x,y,11,'#f4f5f6')+bC(x+Math.cos(a)*7.5,y+Math.sin(a)*7.5,1.6,'#333')},
+   lcd=(y,txt)=>bR(-60,y,86,32,'#4d4d4d',' rx="2"')+bR(-56,y+4,78,24,'#dfe9ee')+`<text x="-50" y="${y+23}" font-size="15" font-weight="700" font-family="Arial,sans-serif" fill="#3a3a3a">${esc(txt)}</text>`;
+   return bR(-64,-106,172,118,'#dcdfe2',' rx="4"')+bR(-64,-106,172,118,'none',bStk('#b9bec3',.8)+' rx="4"')+lcd(-98,v.toFixed(1)+' V')+lcd(-58,Math.abs(i).toFixed(2)+' A')+
+    kn(52,-82,(+c.V||0)/30)+kn(52,-42,(+c.Ilim||0)/5)+bTc(37,-64,'0',4,'#555')+bTc(70,-64,'30 V',4,'#555')+bTc(37,-24,'0',4,'#555')+bTc(70,-24,'5 A',4,'#555')+
+    bC(76,-100,2.2,on&&!d.cc?'#2ecc40':'#c9cdd1')+bT(80,-98.5,'CV',4,'#555')+bC(76,-60,2.2,on&&d.cc?'#ff8a3d':'#c9cdd1')+bT(80,-58.5,'CC',4,'#555')+
+    bR(-64,-14,172,26,'#cfd3d7',' rx="0"')+bP('M-64,-14H108V8Q108,12 104,12H-60Q-64,12 -64,8Z','#cfd3d7')+
+    bR(-58,-7,30,14,on?'#bfe3c4':'#bfc4c9',' rx="7"')+bC(on?-35:-51,0,6,'#4a4f54')+bT(on?-55:-44,2,'ON',4.5,'#444',' font-weight="700"')+
+    bC(0,0,6,'#c62828',bStk('#7a1414',1))+bC(0,0,2.2,'#3a0a0a')+bC(30,0,6,'#2b2b2b',bStk('#000',1))+bC(30,0,2.2,'#000')+bTc(0,-9,'+',6,'#444')+bTc(30,-9,'−',6,'#444')+
+    bT(62,-1,'VOLTAGE',4,'#9aa0a6',' font-weight="700"')+bT(62,5,'SUPPLY',4,'#9aa0a6',' font-weight="700"')+bP('M98,-6l-4,7h3l-2,6l6,-8h-3l2,-5z','#b5bbc0')}}),
+
+ /* gerador de função: tela com a forma de onda, botões de frequência, amplitude e nível CC, saída + e COM */
+ fgen:c=>({pins:[[0,0],[3,0]],sock:1,box:[-66,-108,176,16],art:c=>{const w=c.w||'sq',on=SIM(),wave={sin:'M-50,-74q6,-14 12,0t12,0t12,0t12,0t12,0t12,0',sq:'M-50,-74v-9h12v18h12v-18h12v18h12v-18h12v18h12v-9',tri:'M-50,-74l6,-9l12,18l12,-18l12,18l12,-18l6,9',saw:'M-50,-66l12,-17v17l12,-17v17l12,-17v17l12,-17v17l12,-17v17'}[w];
+   const kn=(x,y,l)=>bC(x,y,10,'#3c4248',bStk('#1c1f22',1))+bC(x,y,7,'#555c63')+bR(x-.8,y-9,1.6,5,'#e9ecef')+bTc(x,y+17,l,4.4,'#c4cad0');
+   return bR(-64,-106,172,118,'#2b3036',' rx="4"')+bR(-58,-100,104,50,'#141a17',' rx="2"')+bR(-55,-97,98,44,'#0b1a12')+bP(wave,'none',` stroke="#6cf09a" stroke-width="1.6"${on?'':' opacity=".55"'}`)+
+    bT(-52,-57,`${fmtE(+c.f,'Hz')}  ${fmtE(+c.Vpp,'V')}pp`,5.5,'#6cf09a')+bT(56,-92,tr('GERADOR'),5,'#c4cad0',' font-weight="700"')+bT(56,-85,tr('DE FUNÇÃO'),5,'#c4cad0',' font-weight="700"')+
+    kn(66,-66,'Hz')+kn(92,-66,'V')+kn(-40,-30,tr('forma'))+kn(-12,-30,'Hz')+kn(66,-30,'Vpp')+kn(92,-30,'CC')+
+    bR(-64,-14,172,26,'#23272c')+bC(0,0,6,'#c62828',bStk('#7a1414',1))+bC(0,0,2.2,'#3a0a0a')+bC(30,0,6,'#111',bStk('#000',1))+bC(30,0,2.2,'#000')+bTc(0,-9,'+',6,'#ddd')+bTc(30,-9,'COM',4.6,'#ddd')+bC(-52,0,3,on?'#2ecc40':'#41474d')+bT(-46,2,'ON',4.5,'#c4cad0')}}),
+
  scope:c=>({pins:[[0,0],[2,0],[5,0],[7,0]],sock:1,box:[-22,-124,94,9],art:c=>{const v1=pbOnS()?VD(c,0,1):0,v2=pbOnS()?VD(c,2,3):0;let s=bR(-20,-122,110,130,'#3b3f45',' rx="5"')+bR(-14,-116,98,70,'#0b1a12',' rx="2"');for(let i=1;i<6;i++)s+=bR(-14+i*16.3,-116,.5,70,'#1f3a2a');for(let j=1;j<4;j++)s+=bR(-14,-116+j*17.5,98,.5,'#1f3a2a');
   const hs=[0,1].map(ch=>SIM()&&rt.wv&&rt.wv[c.id+':'+ch]),t1=SIM()?rt.simT:0,t0=t1-(+S.sp||1)*(typeof simK==='function'&&simK()>1?4:20);let mx=-Infinity,mn=Infinity;hs.forEach(h=>h&&h.forEach(([t,v])=>{if(t>=t0){mx=Math.max(mx,v);mn=Math.min(mn,v)}}));
   if(!(mx>mn)){mx=(isFinite(mx)?mx:0)+1;mn=(isFinite(mn)?mn:0)-1}const pad=(mx-mn)*.1;mx+=pad;mn-=pad;const tr2=(h,col)=>{if(!h||h.length<2)return'';const q=h.filter(([t])=>t>=t0);if(q.length<2)return'';const tt=Math.max(1e-9,t1-Math.max(t0,q[0][0]));return`<polyline fill="none" stroke="${col}" stroke-width="1.3" stroke-linejoin="round" points="${q.map(([t,v])=>`${(-14+98*(t-Math.max(t0,q[0][0]))/tt).toFixed(1)},${(-48-66*(v-mn)/(mx-mn)).toFixed(1)}`).join(' ')}"/>`};
   const tw=tr2(hs[0],'#f2d13a')+tr2(hs[1],'#46c3ff');
   return s+bT(-10,-106,`CH1 ${fmtE(v1,'V')}`,6,'#f2d13a')+bT(-10,-96,`CH2 ${fmtE(v2,'V')}`,6,'#46c3ff')+(tw||bR(-14,-81-Math.max(-30,Math.min(30,v1*3)),98,1.2,'#f2d13a')+bR(-14,-81-Math.max(-30,Math.min(30,v2*3)),98,1.2,'#46c3ff'))+
    [[0,'#f2d13a','1+'],[20,'#222','1−'],[50,'#46c3ff','2+'],[70,'#222','2−']].map(([x,k,t])=>bC(x,0,5,k,bStk('#999',1.2))+bTc(x,-10,t,5,'#ddd')).join('')}}),
- vm:c=>({pins:[[0,0],[3,0]],sock:1,box:[-14,-64,44,9],art:c=>bR(-12,-62,54,70,'#33363b',' rx="5"')+bR(-7,-56,44,20,'#b9d3a8',' rx="2"')+`<text x="35" y="-41" font-size="9" font-family="'IBM Plex Mono',monospace" text-anchor="end" fill="#1d2a15">${esc(pbOnS()?fmtE(VD(c,0,1),'V'):'V')}</text>`+bC(0,0,5,'#c62828',bStk('#999',1.2))+bC(30,0,5,'#111',bStk('#999',1.2))+bTc(15,-20,'V',12,'#ddd')}),
- am:c=>({pins:[[0,0],[3,0]],sock:1,box:[-14,-64,44,9],art:c=>{const o=AM(c.id);return bR(-12,-62,54,70,'#33363b',' rx="5"')+bR(-7,-56,44,20,'#b9d3a8',' rx="2"')+`<text x="35" y="-41" font-size="9" font-family="'IBM Plex Mono',monospace" text-anchor="end" fill="#1d2a15">${esc(o?fmtE(o.i,'A'):'A')}</text>`+bC(0,0,5,'#c62828',bStk('#999',1.2))+bC(30,0,5,'#111',bStk('#999',1.2))+bTc(15,-20,'A',12,'#ddd')}}),
+ /* voltímetro e amperímetro de painel: moldura preta, mostrador com o valor e a unidade, bornes vermelho e preto */
+ vm:c=>({pins:[[0,0],[3,0]],sock:1,box:[-24,-74,78,14],art:c=>pbMeter(pbOnS()?fmtE(VD(c,0,1),'V'):'','V')}),
+
+ am:c=>({pins:[[0,0],[3,0]],sock:1,box:[-24,-74,78,14],art:c=>{const o=pbOnS()&&AM(c.id);return pbMeter(o?fmtE(o.i,'A'):'','A')}}),
+
  rly1:c=>({pins:[[0,0],[0,3],[2,0],[4,0],[4,3]],box:[-7,-3,47,33],art:c=>{const on=pbActive(c);return bR(-6,-2,52,34,'#1e56b0',' rx="2"')+bShade(-6,-2,52,34,2)+bTc(20,13,'RELAY',6,'#fff',' font-weight="700"')+bTc(20,22,'SRD-05VDC',4,'#dfe6f5')+bC(41,4,2,on?'#ff3b3b':'#5a1d1d')}}),
  rly2:c=>({pins:[[0,0],[0,3],[1,0],[2,0],[3,0],[1,3],[2,3],[3,3]],box:[-7,-3,37,33],art:c=>{const on=pbActive(c);return bR(-6,-2,42,34,'#1e56b0',' rx="2"')+bShade(-6,-2,42,34,2)+bTc(15,13,'DPDT',6,'#fff',' font-weight="700"')+bTc(15,22,'5 V',4.4,'#dfe6f5')+bC(31,4,2,on?'#ff3b3b':'#5a1d1d')}}),
  hdr8:c=>({pins:[...pbRow(8,0),...pbRow(8,1)],box:[-6,-6,76,16],art:()=>hdrStrip(0,0,8)+hdrStrip(0,10,8)}),
  ic:c=>{const n=termsOf(c).length,h=n/2;return{pins:dipPins(n),box:[-6,-2,(h-1)*10+6,32],art:c=>pbDip(h,c.k||'IC')}},
  opamp:c=>({pins:[[1,3],[2,3],[2,0],[1,0],[3,3]],dum:[[0,3],[3,0],[0,0]],box:[-6,-2,36,32],art:c=>pbDip(4,({lm358:'LM358',lm741:'LM741',tl072:'TL072'})[c.m]||'AMP OP')}),
- mbit:c=>({pins:[[2,16],[6,16],[10,16],[14,16],[18,16]],sock:1,box:[-2,-8,202,180],art:c=>{const d=DEV(c),m=SIM()?d.mx||[]:[],ba=SIM()&&d.ba,bb=SIM()&&d.bb,R='#e5173f';
-  let s=bR(90,-7,20,10,'#cfcfcf',bStk('#a5a5a5',.6)+' rx="1.5"')+bR(0,0,200,178,'#1c1c1c',' rx="10"')+bP('M0,10Q0,0 10,0H40L0,38Z',R)+bP('M46,0H62L46,15Z',R)+bP('M67,0H79L67,11Z',R);
+ mbit:c=>({pins:[[2,16],[6,16],[10,16],[14,16],[18,16]],sock:1,box:[-2,-8,202,180],art:c=>{const d=DEV(c),pl=mbPlug(c),m=SIM()?mbMx(c,pl):[],ba=SIM()&&d.ba,bb=SIM()&&d.bb,R='#e5173f';
+  let s=(SIM()?mbUsb(pl):'')+bR(90,-7,20,10,'#cfcfcf',bStk('#a5a5a5',.6)+' rx="1.5"')+bR(0,0,200,178,'#1c1c1c',' rx="10"')+bP('M0,10Q0,0 10,0H40L0,38Z',R)+bP('M46,0H62L46,15Z',R)+bP('M67,0H79L67,11Z',R);
   s+=bR(84,22,32,17,'none',` rx="8.5" stroke="${R}" stroke-width="3"`)+bC(93,30.5,2.6,R)+bC(107,30.5,2.6,R);
   for(let y=0;y<5;y++)for(let x=0;x<5;x++){const on=m[y*5+x];s+=bR(64.5+x*17,52+y*17,3.6,9,on?'#ff2424':'#c4c4c4',on?' rx="1" style="filter:drop-shadow(0 0 3px #ff2424)"':' rx="1"')}
-  const btn=(x,on,t,hx)=>`<g data-hx="${hx}" data-hy="-14" class="pbhit">${bR(x-12,88,24,24,'#cfcfcf',bStk('#9e9e9e',.6)+' rx="2"')}${bC(x,100,7,on?'#555':'#151515')}${[[-9,91],[9,91],[-9,109],[9,109]].map(([a,b])=>bC(x+a,b,1.3,'#8a8a8a')).join('')}</g>`+bP(`M${x-4},${t?82:122}l5,-6v6z`,R);
-  s+=btn(28,ba,1,-66)+btn(172,bb,0,66)+bT(25,81,'A',5,'#fff')+bT(174,121,'B',5,'#fff');
+  const btn=(x,on,t,hx)=>`<g data-hx="${hx}" data-hy="-14" class="pbhit">${bR(x-12,88,24,24,'#cfcfcf',bStk('#9e9e9e',.6)+' rx="2"')}${bC(x,100,7,on?'#555':'#151515')}${[[-9,91],[9,91],[-9,109],[9,109]].map(([a,b])=>bC(x+a,b,1.3,'#8a8a8a')).join('')}</g>`+bP(`M${x-4},${t?122:82}l5,-6v6z`,R);
+  s+=btn(28,ba,1,-66)+btn(172,bb,0,66)+bT(21,121,'A',5,'#fff')+bT(178,81,'B',5,'#fff');
   s+=bR(0,148,200,30,'#e8c35e',' rx="0"')+bP('M0,148H200V168Q200,178 190,178H10Q0,178 0,168Z','#e8c35e');for(let i=0;i<34;i++)s+=bR(4+i*5.7,164,1.2,14,'#c9a23c');
   [[2,'0'],[6,'1'],[10,'2'],[14,'3V'],[18,'GND']].forEach(([x,t])=>{const X=x*10;s+=bP(`M${X-11},178V160A11,11 0 0 1 ${X+11},160V178Z`,'#f2d277',bStk('#c9a23c',.6))+bC(X,160,5.5,'#ffffff',bStk('#c9a23c',.6))+bTc(X,175,t,6,'#1c1c1c',' font-weight="700"')});return s}}),
  irremote:c=>({pins:[],box:[-48,-100,48,100],art:c=>{let s=bR(-46,-98,92,196,'#1d1d1d',' rx="14"')+bC(0,-90,3,'#5a1d1d');IRKEYS.forEach((k,i)=>{const r=Math.floor(i/3),q=i%3,x=-36+q*26,y=-80+r*24,on=SIM()&&rt.ir&&rt.ir.k===i&&rt.simT-rt.ir.t<.3,red=i<3;
@@ -215,7 +242,7 @@ PKGS.ard=c=>{const D2=[25,24,23,22,21,20,18,17,16,15,14,13],pins=[[15,20],[16,20
   s+=bR(196,44,80,.8,W)+bT(274,52,'DIGITAL (PWM~)',5.6,W,' text-anchor="end"')+bR(110,166,80,.8,W)+bTc(150,163,'POWER',5.6,W)+bR(196,166,62,.8,W)+bTc(227,163,'ANALOG IN',5.6,W);return s}}};
 function pbTxRx(c){const st=rt.mcu&&rt.mcu[c.id];return!!(st&&st.ser&&(rt.simT-(st.serT||0))<.15)}
 function pbDip(h,lbl){const W=(h-1)*10+10;let s='';for(let i=0;i<h;i++){s+=bR(i*10-1.8,0,3.6,7,'#a8afb7',' rx=".8"')+bR(i*10-1.8,23,3.6,7,'#a8afb7',' rx=".8"')}
- return s+bR(-5,5,W,20,'#232323',' rx="1.5"')+bShade(-5,5,W,20,1.5)+bP('M-5,11a4,4 0 0 1 0,8','#111')+bC(-1,21,1.4,'#555')+bTc(W/2-5,17.4,lbl,Math.min(6,W/lbl.length*1.6),'#d5d9de',' font-weight="600"')}
+ return s+bR(-5,5,W,20,'#232323',' rx="1.5"')+bShade(-5,5,W,20,1.5)+bP('M-5,11a4,4 0 0 1 0,8','#111')+bC(-1,21,1.4,'#555')+bTc(W/2-3,17.4,lbl,Math.min(6,(W-10)/lbl.length*1.55),'#d5d9de',' font-weight="600"')}
 function capCode(F){const pF=F*1e12;if(!(pF>=1))return'';let e=0,v=pF;while(v>=100){v/=10;e++}return String(Math.round(v)).padStart(2,'0')+(e?e:'')}
 
 /* ---------- geometria: furos da protoboard e terminais na bancada ---------- */
@@ -307,9 +334,9 @@ function pbRender(){const sv=document.getElementById('pbv');if(!sv||!pbOn())retu
   hc+=`<g class="pbpart${sel1?' sel':''}${SIM()&&(actOf(c)||D(c).hitClick)?' act':''}" data-id="${c.id}" transform="translate(${c.pbx} ${c.pby}) rotate(${c.pbr||0})"><title>${esc((c.tag?c.tag+' — ':'')+lab(c).replace(c.tag||'@@','').trim()+(valTxt(c)?' · '+valTxt(c):''))}</title>`+
    `<rect class="pbhitbox" x="${b[0]}" y="${b[1]}" width="${b[2]-b[0]}" height="${b[3]-b[1]}"/>`+a+(burnt?burnFx(b):'')+(hot&&!burnt?bR(b[0],b[1],b[2]-b[0],b[3]-b[1],'none',' rx="4" stroke="#ff7a1a" stroke-width="2" opacity=".7" pointer-events="none"'):'')+
    (sel1?bR(b[0]-3,b[1]-3,b[2]-b[0]+6,b[3]-b[1]+6,'none',' rx="4" stroke="var(--pick)" stroke-width="1.2" stroke-dasharray="4 3" pointer-events="none"'):'')+
-   (p.dum||[]).map(([x,y])=>bC(x*PBP,y*PBP,1.2,'#555',' pointer-events="none"')).join('')+
+   
    p.pins.map(([x,y],i)=>`<circle class="pbpin${ph.ins.has(K(c.id,i))?' in':''}" data-c="${c.id}" data-t="${i}" cx="${x*PBP}" cy="${y*PBP}" r="4.6"><title>${esc((c.tag||lab(c))+' · '+tn(c,i))}</title></circle>`).join('')+'</g>';
-  if(c.tag&&!['junction','netl','xref'].includes(c.type)){const bb=pbBox(c);hc+=`<text class="pbtag" x="${bb[0]}" y="${bb[1]-3}">${esc(c.tag)}</text>`}}
+  if(c.tag&&!c.pbtagOff&&!['junction','netl','xref'].includes(c.type)){const bb=pbBox(c),tx=bb[0]+(+c.pbtx||0),ty=bb[1]-3+(+c.pbty||0);hc+=`<text class="pbtag${pbTagSel===c.id?' on':''}" data-id="${c.id}" x="${tx}" y="${ty}"><title>${tr('Nome: arraste para mover, duplo clique para renomear, Del para esconder')}</title>${esc(c.tag)}</text>`}}
  for(const v of pbVisibleWires(ph)){const s=pbSelW&&pbSelW.id===v.id,d=wPath(v.pts,v.k==='s'&&v.pts.length===2);hw+=`<g class="pbw${s?' sel':''}" data-w="${v.id}" data-k="${v.k}">${s?`<path d="${d}" stroke="var(--pick)" stroke-width="6" opacity=".45" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`:''}${bWire(d,v.col,2.6)}<path class="pbwhit" d="${d}"/>`+
   bC(v.pts[0].x,v.pts[0].y,2.2,'#c4cad0',bStk('#6b7178',.6))+bC(v.pts[v.pts.length-1].x,v.pts[v.pts.length-1].y,2.2,'#c4cad0',bStk('#6b7178',.6))+'</g>';if(s&&ed)hx+=`<g class="pbw sel" data-w="${v.id}" data-k="${v.k}">`+v.pts.slice(1,-1).map((p,i)=>!pbOnPath(p,pbOrtho(v.pts))?'':`<circle class="pbbend" data-i="${i}" cx="${p.x}" cy="${p.y}" r="3.6"/>`).join('')+[['a',v.pts[0]],['b',v.pts[v.pts.length-1]]].map(([k,p])=>`<circle class="pbendh" data-e="${k}" cx="${p.x}" cy="${p.y}" r="${Math.max(4.4,8/pbV.s)}"><title>${tr('Arraste para mudar a ponta do fio')}</title></circle>`).join('')+'</g>'}
  hx+=pbDefects(ph);for(const c of S.comps)if((c.type==='mmeter'||c.type==='scope')&&num(c.pbx)&&onSheet(c))hx+=prSVG(c);
@@ -336,7 +363,7 @@ function pbBar(){const el=document.getElementById('pbbar');if(!el)return;const e
  const wsel=pbSelW,cur=wsel?(wsel.k==='s'?(S.wires.find(w=>w.id===wsel.id)||{}).pbc:(S.pb.w.find(w=>w.id===wsel.id)||{}).col):pbCol;
  const h=`<div class="pbgrp"><button data-pb="add" ${ed?'':'disabled'} title="Colocar outra protoboard na bancada">＋ Protoboard ▾</button><div class="pbmenu" hidden><button data-pb="full">Protoboard completa (830 furos)</button><button data-pb="half">Meia protoboard (400 furos)</button><button data-pb="mini">Mini protoboard (170 furos)</button></div></div>`+
   `<div class="pbgrp pbcols" role="group" aria-label="Cor do fio">${Object.keys(PBW).map(k=>`<button class="pbsw${(cur||'')===k||(!cur&&k===pbCol&&!wsel)?' on':''}" data-pbc="${k}" title="Fio ${PBW[k][0].toLowerCase()}" aria-label="Fio ${PBW[k][0].toLowerCase()}" style="--c:${PBW[k][1]}" ${ed?'':'disabled'}></button>`).join('')}</div>`+
-  `<div class="pbgrp"><button data-pb="auto" ${ed?'':'disabled'} title="Encaixa sozinho as peças da bancada na protoboard e liga com jumpers">⚡ Montar na protoboard</button></div>`+
+  `<div class="pbgrp"><button data-pb="auto" ${ed?'':'disabled'} title="Encaixa as peças da bancada na protoboard e liga tudo com jumpers: vermelho no +, preto no −">Montar na protoboard</button></div>`+
   `<div class="pbgrp"><button data-pb="rot" ${ed&&sel&&sel.c.size?'':'disabled'} title="Girar a peça selecionada (R)">⟳ Girar</button><button data-pb="del" ${ed&&(sel||pbSelW||pbSelB)?'':'disabled'} title="Apagar o que está selecionado (Del)">Apagar</button></div>`+
   (hid?`<span class="pbnote" title="Diagramas ladder, Grafcet, pneumática e itens virtuais não têm peça física">${hid} item(ns) só no esquema</span>`:'');
  if(el.dataset.h!==h){el.dataset.h=h;el.innerHTML=h}}
@@ -346,18 +373,31 @@ const PRB=['a','b'],PRL=c=>c&&c.type==='scope'?['a','b','g']:PRB,PRCOL={a:'#1b1b
 const prCol=(c,w)=>c.type==='scope'?PRSC[w]:PRCOL[w];
 function prParse(s){if(typeof s!=='string')return null;const p=s.split(':');if(p[0]==='p'&&p.length===3)return{c:p[1],t:+p[2]};if(p[0]==='h'&&p.length===4)return{bd:p[1],hx:+p[2],hy:+p[3]};if(p[0]==='f'&&p.length===3)return{px:+p[1],py:+p[2]};return null}
 const prStr=e=>e.c?`p:${e.c}:${e.t}`:e.bd?`h:${e.bd}:${e.hx}:${e.hy}`:`f:${Math.round(e.px)}:${Math.round(e.py)}`;
-function prJack(c,w){return pbPin(c,c.type==='scope'?{a:0,b:2,g:1}[w]:w==='a'?0:1)}
+function prJack(c,w){return pbPin(c,c.type==='scope'?{a:0,b:2,g:1}[w]:w==='a'?0:(c.m==='A'?2:1))}
 function prTip(c,w){const e=prParse(c['pr'+w]);if(e){const q=e.px!=null?{x:e.px,y:e.py}:pbEndPos(e);if(q)return q}const j=prJack(c,w);const dx=c.type==='scope'?{a:-30,b:40,g:5}[w]:w==='a'?-30:30;return{x:j.x+dx,y:j.y+70}}
 /* terminal (no circuito) que a ponta toca; guarda o resultado durante a simulação */
 function prKey(c,w){const s=c['pr'+w],e=prParse(s);if(!e||e.px!=null)return null;const ck=rt?(rt.prkC||(rt.prkC=new Map())):null,key=c.id+'|'+w+'|'+s;if(ck&&ck.has(key))return ck.get(key);let k=null;
  if(e.c){if(byId(e.c))k=K(e.c,e.t)}else{const ph=pbPhys(),bd=S.pb.bds.find(b=>b.id===e.bd);if(bd){const root=ph.uf.f(ph.node(e));for(const o of S.comps){if(!pbVis(o)||!num(o.pbx)||o.id===c.id)continue;for(let i=0;i<termsOf(o).length;i++)if(ph.uf.f(K(o.id,i))===root){k=K(o.id,i);break}if(k)break}}}
  if(ck)ck.set(key,k);return k}
 function prVolt(c,w){if(!pbOnS())return null;const k=prKey(c,w);if(!k)return null;try{return rt.A.vdc(k)}catch(_){return null}}
+/* alvo da ponta: o terminal ou furo mais perto da PONTA (não do cursor), ignorando os bornes do próprio instrumento */
+function prAim(c,q){const R=Math.max(6,16/pbV.s);let best=null,bd=R*R;for(const o of S.comps){if(o.id===c.id||!pbVis(o)||!num(o.pbx)||!onSheet(o))continue;const b=pbBox(o);if(q.x<b[0]-R||q.x>b[2]+R||q.y<b[1]-R||q.y>b[3]+R)continue;const n=pkgOf(o).pins.length;for(let i=0;i<n;i++){const p=pbPin(o,i);if(!p)continue;const dd=(p.x-q.x)**2+(p.y-q.y)**2;if(dd<bd){bd=dd;best={end:{c:o.id,t:i},x:p.x,y:p.y,pin:1}}}}
+ const h=pbHoleAt(q,Math.max(5,10/pbV.s));if(h){const dh=(h.x-q.x)**2+(h.y-q.y)**2;if(!best||dh<bd-1){const pin=pbPinOnHole(h),bdd=S.pb.bds.find(b=>b.id===h.bd);if(pin&&pin.c!==c.id)return{end:pin,x:h.x,y:h.y,pin:1};if(bdd)return{end:{bd:h.bd,hx:(h.x-bdd.x)/PBP,hy:(h.y-bdd.y)/PBP},x:h.x,y:h.y,net:h.net}}}return best}
+/* nome da peça na protoboard: selecionar, arrastar, renomear (duplo clique) e esconder (Del) */
+let pbTagSel=null,pbTagT=0,pbTagXY=[0,0];
+function pbTagEdit(c,el){if(!c||document.querySelector('input.pbtagin'))return;const sv=document.getElementById('pbv'),r=el.getBoundingClientRect(),st=sv.parentElement.getBoundingClientRect(),inp=document.createElement('input');
+ inp.className='pbtagin';inp.value=c.tag;inp.style.cssText=`position:absolute;left:${r.left-st.left-4}px;top:${r.top-st.top-6}px;width:${Math.max(70,r.width+40)}px;height:26px;z-index:30;font:600 13px 'IBM Plex Sans',sans-serif;padding:0 6px;border:2px solid var(--pick);border-radius:6px;background:var(--panel);color:var(--ink)`;
+ sv.parentElement.appendChild(inp);inp.focus();inp.select();let done=false;const fin=ok=>{if(done)return;done=true;const v=inp.value.trim();inp.remove();if(ok&&v&&v!==c.tag){if(S.comps.some(o=>o!==c&&o.tag===v&&o.type===c.type&&!['coil','kno','knc','relay'].includes(c.type))){}pushHist();c.tag=v;commit()}else pbRender()};
+ inp.addEventListener('keydown',ev=>{ev.stopPropagation();if(ev.key==='Enter')fin(true);if(ev.key==='Escape')fin(false)});inp.addEventListener('blur',()=>fin(true))}
 function prOn(c){return PRB.every(w=>{const e=prParse(c['pr'+w]);return e&&e.px==null})}
 function prSVG(c){let h='';for(const w of PRL(c)){const j=prJack(c,w),t=prTip(c,w);if(!j)continue;const col=prCol(c,w),my=Math.max(j.y,t.y)+30;h+=`<path d="M${j.x},${j.y}C${j.x},${my} ${t.x},${my+10} ${t.x},${t.y+18}" stroke="${col}" stroke-width="2.4" fill="none" stroke-linecap="round" pointer-events="none"/>`;
   const ttl=c.type==='scope'?{a:'Ponta do CH1: arraste até um furo ou terminal',b:'Ponta do CH2: arraste até um furo ou terminal',g:'Garra do terra (GND) das pontas: arraste até o GND do circuito'}[w]:w==='a'?'Ponta preta (COM): arraste até um furo ou terminal':'Ponta vermelha (VΩ): arraste até um furo ou terminal';
   h+=w==='g'?`<g class="pbprobe" data-id="${c.id}" data-p="${w}" transform="translate(${t.x} ${t.y})"><title>${tr(ttl)}</title><path d="M-5,18L-5,6L-2,0L2,0L5,6L5,18Z" fill="${col}"/><path d="M-3,1L0,-3L3,1" fill="none" stroke="#c9ced3" stroke-width="1.6"/><circle cx="0" cy="8" r="9" fill="transparent"/></g>`
    :`<g class="pbprobe" data-id="${c.id}" data-p="${w}" transform="translate(${t.x} ${t.y})"><title>${tr(ttl)}</title><rect x="-3.2" y="4" width="6.4" height="16" rx="2" fill="${col}"/><rect x="-4" y="14" width="8" height="3" fill="#888"/><path d="M-1.2,4L0,-1L1.2,4Z" fill="#c9ced3"/><circle cx="0" cy="8" r="9" fill="transparent"/></g>`}return h}
+/* pontas do multímetro entram no circuito como ligações de verdade: COM no terminal da ponta preta e VΩ (ou A) no da vermelha.
+   Assim V, A e Ω funcionam com as pontas, como no Tinkercad (A em série, Ω com o circuito desligado). */
+XWIRES.push(()=>{const r=[];if(!SIM()||!pbOn()||!S.pb)return r;for(const c of S.comps){if(c.type!=='mmeter'||!num(c.pbx)||!prOn(c))continue;const ka=prKey(c,'a'),kb=prKey(c,'b');if(!ka||!kb)continue;
+ const sp=k=>{const i=k.lastIndexOf(':');return{c:k.slice(0,i),t:+k.slice(i+1)}};r.push({id:'prA'+c.id,a:{c:c.id,t:0},b:sp(ka)},{id:'prB'+c.id,a:{c:c.id,t:(c.m||'V')==='A'?2:1},b:sp(kb)})}return r});
 {const mr=mmRead;mmRead=function(c){if(pbOn()&&S.pb&&prOn(c)&&(c.m||'V')==='V'){const a=prVolt(c,'a'),b=prVolt(c,'b');return a==null||b==null?'— — —':fmtE(b-a,'V')}return mr(c)}}
 /* ---------- interação ---------- */
 function pbWorld(e){const b=document.getElementById('pbv').getBoundingClientRect();return{x:(e.clientX-b.left-pbV.x)/pbV.s,y:(e.clientY-b.top-pbV.y)/pbV.s}}
@@ -411,7 +451,7 @@ body.pbmode #pbbar{display:flex}
 body:not(.sim) #pbv .pbpin:hover{fill:rgba(22,104,201,.3);stroke:var(--pick);stroke-width:1.2}
 #pbv .pbpart{cursor:grab}body.sim #pbv .pbpart{cursor:default}body.sim #pbv .pbpart.act{cursor:pointer}
 body.sim #pbv .pbpart.act .pbhit{cursor:pointer}
-#pbv .pbtag{font-size:7px;fill:var(--muted);pointer-events:none;font-weight:600}
+#pbv .pbtag{font-size:7px;fill:var(--muted);font-weight:600;cursor:move;user-select:none}#pbv .pbtag:hover{fill:var(--pick)}#pbv .pbtag.on{fill:var(--pick);text-decoration:underline}body.sim #pbv .pbtag{pointer-events:none}
 #pbv .pbwhit{stroke:transparent;stroke-width:9;fill:none;cursor:pointer;stroke-linecap:round}
 #pbv .pbbend{fill:#fff;stroke:var(--pick);stroke-width:1.4;cursor:move}
 #pbO{pointer-events:none}
@@ -447,10 +487,11 @@ body.sim #pbv .pbpart.act .pbhit{cursor:pointer}
  const TP=new Map();let pinch=null;
  sv.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'){TP.set(e.pointerId,{x:e.clientX,y:e.clientY});if(TP.size===2){const[a,b]=[...TP.values()],r=sv.getBoundingClientRect();if(pbDrag&&pbDrag.t==='wire')pbTool=null;pbDrag=null;pinch={d0:Math.hypot(a.x-b.x,a.y-b.y)||1,s0:pbV.s,mx:(a.x+b.x)/2-r.left,my:(a.y+b.y)/2-r.top,vx:pbV.x,vy:pbV.y};pbOverlay();return}if(TP.size>2)return}
   const p=pbWorld(e);pbPtr=p;const menu=bar.querySelector('.pbmenu');if(menu)menu.hidden=true;
+  {const tg=mode==='edit'&&e.button===0&&e.target.closest&&e.target.closest('.pbtag');if(tg){const c=byId(tg.dataset.id);if(c){const now=performance.now();if(pbTagSel===c.id&&pbTagT&&now-pbTagT<450&&Math.hypot(e.clientX-pbTagXY[0],e.clientY-pbTagXY[1])<6){pbTagT=0;e.preventDefault();setTimeout(()=>{const el=document.querySelector(`#pbv .pbtag[data-id="${c.id}"]`);if(el)pbTagEdit(c,el)},0);return}pbTagT=now;pbTagXY=[e.clientX,e.clientY];pushHist();pbTagSel=c.id;pbDrag={t:'tag',c,x0:p.x,y0:p.y,tx:+c.pbtx||0,ty:+c.pbty||0,moved:false};try{sv.setPointerCapture(e.pointerId)}catch(_){}pbRender();return}}if(pbTagSel){pbTagSel=null}}
   const pan=()=>{pbDrag={t:'pan',sx:e.clientX,sy:e.clientY,vx:pbV.x,vy:pbV.y,moved:false};try{sv.setPointerCapture(e.pointerId)}catch(_){}};
   if(e.button===2){if(pbTool){pbTool=null;pbOverlay();return}if(tool){tool=null;renderAll();return}pan();return}
   if(e.button===1){e.preventDefault();pan();return}if(e.button!==0)return;
-  const prEl=e.target.closest('.pbprobe');if(prEl){const c=byId(prEl.dataset.id);if(c){if(mode==='edit')pushHist();pbDrag={t:'probe',c,w:prEl.dataset.p,moved:false};try{sv.setPointerCapture(e.pointerId)}catch(_){}}return}
+  const prEl=e.target.closest('.pbprobe');if(prEl){const c=byId(prEl.dataset.id);if(c){if(mode==='edit')pushHist();{const p0=pbWorld(e),t0=prTip(c,prEl.dataset.p);pbDrag={t:'probe',c,w:prEl.dataset.p,moved:false,ox:t0.x-p0.x,oy:t0.y-p0.y}}try{sv.setPointerCapture(e.pointerId)}catch(_){}}return}
   const gEl=e.target.closest('.pbpart'),c=gEl&&byId(gEl.dataset.id);
   if(mode==='sim'){if(!c){pan();return}const d=D(c),hit=e.target.closest('.pbhit');
    if(hit&&d.hitClick){e.preventDefault();const r=d.hitClick(c,+hit.dataset.hx,+hit.dataset.hy);if(r==='hold')pbHeld=c;solve();refresh(true);return}
@@ -482,7 +523,7 @@ body.sim #pbv .pbpart.act .pbhit{cursor:pointer}
   const p=pbWorld(e);pbPtr=p;pbPtrIn=true;const d=pbDrag;
   if(d&&d.t==='wire'&&Math.hypot(e.clientX-d.sx,e.clientY-d.sy)>6)d.moved=true;
   if(d&&d.t==='box'){d.x1=p.x;d.y1=p.y;pbOverlay();return}
-  if(d&&d.t==='probe'){d.moved=true;d.c['pr'+d.w]=prStr({px:p.x,py:p.y-8});const np=pbNearPin(p),h=np?null:pbHoleAt(p);pbHover=np?{pin:1,x:np.x,y:np.y,k:'e'}:h?{net:h.net,x:h.x,y:h.y,k:'e'}:null;pbRender();pbOverlay();return}
+  if(d&&d.t==='tag'){d.moved=true;d.c.pbtx=Math.round(d.tx+p.x-d.x0);d.c.pbty=Math.round(d.ty+p.y-d.y0);pbRender();return}if(d&&d.t==='probe'){d.moved=true;const q={x:p.x+(d.ox||0),y:p.y+(d.oy||0)},a=prAim(d.c,q);d.c['pr'+d.w]=prStr({px:a?a.x:q.x,py:a?a.y:q.y});pbHover=a?{pin:a.pin,net:a.net,x:a.x,y:a.y,k:'e'}:null;pbRender();pbOverlay();return}
   if(d&&d.t==='pan'){pbV.x=d.vx+e.clientX-d.sx;pbV.y=d.vy+e.clientY-d.sy;d.moved=true;pbApplyView();return}
   if(d&&d.t==='part'){const dx=Math.round((p.x-d.sx)/PBP)*PBP,dy=Math.round((p.y-d.sy)/PBP)*PBP;if(!d.moved&&!dx&&!dy)return;if(!d.moved){pushHist();d.moved=true}for(const id of d.ids){const o=byId(id);if(o){o.pbx=d.orig[id].x+dx;o.pby=d.orig[id].y+dy}}pbRender();return}
   if(d&&d.t==='board'){const dx=Math.round((p.x-d.sx)/PBP)*PBP,dy=Math.round((p.y-d.sy)/PBP)*PBP;if(!d.moved&&!dx&&!dy)return;if(!d.moved){pushHist();d.moved=true}d.bd.x=d.orig.bd.x+dx;d.bd.y=d.orig.bd.y+dy;
@@ -495,16 +536,17 @@ body.sim #pbv .pbpart.act .pbhit{cursor:pointer}
   else if(!body){const h=pbHoleAt(p);if(h)hv={net:h.net,x:h.x,y:h.y,tip:h.rail!=null?`${tr('Barramento')} ${h.rail%2?'+':'−'}`:`${h.row}${h.col}`}}
   if(pbTool){pbTool.snap=hv?{x:hv.x,y:hv.y}:null}
   const k=hv?hv.x+','+hv.y+(hv.tip||''):'';if(k!==(pbHover?pbHover.k:'')||pbTool||(tool&&tool.key)){pbHover=hv?{...hv,k}:null;pbOverlay()}});
- const up=e=>{if(e&&TP.has(e.pointerId)){TP.delete(e.pointerId);if(pinch){if(TP.size<2)pinch=null;return}}const d=pbDrag;pbDrag=null;if(d&&d.t==='wire'){if(d.moved&&pbTool){const end=pbEndAt({target:document.body},pbPtr);if(end&&!sameEnd(end,pbTool.from))pbFinishWire(end);else{pbTool=null;pbRender()}}return}if(d&&d.t==='probe'){if(d.moved){const end=pbEndAt({target:document.body},pbPtr);d.c['pr'+d.w]=prStr(end||{px:pbPtr.x,py:pbPtr.y-8});pbHover=null;if(mode==='edit')commit();else{save();pbRender();refresh(true)}}return}if(d&&d.t==='end'){if(d.moved){pbMoveEnd(d.v,d.which,pbEndAt({target:document.body},pbPtr));pbPrune();save();pbRender()}else pbRender();return}if(d&&d.t==='box'){pbBoxSel(d);return}pbKeep=null;if(d&&(d.t==='part'||d.t==='board'||d.t==='bend')&&d.moved){pbPrune();commit()}else if(d&&d.t!=='pan')pbOverlay();
+ const up=e=>{if(e&&TP.has(e.pointerId)){TP.delete(e.pointerId);if(pinch){if(TP.size<2)pinch=null;return}}const d=pbDrag;pbDrag=null;if(d&&d.t==='wire'){if(d.moved&&pbTool){const end=pbEndAt({target:document.body},pbPtr);if(end&&!sameEnd(end,pbTool.from))pbFinishWire(end);else{pbTool=null;pbRender()}}return}if(d&&d.t==='tag'){if(d.moved)commit();else{hist.pop&&hist.pop();updUndoBtns&&updUndoBtns()}return}if(d&&d.t==='probe'){if(d.moved){const q={x:pbPtr.x+(d.ox||0),y:pbPtr.y+(d.oy||0)},a=prAim(d.c,q);d.c['pr'+d.w]=prStr(a?a.end:{px:q.x,py:q.y});pbHover=null;if(mode==='edit')commit();else{save();pbRender();refresh(true)}}return}if(d&&d.t==='end'){if(d.moved){pbMoveEnd(d.v,d.which,pbEndAt({target:document.body},pbPtr));pbPrune();save();pbRender()}else pbRender();return}if(d&&d.t==='box'){pbBoxSel(d);return}pbKeep=null;if(d&&(d.t==='part'||d.t==='board'||d.t==='bend')&&d.moved){pbPrune();commit()}else if(d&&d.t!=='pan')pbOverlay();
   if(pbHeld&&rt){const dd=D(pbHeld);if(dd.release)dd.release(pbHeld);pbHeld=null;solve();refresh(true)}pbHeld=null};
  addEventListener('pointerup',up);addEventListener('pointercancel',up);
  sv.addEventListener('pointerleave',()=>{if(pbHover){pbHover=null;pbOverlay()}});
- sv.addEventListener('dblclick',e=>{if(mode!=='edit')return;const wEl=e.target.closest('.pbw');if(!wEl)return;const v=pbFindW(wEl.dataset.w,wEl.dataset.k);if(!v)return;const p=pbWorld(e),pts=v.pts;let bi=0,bd=1e9;
+ sv.addEventListener('dblclick',e=>{if(mode!=='edit')return;if(e.target.closest&&e.target.closest('.pbtag'))return;const wEl=e.target.closest('.pbw');if(!wEl)return;const v=pbFindW(wEl.dataset.w,wEl.dataset.k);if(!v)return;const p=pbWorld(e),pts=v.pts;let bi=0,bd=1e9;
   for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1],L=Math.hypot(b.x-a.x,b.y-a.y)||1,t=Math.max(0,Math.min(1,((p.x-a.x)*(b.x-a.x)+(p.y-a.y)*(b.y-a.y))/L/L)),dd=Math.hypot(a.x+t*(b.x-a.x)-p.x,a.y+t*(b.y-a.y)-p.y);if(dd<bd){bd=dd;bi=i}}
   pushHist();const arr=v.k==='s'?(v.w.pbp=v.w.pbp||[]):(v.w.p=v.w.p||[]);arr.splice(bi,0,[Math.round(p.x/5)*5,Math.round(p.y/5)*5]);pbSelW={id:v.id,k:v.k};commit()});
 
  /* teclado: Del, R e Esc atuam na protoboard quando ela está à vista */
  addEventListener('keydown',e=>{if(!pbOn()||$('#dProj').open)return;if(e.target.matches&&e.target.matches('input,select,textarea'))return;const k=e.key.toLowerCase();
+  if(pbTagSel&&mode==='edit'&&(k==='delete'||k==='backspace')){const c=byId(pbTagSel);if(c){e.preventDefault();e.stopImmediatePropagation();pushHist();c.pbtagOff=true;pbTagSel=null;commit();toast(tr('Nome escondido. Para mostrar de novo, selecione a peça e use "Mostrar nome na protoboard".'))}return}
   if(e.key==='Escape'&&(pbTool||pbSelW||pbSelB)){pbTool=null;pbSelW=null;pbSelB=null;pbRender();return}
   if((e.key==='Delete'||e.key==='Backspace')&&mode==='edit'&&(pbSelW||pbSelB)){e.preventDefault();e.stopImmediatePropagation();pbDelSel();return}
   if(k==='r'&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&mode==='edit'){e.preventDefault();e.stopImmediatePropagation();if(tool&&tool.key){tool.pbr=((tool.pbr||0)+90)%360;pbOverlay()}else pbRot()}},true);
@@ -554,7 +596,7 @@ function pbAutoMount(silent){if(mode!=='edit')return;pbInit();pbSheetBoard();
   const bx0=Math.min(x0,Math.floor(pk.box[0]/PBP)+1),bx1=Math.max(x1,Math.ceil(pk.box[2]/PBP)-1);
   for(const[y0,half]of opts)for(let col=3;col+x1-x0<=g.n+1;col++){const cols=[];for(let x=bx0;x<=bx1;x++)if(col+x-x0>=1)cols.push(col+x-x0);const fr=cols.concat([cols[cols.length-1]+1]).every(cc=>cc<=g.n+1&&(half==='t'?!u.t[cc]:half==='b'?!u.b[cc]:!u.t[cc]&&!u.b[cc]));if(!fr)continue;
    cols.concat([cols[cols.length-1]+1]).forEach(cc=>{if(half!=='b')u.t[cc]=true;if(half!=='t')u.b[cc]=true});return{x:b.x+(col-x0)*PBP,y:b.y+y0*PBP}}return null};
- let placed=0;const out=[];parts.sort((a,b)=>pkgOf(b).pins.length-pkgOf(a).pins.length||(a.x-b.x));
+ let placed=0;const out=[];/* mantém a ordem em que as peças estão na bancada (da esquerda para a direita) */parts.sort((a,b)=>(a.pbx-b.pbx)||(a.pby-b.pby));
  for(const c of parts){let pos=null;for(const b of boards){pos=fit(c,b);if(pos)break}if(!pos&&boards.length<4){pos=fit(c,newBoard())}if(!pos){out.push(c);continue}c.pbr=0;c.pbx=pos.x;c.pby=pos.y;placed++}
  /* fontes (+ / 0 V) viram etiquetas ao lado do barramento */
  const b0=boards[0];
@@ -563,17 +605,34 @@ function pbAutoMount(silent){if(mode!=='edit')return;pbInit();pbSheetBoard();
  for(const c of S.comps){if(!onSheet(c)||!pbVis(c)||!num(c.pbx)||['junction','netl','xref'].includes(c.type))continue;termsOf(c).forEach((_,i)=>{const k=K(c.id,i),r=uf.f(k);if(!nets.has(r))nets.set(r,[]);nets.get(r).push({c,i})})}
  const usedH=new Set();for(const c of S.comps){if(!num(c.pbx))continue;pkgOf(c).pins.forEach((_,i)=>{const q=pbPin(c,i);if(q)usedH.add(q.x+','+q.y)})}for(const w of S.pb.w)for(const e of[w.a,w.b])if(e.bd){const b=S.pb.bds.find(x=>x.id===e.bd);if(b)usedH.add((b.x+e.hx*PBP)+','+(b.y+e.hy*PBP))}
  const freeIn=(net,pref)=>{const L=[...H2.values()].filter(v=>v.net===net&&!usedH.has(v.x+','+v.y));if(!L.length)return null;L.sort(pref);const h=L[0];usedH.add(h.x+','+h.y);const b=S.pb.bds.find(x=>x.id===h.bd);return{e:{bd:b.id,hx:(h.x-b.x)/PBP,hy:(h.y-b.y)/PBP},x:h.x}};
- const ph=pbPhys();let nj=0,ci=0;const COLS=['verde','azul','amarelo','laranja','roxo','branco','ciano','rosa','marrom','cinza'];
+ const ph=pbPhys();let nj=0,ci=0,ln=0;const COLS=['verde','azul','amarelo','laranja','roxo','branco','ciano','rosa','marrom','cinza'];
+ const POLN={'+':0,'-':0};{const SRCT=new Set(['bat','psub','usba','solar','src','vreg']),PL=/^(\+|\+?5V|3V3|3\.3V|3V|VCC|VIN|V\+|\+VS|\+?12V|\+?24V|VDD)$/,MN=/^(−|-|GND|0V|V−|VSS)$/;
+  for(const L of nets.values()){if(L.some(({c})=>c.type==='src'))continue;const nm=L.map(({c,i})=>{const n=String(tn(c,i)).trim().toUpperCase().replace(/^\d+\s+/,'');return(n==='+'||n==='−'||n==='-')&&!SRCT.has(c.type)?'':n});
+   const p=nm.some(n=>PL.test(n))&&!nm.some(n=>MN.test(n)),m=nm.some(n=>MN.test(n))&&!nm.some(n=>PL.test(n));if(p)POLN['+']++;else if(m)POLN['-']++}}
  for(const L of nets.values()){const sv=L.find(({c})=>c.type==='src');const kind=sv?(String(sv.c.v)==='+'?'+':'-'):null;if(L.length<2&&!kind)continue;const ends=[],seen=new Set();
   for(const{c,i}of L){if(c.type==='src')continue;const h=pbIns(c,i,H2);if(h){const key='N'+h.net;if(seen.has(key))continue;seen.add(key);const g=bdGeo(S.pb.bds.find(x=>x.id===h.bd)),e=freeIn(h.net,(a,z)=>Math.abs(z.hy-g.mid)-Math.abs(a.hy-g.mid));if(e)ends.push({...e,root:ph.uf.f(K(c.id,i))})}
    else if(pkgOf(c).sock){const q=pbPin(c,i);ends.push({e:{c:c.id,t:i},x:q?q.x:0,root:ph.uf.f(K(c.id,i))})}}
-  const names=L.map(({c,i})=>String(tn(c,i)).toUpperCase()).join(' '),col=kind==='-'||/\b(GND|0V)\b|−/.test(names)?'preto':kind==='+'||/(5V|VCC|3V)/.test(names)?'vermelho':COLS[ci++%COLS.length];
-  if(kind){/* rede da fonte: cada ponta vai ao barramento da sua placa; a etiqueta da fonte liga no barramento da primeira */
-   const railOf=b=>{const g=bdGeo(b);return kind==='+'?`${b.id}:r1`:`${b.id}:r0`};const bs=new Set();
-   for(const en of ends){const bd=en.e.bd?S.pb.bds.find(x=>x.id===en.e.bd):b0;const r=freeIn(railOf(bd),(a,z)=>Math.abs(a.x-en.x)-Math.abs(z.x-en.x));if(r){S.pb.w.push({id:'pw'+(S.seq++),a:en.e,b:r.e,col});nj++;bs.add(bd.id)}}
-   for(const id of bs)if(id!==b0.id){const b=S.pb.bds.find(x=>x.id===id),r1=freeIn(railOf(b0),(a,z)=>a.x-z.x),r2=freeIn(railOf(b),(a,z)=>a.x-z.x);if(r1&&r2){S.pb.w.push({id:'pw'+(S.seq++),a:r1.e,b:r2.e,col});nj++}}continue}
+  /* polaridade da rede: fonte (+/0 V) ou nomes dos terminais (+, VCC, 5V… / −, GND, 0V…) */
+  /* + e − sozinhos só contam em fontes (bateria, fonte de bancada…); em capacitor, LED etc. não indicam alimentação */
+  const SRCT=new Set(['bat','psub','usba','solar','src','vreg']),nm=L.map(({c,i})=>{const n=String(tn(c,i)).trim().toUpperCase().replace(/^\d+\s+/,'');return(n==='+'||n==='−'||n==='-')&&!SRCT.has(c.type)?'':n}),PL=/^(\+|\+?5V|3V3|3\.3V|3V|VCC|VIN|V\+|\+VS|\+?12V|\+?24V|VDD)$/,MN=/^(−|-|GND|0V|V−|VSS)$/;
+  const kn=kind||(nm.some(n=>PL.test(n))&&!nm.some(n=>MN.test(n))?'+':nm.some(n=>MN.test(n))&&!nm.some(n=>PL.test(n))?'-':null);
+  /* pelo barramento só se for a única rede com essa polaridade (dois circuitos separados não podem ser unidos) */
+  const kd=kind||(kn&&POLN[kn]===1?kn:null);
+  const col=kn==='-'?'preto':kn==='+'?'vermelho':COLS[ci++%COLS.length];
+  if(kd){/* + e − vão pelos barramentos: cada pino vai reto até o barramento do seu lado; a fonte entra no barramento de baixo */
+   const ri=top=>kd==='+'?(top?1:3):(top?0:2),bdOf=en=>en.e.bd?S.pb.bds.find(x=>x.id===en.e.bd):null,usedR=new Set(),sockE=[];
+   for(const en of ends){const bd=bdOf(en);if(!bd){sockE.push(en);continue}const g=bdGeo(bd),top=en.e.hy<g.mid,rid=`${bd.id}:r${ri(top)}`,r=freeIn(rid,(a,z)=>Math.abs(a.x-en.x)-Math.abs(z.x-en.x));if(r){S.pb.w.push({id:'pw'+(S.seq++),a:en.e,b:r.e,col});nj++;usedR.add(rid)}}
+   const bb=`${b0.id}:r${ri(false)}`,bt=`${b0.id}:r${ri(true)}`;
+   for(const en of sockE){const rid=usedR.has(bb)||!usedR.has(bt)?bb:bt,r=freeIn(rid,(a,z)=>z.x-a.x);if(r){S.pb.w.push({id:'pw'+(S.seq++),a:en.e,b:r.e,col});nj++;usedR.add(rid)}}
+   const bds=[...new Set([...usedR].map(r=>r.split(':')[0]))];
+   for(const id of bds){const t=`${id}:r${ri(true)}`,b=`${id}:r${ri(false)}`;if(usedR.has(t)&&usedR.has(b)){const r1=freeIn(t,(a,z)=>z.x-a.x),r2=freeIn(b,(a,z)=>z.x-a.x);if(r1&&r2){S.pb.w.push({id:'pw'+(S.seq++),a:r1.e,b:r2.e,col});nj++}}}
+   for(const id of bds)if(id!==b0.id){const r1=freeIn(bb,(a,z)=>a.x-z.x),r2=freeIn(`${id}:r${ri(false)}`,(a,z)=>a.x-z.x)||freeIn(`${id}:r${ri(true)}`,(a,z)=>a.x-z.x);if(r1&&r2){S.pb.w.push({id:'pw'+(S.seq++),a:r1.e,b:r2.e,col});nj++}}
+   continue}
   if(ends.length<2)continue;ends.sort((a,b)=>a.x-b.x);
-  for(let k=1;k<ends.length;k++){S.pb.w.push({id:'pw'+(S.seq++),a:ends[k-1].e,b:ends[k].e,col});nj++}}
+  /* sinais: cada rede ganha uma "faixa" própria no espaço entre o barramento e as fileiras, para os fios não se amontoarem */
+  const lane=ln++%5;for(let k=1;k<ends.length;k++){const A=ends[k-1].e,B=ends[k].e,w={id:'pw'+(S.seq++),a:A,b:B,col};
+   if(A.bd&&B.bd&&A.bd===B.bd&&A.hx!==B.hx){const bd=S.pb.bds.find(x=>x.id===A.bd),g=bdGeo(bd),top=A.hy<g.mid||B.hy<g.mid,ly=bd.y+PBP*(top?3.65-.3*lane:15.35+.3*lane);w.p=[[bd.x+A.hx*PBP,ly],[bd.x+B.hx*PBP,ly]]}
+   S.pb.w.push(w);nj++}}
  commit();if(silent){requestAnimationFrame(pbFit);return}const ns=out.map(c=>c.tag||lab(c)).slice(0,4).join(', ');toast(LANG==='en'?`Auto assembly: ${placed} part(s) placed and ${nj} jumper(s).`+(out.length?` ${out.length} did not fit (${ns}).`:''):`Montagem automática: ${placed} peça(s) encaixada(s) e ${nj} jumper(s).`+(out.length?` ${out.length} não couberam (${ns}).`:''))}
 function pbFindW(id,k){const ph=pbPhys();return pbVisibleWires(ph).find(v=>v.id===id&&v.k===k)||null}
 /* sem vínculo: a protoboard tem um circuito próprio, guardado em S.alt enquanto o desenho está aberto (e vice-versa) */
@@ -653,7 +712,7 @@ Object.assign(I18N_EXACT,{'Protoboard':'Breadboard','＋ Protoboard ▾':'＋ Br
  '⟳ Girar':'⟳ Rotate','Apagar':'Delete','Colocar outra protoboard na bancada':'Add another breadboard to the bench','Girar a peça selecionada (R)':'Rotate the selected part (R)','Apagar o que está selecionado (Del)':'Delete the selection (Del)',
  'Mostrar o circuito montado numa protoboard (e voltar ao esquema)':'Show the circuit built on a breadboard (and back to the schematic)','Cor do fio':'Wire color','Esses dois terminais já estão ligados.':'These two terminals are already connected.',
  'Esse item não tem peça física: coloque-o no esquema (desligue o modo Protoboard).':'This item has no physical part: place it in the schematic (turn Breadboard mode off).','Modo Protoboard':'Breadboard mode',
- 'Diagramas ladder, Grafcet, pneumática e itens virtuais não têm peça física':'Ladder, Grafcet, pneumatic and virtual items have no physical part','Protoboards':'Breadboards','Protoboard':'Breadboard','Meia protoboard':'Half breadboard','Mini protoboard':'Mini breadboard','Componentes básicos':'Basic components','Energia':'Power','Transistores, reguladores e relés':'Transistors, regulators and relays','Sensores e entradas':'Sensors and inputs','Saídas, motores e telas':'Outputs, motors and displays','Microcontroladores e conectores':'Microcontrollers and connectors','Circuitos integrados':'Integrated circuits','Instrumentos':'Instruments','⚡ Montar na protoboard':'⚡ Build on breadboard','Encaixa sozinho as peças da bancada na protoboard e liga com jumpers':'Places the bench parts on the breadboard and wires them with jumpers','Todas as peças já estão na protoboard.':'All parts are already on the breadboard.',
+ 'Diagramas ladder, Grafcet, pneumática e itens virtuais não têm peça física':'Ladder, Grafcet, pneumatic and virtual items have no physical part','Protoboards':'Breadboards','Protoboard':'Breadboard','Meia protoboard':'Half breadboard','Mini protoboard':'Mini breadboard','Componentes básicos':'Basic components','Energia':'Power','Transistores, reguladores e relés':'Transistors, regulators and relays','Sensores e entradas':'Sensors and inputs','Saídas, motores e telas':'Outputs, motors and displays','Microcontroladores e conectores':'Microcontrollers and connectors','Circuitos integrados':'Integrated circuits','Instrumentos':'Instruments','Montar na protoboard':'Build on breadboard','Encaixa as peças da bancada na protoboard e liga tudo com jumpers: vermelho no +, preto no −':'Places the parts on the breadboard and wires everything: red to +, black to −','Encaixa sozinho as peças da bancada na protoboard e liga com jumpers':'Places the bench parts on the breadboard and wires them with jumpers','Todas as peças já estão na protoboard.':'All parts are already on the breadboard.',
  'Clique nos botões, chaves e sensores para operar. Shift + clique segura uma botoeira apertada.':'Click buttons, switches and sensors to operate them. Shift + click holds a push button down.',
  'Clique noutro terminal ou furo para terminar o fio. Clique no vazio para fazer uma curva. Esc ou botão direito cancela.':'Click another terminal or hole to finish the wire. Click an empty spot to make a bend. Esc or right click cancels.',
  'Arraste as peças para os furos. Clique num terminal ou furo para puxar um fio. Fio selecionado: arraste a ponta para trocar de terminal; duplo clique cria curva. Arraste o vazio para selecionar; botão direito ou do meio move a vista.':'Drag parts into the holes. Click a terminal or hole to pull a wire. Selected wire: drag its end to another terminal; double click adds a bend. Drag on empty space to select; right or middle button moves the view.',
@@ -672,3 +731,5 @@ HELP.push(['Vincular desenho e protoboard','vincular vínculo desvincular sincro
 function tbFit(){const t=document.querySelector('header .tools');if(!t)return;const B=document.body.classList;B.remove('tb1','tb2');const wr=()=>{const k=[...t.children].filter(e=>e.offsetParent&&!e.hidden);if(!k.length)return false;const y0=Math.min(...k.map(e=>e.offsetTop));return k.some(e=>e.offsetTop>y0+8)};if(wr()){B.add('tb1');if(wr())B.add('tb2')}}
 {const st=document.createElement('style');st.textContent='body.tb1 #bLink .lbl2,body.tb2 .tools .lbl2{display:none}';document.head.appendChild(st);addEventListener('resize',()=>tbFit());requestAnimationFrame(tbFit);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(tbFit)}
 {const _s=pbSyncUI;pbSyncUI=function(){const k=document.getElementById('bLink'),h=k&&k.dataset.h;_s();if(k&&k.dataset.h!==h)tbFit()}}
+/* painel: mostrar de novo o nome escondido na protoboard */
+{const _rpT=renderProps;renderProps=function(){_rpT();try{if(mode!=='edit'||!sel||sel.c.size!==1||!pbOn())return;const c=byId([...sel.c][0]);if(!c||!c.pbtagOff)return;const el=$('#props');const d=document.createElement('div');d.className='row';d.innerHTML=`<button data-a="pbtagon">${tr('Mostrar nome na protoboard')}</button>`;el.appendChild(d);d.querySelector('button').onclick=()=>{pushHist();delete c.pbtagOff;commit()}}catch(e){console.error(e)}}}

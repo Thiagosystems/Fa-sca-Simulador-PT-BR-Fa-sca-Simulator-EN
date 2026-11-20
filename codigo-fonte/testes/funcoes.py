@@ -283,6 +283,12 @@ W(a3,0,f,0);W(f,1,l1,1);W(a3,0,l2,1);W(l1,0,orv,1);W(l2,0,orv,2);W(l1,0,anv,1);W
 const st=()=>[pres(orv,0),pres(anv,0),pres(cd,0)].map(x=>x?1:0).join('');const a=st();simPress(l1.id);await sl(700);const b=st()+((rt.cyl[cd.id]||{x:0}).x>.9?'+':'-');simPress(l2.id);await sl(300);const c=st();simPress(l1.id);simPress(l2.id);await sl(700);const d=st()+((rt.cyl[cd.id]||{x:0}).x<.1?'-':'+');stopSim();
 const ui=document.querySelectorAll('details.howto').length;loadTpl('direta',true);commit();const cn=document.querySelectorAll('circle.term.cn').length;return[a,b,c,d,ui,cn>0]})()""")
     ok('pneumática ISO: alavanca, OU, E, piloto, FRL e escape rápido; "Como usar" recolhido; bolinha some no terminal ligado',r==['000','101+','111','000-',1,True],r)
+    r=pg.evaluate(r"""(async()=>{const sl=ms=>new Promise(q=>setTimeout(q,ms));const N=(t,p,x,y)=>{const c=placeComp(makeComp(t,p||{},''),x,y,0);S.comps.push(c);return c};
+S={comps:[],wires:[],seq:1,doc:{fr:false}};ensureDoc();const bt=N('bat',{V:9,ri:.01},0,0),r1=N('res',{R:1000},200,0),r2=N('res',{R:2000},400,0),mm=N('mmeter',{},600,0);
+S.wires.push({id:'w1',a:{c:bt.id,t:0},b:{c:r1.id,t:0}},{id:'w2',a:{c:r1.id,t:1},b:{c:r2.id,t:0}},{id:'w3',a:{c:r2.id,t:1},b:{c:bt.id,t:1}});pbInit();S.pb.on=true;S.pb.bds=[];let x=0;for(const c of S.comps){c.pbx=x;c.pby=300;x+=150}if(S.nopb)delete S.nopb;
+mm.pra=`p:${r2.id}:1`;mm.prb=`p:${r2.id}:0`;commit();startSim();await sl(200);const v=mmRead(mm);simPress(mm.id);await sl(100);const m1=mm.m;stopSim();
+S.comps=S.comps.filter(c=>c!==bt);S.wires=[];mm.m='R';mm.pra=`p:${r1.id}:0`;mm.prb=`p:${r1.id}:1`;commit();startSim();await sl(200);const r=mmRead(mm);stopSim();return[v,m1,r]})()""")
+    ok('multímetro: pontas medem V e Ω e a chave muda durante a simulação',r==['6 V','R','1 kΩ'],r)
     ok('nenhum erro de JavaScript',not erros,erros)
     b.close()
 print('\nFALHAS:',len(falhas));sys.exit(1 if falhas else 0)

@@ -1314,7 +1314,7 @@ const STUCKT=new Set(['kno','knc','ktno','ktnc','btn','lim','mp','ftnc','ftno'])
 function faultKinds(c){const k=[];if(domOf(c)==='e'&&termsOf(c).length>=2&&!['src','supply','plc','junction'].includes(c.type))k.push('open');if(STUCKT.has(c.type)&&!(c.type==='lim'&&c.f==='co'))k.push('stuck');if(SHORTT.has(c.type))k.push('short');return k}
 const TR=()=>S.train||(S.train={on:false,mode:'prof',pin:'',tries:0,found:[]});
 const fltOn=()=>false,FL=c=>fltOn()?c.flt:null;
-const liveWires=()=>[...(fltOn()?S.wires.filter(w=>!w.flt):S.wires),...coincidentWires(),...xrefWires()];
+const liveWires=()=>{const r=[...(fltOn()?S.wires.filter(w=>!w.flt):S.wires),...coincidentWires(),...xrefWires()];for(const f of XWIRES){try{r.push(...f())}catch(e){}}return r};
 function condOf(c,E){const d=D(c);if(fltOn()&&c.flt){if(c.flt==='open')return[];if(c.flt==='stuck')return c.type==='mp'?rng(+c.p).map(i=>[i,i+ +c.p]):[[0,1]]}return d.cond?d.cond(c,E):[]}
 function faultList(){const r=[];S.comps.forEach(c=>{if(c.flt)r.push({id:c.id,lbl:`${c.tag||lab(c)}: ${FK[c.flt]||c.flt}`})});S.wires.forEach(w=>{if(w.flt){const a=byId(w.a.c),b=byId(w.b.c);r.push({id:w.id,w:1,lbl:`Fio de ${a?a.tag||lab(a):'?'} a ${b?b.tag||lab(b):'?'}: rompido`})}});return r}
 function wireMid(w){const a=byId(w.a.c),b=byId(w.b.c);if(!a||!b)return null;const p=tp(a,w.a.t),q=tp(b,w.b.t);return{x:(p.x+q.x)/2,y:(p.y+q.y)/2}}
@@ -1513,7 +1513,9 @@ function splitWire(wid,p){const w=S.wires.find(x=>x.id===wid);if(!w)return null;
 /* terminais na mesma posição ficam ligados (como no CADe_SIMU) */
 function coincidentWires(){const g={},v=[];for(const c of S.comps)termsOf(c).forEach((_,i)=>{const q=tp(c,i),k=`${c.sh||1}:${Math.round(q.x)}:${Math.round(q.y)}`;(g[k]=g[k]||[]).push({c:c.id,t:i})});
  for(const k in g){const a=g[k];for(let i=1;i<a.length;i++)if(a[i].c!==a[0].c)v.push({id:'cv'+k+i,a:a[0],b:a[i],virt:1})}return v}
-const allWires=()=>[...S.wires,...coincidentWires(),...xrefWires()];
+/* XWIRES: ligações virtuais (ex.: pontas de prova do multímetro na protoboard) */
+const XWIRES=[];
+const allWires=()=>{const r=[...S.wires,...coincidentWires(),...xrefWires()];for(const f of XWIRES){try{r.push(...f())}catch(e){}}return r};
 let hoverConn=null;
 function connOverlay(){if(mode!=='edit'||!hoverConn)return'';const q=hoverConn.p;return hoverConn.k==='t'?`<circle class="snapt" cx="${q.x}" cy="${q.y}" r="8"/>`:`<circle class="snapw" cx="${q.x}" cy="${q.y}" r="5"/>`}
 function updHover(e,p){if(mode!=='edit'||!(tool&&tool.from)){if(hoverConn){hoverConn=null;return true}return false}const old=JSON.stringify(hoverConn);
