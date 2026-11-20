@@ -5425,8 +5425,8 @@ function pbAutoMount(silent){if(mode!=='edit')return;pbInit();pbSheetBoard();
  const fit=(c,b)=>{const g=bdGeo(b),u=U(b),top=g.rows.slice(0,5),bot=g.rows.slice(5),pk=pkgOf(c),ys=[...new Set(pk.pins.map(q=>q[1]))].sort((a,z)=>a-z),xs=pk.pins.map(q=>q[0]),x0=Math.min(...xs),x1=Math.max(...xs),dy=ys[ys.length-1]-ys[0];
   const sy=[...top].reverse().find(y=>bot.includes(y+dy)),opts=ys.length===1?[[top[2]-ys[0],'t'],[bot[2]-ys[0],'b']]:dy===1?[[top[1]-ys[0],'t'],[bot[1]-ys[0],'b']]:ys.length===2&&sy!=null?[[sy-ys[0],'s']]:null;if(!opts)return null;
   const bx0=Math.min(x0,Math.floor(pk.box[0]/PBP)+1),bx1=Math.max(x1,Math.ceil(pk.box[2]/PBP)-1);
-  for(const[y0,half]of opts)for(let col=3;col+x1-x0<=g.n+1;col++){const cols=[];for(let x=bx0;x<=bx1;x++)if(col+x-x0>=1)cols.push(col+x-x0);const fr=cols.concat([cols[cols.length-1]+1]).every(cc=>cc<=g.n+1&&(half==='t'?!u.t[cc]:half==='b'?!u.b[cc]:!u.t[cc]&&!u.b[cc]));if(!fr)continue;
-   cols.concat([cols[cols.length-1]+1]).forEach(cc=>{if(half!=='b')u.t[cc]=true;if(half!=='t')u.b[cc]=true});return{x:b.x+(col-x0)*PBP,y:b.y+y0*PBP}}return null};
+  for(const[y0,half]of opts)for(let col=3;col+x1-x0<=g.n+1;col++){const cols=[];for(let x=bx0;x<=bx1;x++)if(col+x-x0>=1)cols.push(col+x-x0);const fr=cols.concat([cols[cols.length-1]+1,cols[cols.length-1]+2]).every(cc=>cc<=g.n+1&&(half==='t'?!u.t[cc]:half==='b'?!u.b[cc]:!u.t[cc]&&!u.b[cc]));if(!fr)continue;
+   cols.concat([cols[cols.length-1]+1,cols[cols.length-1]+2]).forEach(cc=>{if(half!=='b')u.t[cc]=true;if(half!=='t')u.b[cc]=true});return{x:b.x+(col-x0)*PBP,y:b.y+y0*PBP}}return null};
  let placed=0;const out=[];/* mantém a ordem em que as peças estão na bancada (da esquerda para a direita) */parts.sort((a,b)=>(a.pbx-b.pbx)||(a.pby-b.pby));
  for(const c of parts){let pos=null;for(const b of boards){pos=fit(c,b);if(pos)break}if(!pos&&boards.length<4){pos=fit(c,newBoard())}if(!pos){out.push(c);continue}c.pbr=0;c.pbx=pos.x;c.pby=pos.y;placed++}
  /* fontes (+ / 0 V) viram etiquetas ao lado do barramento */
@@ -5454,7 +5454,7 @@ function pbAutoMount(silent){if(mode!=='edit')return;pbInit();pbSheetBoard();
    const ri=top=>kd==='+'?(top?1:3):(top?0:2),bdOf=en=>en.e.bd?S.pb.bds.find(x=>x.id===en.e.bd):null,usedR=new Set(),sockE=[];
    for(const en of ends){const bd=bdOf(en);if(!bd){sockE.push(en);continue}const g=bdGeo(bd),top=en.e.hy<g.mid,rid=`${bd.id}:r${ri(top)}`,r=freeIn(rid,(a,z)=>Math.abs(a.x-en.x)-Math.abs(z.x-en.x));if(r){S.pb.w.push({id:'pw'+(S.seq++),a:en.e,b:r.e,col});nj++;usedR.add(rid)}}
    const bb=`${b0.id}:r${ri(false)}`,bt=`${b0.id}:r${ri(true)}`;
-   for(const en of sockE){const rid=usedR.has(bb)||!usedR.has(bt)?bb:bt,r=freeIn(rid,(a,z)=>z.x-a.x);if(r){S.pb.w.push({id:'pw'+(S.seq++),a:en.e,b:r.e,col});nj++;usedR.add(rid)}}
+   for(const en of sockE){const q=pbPin(byId(en.e.c),en.e.t),g0=bdGeo(b0),rid=q&&q.y<b0.y+g0.mid*PBP?bt:bb,r=freeIn(rid,(a,z)=>Math.abs(a.x-en.x)-Math.abs(z.x-en.x));if(r){S.pb.w.push({id:'pw'+(S.seq++),a:en.e,b:r.e,col});nj++;usedR.add(rid)}}
    const bds=[...new Set([...usedR].map(r=>r.split(':')[0]))];
    for(const id of bds){const t=`${id}:r${ri(true)}`,b=`${id}:r${ri(false)}`;if(usedR.has(t)&&usedR.has(b)){const r1=freeIn(t,(a,z)=>z.x-a.x),r2=freeIn(b,(a,z)=>z.x-a.x);if(r1&&r2){S.pb.w.push({id:'pw'+(S.seq++),a:r1.e,b:r2.e,col});nj++}}}
    for(const id of bds)if(id!==b0.id){const r1=freeIn(bb,(a,z)=>a.x-z.x),r2=freeIn(`${id}:r${ri(false)}`,(a,z)=>a.x-z.x)||freeIn(`${id}:r${ri(true)}`,(a,z)=>a.x-z.x);if(r1&&r2){S.pb.w.push({id:'pw'+(S.seq++),a:r1.e,b:r2.e,col});nj++}}

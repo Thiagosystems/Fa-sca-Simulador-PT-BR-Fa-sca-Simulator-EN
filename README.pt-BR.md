@@ -1,0 +1,112 @@
+# Faísca — simulador de comandos elétricos
+
+Feito por **Thiagosystems**. Simulador de comandos elétricos, eletrônica, CLP e pneumática que roda no navegador, calcula tensões e correntes reais e funciona como aplicativo instalável (também sem internet).
+
+[English version](README.md)
+
+## Como usar
+
+- **Abrir:** abra o `index.html` no navegador, ou publique a pasta num site com https (GitHub Pages, Netlify, Vercel) para poder instalar como aplicativo.
+- **Instalar:** no Chrome ou Edge, use o ícone de instalar na barra de endereço ou **Arquivo → Instalar aplicativo**. No Android, menu **⋮ → Instalar aplicativo**; no iPhone, **Compartilhar → Adicionar à Tela de Início**.
+- **Exemplo pronto:** `Estrela-triangulo-24Vcc.fais` abre em **Arquivo → Abrir arquivo .fais**. O mesmo circuito está em **Modelos prontos → Estrela-triângulo com comando 24 Vcc**.
+
+## Recursos
+
+**Desenho**
+- Mais de 320 itens em 23 bibliotecas (e mais os seus blocos): alimentação, fusíveis e seccionadores, DR e disjuntores (símbolo simplificado ou detalhado), contatores, motores, partida e velocidade, contatos e temporizadores, botoeiras (impulso, retenção, dupla NA+NF, comutadora, luminosa, de puxar, pedal, emergência), detectores, sinalização, relés eletrônicos, lógica, CLP, Ladder, GRAFCET, pneumática, cabos, eletrônica e circuitos integrados.
+- **Numeração editável dos contatos** (ex.: 53-54, 61-62, 83-84), como no CADe_SIMU.
+- Símbolos no estilo do CADe_SIMU: transformador com núcleo (1-2 / 3-4), ponte retificadora em losango (1, 2, 3+, 4−) e disjuntor com quadrado preto (o "x" da IEC continua como opção).
+- Motor de 6 terminais com borne de terra (PE) e ponte retificadora com saída sem filtro, com capacitor ou ideal (Vcc = Vca).
+- **Redimensionar:** selecione uma parte do circuito e arraste um dos quadradinhos nos cantos da seleção para diminuir ou aumentar (os fios continuam ligados). No painel há 50%, 75%, 100% e **Caber na folha**; em **Documentação → Encaixar o esquema na folha** a folha inteira é ajustada de uma vez.
+- Seleção por retângulo, copiar/colar/duplicar, desfazer/refazer, ajuste do trajeto dos fios e desvio automático.
+- Ligações confiáveis: o clique "puxa" para o terminal mais próximo, terminar um fio sobre outro cria o ponto de conexão, e um indicador verde mostra onde o fio vai ligar.
+- Cores dos fios e **Colorir fios pela norma** (IEC 60445).
+- **Nome arrastável:** clique e arraste o nome (tag) de qualquer componente para tirá-lo de cima do desenho; o botão "Voltar o nome para o lugar padrão" desfaz.
+- Portas lógicas com o símbolo simples (formato das portas) ou retangular (IEC), e de 2 a 8 entradas.
+- Fios em ângulo reto: cada curva fica alinhada com o ponto anterior e, ao terminar num terminal, a última curva se ajusta para o fio chegar reto. Todos os terminais ficam na grade.
+- **Rótulo de rede:** pontos com o mesmo nome ficam ligados sem fio. Clique num rótulo ou num fio para destacar a rede inteira e ver o que está ligado nela.
+- **Meus blocos:** selecione parte do circuito, clique em "Salvar como bloco" e reaproveite pela paleta (dá para exportar e importar).
+- Curvas de fio invisíveis, como no CADe_SIMU: a bolinha só aparece nas junções (3 fios ou mais) e nos terminais. Um fio desenhado por cima de outro se liga sozinho, e cancelar um fio (botão direito ou Esc) apaga o trecho que ficou solto.
+
+**Simulação**
+- Análise nodal em CC e CA 60 Hz, com fases defasadas, em passos de tempo finos quando há capacitores ou indutores.
+- **Velocidade da simulação** (1×, 1/10, 1/100, 1/1000…) para ver sinais rápidos: o osciloscópio mostra a forma de onda no tempo (ex.: NE555 a 1,5 kHz).
+- Indutor, **corrente de partida dos motores** (ajustável) e **amplificador operacional** de verdade (LM358, LM741, TL072 e ideal), com saturação na alimentação.
+- Bobina abaixo de 80% não atraca, lâmpada em sobretensão queima, fusível e disjuntor desarmam por sobrecarga e curto (curvas B, C, D), relé térmico pela corrente real do motor, DR por fuga, transistores e capacitores.
+- Diagnóstico ao vivo ("O que faz", "Problemas", "Eventos"), com correções em um clique.
+- Osciloscópio de 2 canais e gráfico ao longo do tempo.
+- Modo Protoboard: o mesmo circuito montado numa protoboard, com peças coloridas e realistas (Arduino Uno, micro:bit, LEDs, resistores com faixas de cor, CIs, sensores, telas, motores…). Fica sincronizado com o esquema nos dois sentidos: peças encaixadas na mesma tira viram fios no esquema, e a simulação funciona nas duas vistas. Apagar no esquema um fio feito pela protoboard desfaz a ligação nela também (a peça sai da placa ou o jumper é retirado). Cada projeto novo começa com o desenho e a protoboard **separados** (dá para usar a protoboard sem mexer no desenho); o botão **☐ Vincular protoboard**, no canto superior direito, junta os dois e sincroniza as ligações; clicar em ☑ Vinculado separa de novo. Os fios saem em ângulo reto automaticamente. O multímetro tem **pontas de prova** que você arrasta até qualquer furo ou terminal (tensão ao vivo, também simulando). **Montar na protoboard** encaixa sozinho as peças da bancada e liga com jumpers; peça colocada na protoboard vai para perto das peças ligadas a ela no esquema, com fios em ângulo reto. O osciloscópio também tem pontas (CH1, CH2 e garra do terra) e **trigger** (automático, normal ou desligado; canal, borda e nível). **Defeitos visíveis**: curto-circuito na fonte pisca em vermelho e peça queimada solta fumaça.
+
+**Circuitos integrados e sensores**
+- CIs com a pinagem real, no formato DIP: portas 74HC00, 02, 04, 08, 14 (Schmitt), 32 e 86; CMOS CD4011, 4069, 4071, 4081 e 4070; flip-flops 74HC74 e CD4013; 74HC138 (decodificador), 74HC151 (multiplexador), 74HC161 (contador), **74HC595** (registrador de deslocamento), CD4017 (contador de década), CD4511 (BCD para 7 segmentos), **NE555** (temporizador), ULN2003, L293D (ponte H), LM393 (comparador) e PC817 (optoacoplador).
+- Os pinos acendem em verde quando estão em nível alto. O CI precisa de VCC e GND e queima se passar da tensão máxima (74HC: 6 V; CD4000: 18 V; NE555: 16 V).
+- Display de 7 segmentos (cátodo ou ânodo comum), reguladores 7805, 7809, 7812 e AMS1117, sensor de temperatura LM35 e LDR (clique para mudar a temperatura ou a luz).
+- Modelos prontos **NE555 a 1,5 kHz no osciloscópio**, **Amplificador operacional (não inversor)**, **Pisca-pisca com NE555** e **Registrador 74HC595 com 8 LEDs** e **Onda de LEDs (NE555 + 74HC595)** (também no arquivo `Onda-de-LEDs.fais`).
+
+**Valores de datasheet** (como no Tinkercad): resistor 1 kΩ de 1/4 W, potenciômetro 250 kΩ, LED de 5 mm com tensão direta por cor (2,0 a 3,2 V) e 20 mA, diodo 1N4007, LDR GL5528, IRFZ44N, 7805/AMS1117 com tensão máxima de entrada, relé SRD-05VDC e saída de pino do Arduino de ~40 Ω. Trocar a cor do LED ajusta a tensão direta.
+
+**Arduino, micro:bit e ATtiny em C++**
+- Programe como na IDE do Arduino (setup/loop) com exemplos prontos e **Monitor serial**. Aceita struct, class (construtor, métodos, herança) e enum. Placas: Arduino Uno, Nano e Mega 2560, ESP32 DevKit, Raspberry Pi Pico, micro:bit e ATtiny85. **Projetos com Arduino** prontos (Modelos prontos): semáforo, alarme com PIR, termômetro com LCD, servo com potenciômetro, sensor de distância com bipe, contador de 4 dígitos e anel NeoPixel, já montados na protoboard. Bibliotecas: Servo, LiquidCrystal, LiquidCrystal_I2C, Adafruit_NeoPixel, Keypad, IRremote, TM1637Display, Wire, Serial, SoftwareSerial, EEPROM, shiftOut (74HC595), **WiFi** (simulado), **Adafruit_SSD1306** (OLED) e **Stepper**.
+- **MicroPython no ESP32 e no Raspberry Pi Pico**: se o código começar com `import`, ele roda como MicroPython (machine.Pin, ADC, PWM, I2C, Timer e interrupções; time, network com Wi-Fi simulado, neopixel, ssd1306, i2c_lcd, random, math). Erros mostram a linha, como no Thonny.
+- **Serial Plotter**: o botão Gráfico do monitor serial desenha os números recebidos (várias colunas ou nome:valor).
+- Componentes como os do Tinkercad: LED RGB, Zener, chave deslizante, botão de 4 pinos, DIP, teclado 4×4, sensores (TMP36, PIR, ultrassônico, umidade, gás, flexível, força, luz, inclinação, IR e controle remoto), NeoPixel (LED, anéis e faixas), servo, piezo, motor com encoder, LCD 16×2 (comum e I2C), display TM1637, **display OLED 128×64**, **lâmpada pequena** (brilho pela tensão, queima com sobretensão), **módulo relé 5 V**, **ponte H L298N**, **motor de passo 28BYJ-48 com ULN2003**, **encoder rotativo KY-040**, multímetro, fonte de bancada, gerador de função, relés SPDT/DPDT, pMOS, 556, LM339, 4N35, 74HC10/11/20/21/27/73/75/93/132/283 e PCF8574.
+- Modelo pronto **Arduino programado em C++**.
+- **Protoboard mais caprichada**: displays de 7 segmentos e TM1637 inclinados por igual como os reais; micro:bit com animação do cabo USB ao simular e carinha feliz sem programa; botões A/B no lugar certo; nome dos chips centralizado.
+- **Instrumentos**: multímetro troca de escala durante a simulação (clique nele ou no painel) e as pontas medem V, A (em série) e Ω (circuito desligado); a ponta vai para o terminal ou furo mais perto da ponta; fonte de bancada no estilo do Tinkercad (mostradores, botões 0–30 V e 0–5 A, CV/CC, chave ON); gerador de função, voltímetro e amperímetro redesenhados.
+- **Montar na protoboard** organizado: + em vermelho e − em preto pelos barramentos, sinais em faixas coloridas sem amontoar, peças na ordem da bancada.
+- Nomes das peças na protoboard: arraste para mover, duplo clique para renomear, Del para esconder.
+- **Pneumática na norma ISO 1219**: válvulas com quadrados por posição, setas, bloqueios, escapes e números dos pórticos; acionamentos por solenoide, botão, alavanca com trava, rolete, piloto de ar e mola. Novos: 3/2 NA, 2/2 NF/NA, 5/2 alavanca/piloto/duplo piloto, 5/3 (centro fechado, em escape e em pressão), válvulas OU e E, filtro, regulador, lubrificador, filtro regulador, FRL (completa e simplificada), manômetro, compressor, reservatório, secador, regulador de fluxo unidirecional, válvula de fechamento e escape rápido.
+- Terminal com fio ligado vira um pontinho; "Como usar" fica recolhido num botão; a seleção não mostra mais os quadradinhos nos cantos; o indicador luminoso LED usa o símbolo de sinaleiro.
+- **Soft starter com simbologia completa**: tiristor em L1-L3/T1-T3, PE, alimentação A1-A2, partida por DI1-DI2 (contato fechado ou tensão; sem fios em DI1-DI2 parte só com A1-A2), contato 13-14 que fecha em funcionamento e 23-24 que fecha no fim da rampa.
+- Na protoboard, o amplificador operacional mostra no chip o modelo escolhido (LM358, LM741, TL072 ou AMP OP no ideal).
+- Contas com `unsigned long` dão a volta em 32 bits como no Arduino real (ex.: `millis() - inicio`), então temporizações com `millis()` funcionam certo.
+- **Textos sempre legíveis ao girar**: nomes e valores nunca ficam de cabeça para baixo; o texto de dentro do corpo (fases, inversor, sensores) fica em pé e centralizado; rótulos de pino ficam dentro do corpo, sem cobrir fios nem terminais. Na protoboard, o nome dos chips gira junto com a peça, como na peça real.
+
+**CLP**
+- Entradas e saídas digitais e **analógicas** (0–10 V = 0–27648, como na Siemens): IW64, IW66… e QW64, QW66… nas CPUs, ET 200 e nos módulos de entrada/saída analógica; A0–A5 (0–1023) no Arduino.
+- Ladder com contatos, bobinas (normal, negada, Set, Reset), TON/TOF, **CTU, CTD e CTUD**, **comparadores** (==, <>, >=, <=, >, <), **IN_RANGE / OUT_RANGE** e **MOVE**. Os valores podem ser variáveis (IW64, QW64, MW…, C1.CV, T1.ET) ou números.
+- **Programa em texto estruturado (ST)** em cada CPU: IF/ELSIF/ELSE, FOR, WHILE, TON/TOF/TP, CTU/CTD, R_TRIG/F_TRIG.
+- **Vários CLPs** no mesmo projeto, cada um com um prefixo de endereço (CLP2.I0.0…).
+- Modelos prontos **CLP programado em texto (ST)** e **CLP com entrada e saída analógica** (potenciômetro em IW64, comparador, MOVE para QW64 e voltímetro).
+
+**Documentação**
+- **Exportar imagem PNG** da folha atual, além do PDF.
+- Várias folhas, ligação entre folhas, moldura com colunas e carimbo, numeração de fios, referência cruzada, lista de materiais (tela, CSV, PDF) e PDF vetorial.
+
+**Configurações** (engrenagem)
+- Aba **Dúvidas**: pesquise como funciona um componente ou uma função; a explicação é curta e tem exemplo. O botão "Como funciona?" no painel abre direto o componente selecionado.
+- Português ou inglês, tema claro/escuro, e o que aparece no desenho (valores, medições, números dos terminais, referência cruzada, grade, selos).
+- Setas nas bordas escondem a paleta, o painel lateral e a barra (`Ctrl+Shift+F` faz tudo de uma vez).
+
+## Atalhos
+
+| Tecla | Ação |
+|---|---|
+| `R` | Gira |
+| `Del` | Exclui |
+| `Ctrl+A` / `Ctrl+C` / `Ctrl+V` / `Ctrl+D` | Selecionar tudo / copiar / colar / duplicar |
+| `Ctrl+Z` / `Ctrl+Y` | Desfazer / refazer |
+| `Ctrl+S` / `Ctrl+O` | Salvar / abrir .fais |
+| `Esc` | Cancela |
+| `Ctrl+Shift+F` | Esconde/mostra paleta, painel e barra |
+
+## Limitações conhecidas
+
+- Motores sem corrente de partida; bobinas sem indutância; retificador sem ondulação.
+- Sinais rápidos precisam da velocidade lenta (1/100, 1/1000…); os CIs são lógicos (sem atraso de propagação).
+- A ajuda da aba Dúvidas está em português.
+- Os projetos ficam no navegador: salve em `.fais` para não perder.
+
+## Para quem for mexer no código
+
+O código-fonte organizado (núcleo + módulos) e os testes automáticos estão em `codigo-fonte/`. Veja `codigo-fonte/LEIA-ME-DESENVOLVIMENTO.md`.
+
+## Colaboradores
+
+- **Rafael Costa** — colaborador criativo: ajuda a pensar novos recursos e a transformar ideias em prompts para o desenvolvimento.
+
+## Licença
+
+© 2026 Thiagosystems. Todos os direitos reservados.
+
+O uso pelo site e pelo aplicativo é livre. Copiar, clonar, modificar, redistribuir ou usar o código como base para outro programa é proibido sem autorização por escrito. Veja o arquivo `LICENSE`.
